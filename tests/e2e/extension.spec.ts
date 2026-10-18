@@ -318,6 +318,13 @@ test('a shadow root attached to a plain element after load is styled (consent di
     .toBeLessThan(0.08);
 });
 
+test('a fetched stylesheet starting with a Google Fonts @import is still darkened (ycombinator.com)', async ({ context }) => {
+  const page = await context.newPage();
+  await page.goto(url('fonts-import.html'));
+  await page.waitForLoadState('load');
+  await expect.poll(async () => luminance(await bg(page, 'body'))).toBeLessThan(0.08);
+});
+
 test('re-detects when a site switches its own theme', async ({ context }) => {
   const page = await context.newPage();
   await page.goto(url('toggle.html'));

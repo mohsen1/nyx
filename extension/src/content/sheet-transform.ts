@@ -195,3 +195,54 @@ export function transformSheet(sheet: CSSStyleSheet, opts: TransformOptions): st
   if (!rules) return null;
   return transformRules(rules, { ...opts, baseUrl: sheet.href ?? opts.baseUrl });
 }
+
+/**
+ * Removes @import statements from raw CSS text. Their URLs can hold semicolons inside quotes
+ * (Google Fonts: `family=Outfit:wght@300;400;700`), so the end of each statement is found by
+ * scanning past strings, parentheses and comments rather than at the first `;`.
+ */
+export function stripImports(css: string): string {
+  let out = '';
+  let i = 0;
+  // Index just past a string or comment starting at `j`, or -1 when none starts there.
+  const skip = (j: number): number => {
+    const ch = css[j];
+    if (ch === '"' || ch === "'") {
+      const end = css.indexOf(ch, j + 1);
+      return end < 0 ? css.length : end + 1;
+    }
+    if (ch === '/' && css[j + 1] === '*') {
+      const end = css.indexOf('*/', j + 2);
+      return end < 0 ? css.length : end + 2;
+    }
+    return -1;
+  };
+  let kept = 0; // start of the text not yet copied to `out`
+  while (i < css.length) {
+    const past = skip(i);
+    if (past >= 0) {
+      i = past;
+      continue;
+    }
+    if (css[i] !== '@' || css.slice(i, i + 7).toLowerCase() !== '@import') {
+      i++;
+      continue;
+    }
+    out += css.slice(kept, i);
+    let j = i + 7;
+    let depth = 0;
+    while (j < css.length) {
+      const over = skip(j);
+      if (over >= 0) {
+        j = over;
+        continue;
+      }
+      const ch = css[j++];
+      if (ch === '(') depth++;
+      else if (ch === ')') depth = Math.max(0, depth - 1);
+      else if (ch === ';' && depth === 0) break;
+    }
+    i = kept = j;
+  }
+  return out + css.slice(kept);
+}

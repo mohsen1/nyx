@@ -5,7 +5,7 @@ import { Palette } from '../shared/palette';
 import { PROPERTY_ROLES, rewriteCustomProperty, rewriteValue, roleVarName, type RewriteContext } from '../shared/css-values';
 import type { AppearanceOptions } from '../shared/settings';
 import type { Theme } from '../shared/theme';
-import { transformRules, transformSheet, type TransformOptions } from './sheet-transform';
+import { stripImports, transformRules, transformSheet, type TransformOptions } from './sheet-transform';
 import { ImageAnalyzer } from './images';
 import { ATTR_DIM, ATTR_FIX, ATTR_FIX_FILL, ATTR_FIX_STROKE, ContrastGuard, DIM_VAR, FIX_VAR } from './contrast';
 import { formatColor, parseColor } from '../shared/color';
@@ -717,7 +717,7 @@ export class DarkEngine {
     try {
       const sheet = new this.win.CSSStyleSheet();
       // replaceSync ignores @import; imported sheets are fetched separately when encountered.
-      sheet.replaceSync(text.replace(/@import[^;]+;/g, ''));
+      sheet.replaceSync(stripImports(text));
       return transformRules(sheet.cssRules, { ...this.rewriteOptions(href), onComposedColor, onBackgroundImage, onComposedProperty });
     } catch {
       return '';

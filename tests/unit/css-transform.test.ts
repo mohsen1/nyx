@@ -2,7 +2,7 @@
 import { describe, expect, it } from 'vitest';
 import { rewriteCustomProperty, rewriteChannels, rewriteValue } from '../../extension/src/shared/css-values';
 import { Palette } from '../../extension/src/shared/palette';
-import { transformRules } from '../../extension/src/content/sheet-transform';
+import { stripImports, transformRules } from '../../extension/src/content/sheet-transform';
 
 const palette = new Palette({ background: '#1c1c1e', text: '#e3e3e6', dynamicColors: true });
 const ctx = { palette, baseUrl: 'https://cdn.example.com/css/site.css' };
@@ -118,5 +118,21 @@ describe('transformRules', () => {
     const stops = [...css.matchAll(/#([0-9a-f]{6})/g)].map((m) => parseInt(m[1].slice(0, 2), 16));
     expect(stops.length).toBeGreaterThan(0);
     for (const r of stops) expect(r).toBeGreaterThan(150); // lightened like text, not darkened
+  });
+});
+
+describe('stripImports', () => {
+  it('keeps the rest of the sheet when an @import URL contains semicolons (Google Fonts)', () => {
+    const css = '@import "https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;700&display=swap" layer(fonts);@layer base{.a{color:red}}.bg{background-color:#f5f5ee}';
+    expect(stripImports(css)).toBe('@layer base{.a{color:red}}.bg{background-color:#f5f5ee}');
+  });
+
+  it('handles url(), media queries, comments and several imports', () => {
+    const css = "@import url('a.css;x') screen;/* @import ignored; */@IMPORT url(b.css) (min-width: 1px);.x{color:blue}";
+    expect(stripImports(css)).toBe('/* @import ignored; */.x{color:blue}');
+  });
+
+  it('leaves sheets without imports untouched', () => {
+    expect(stripImports('.a{color:red}')).toBe('.a{color:red}');
   });
 });
