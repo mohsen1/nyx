@@ -7,7 +7,7 @@ import type { AppearanceOptions } from '../shared/settings';
 import type { Theme } from '../shared/theme';
 import { stripImports, transformRules, transformSheet, type TransformOptions } from './sheet-transform';
 import { ImageAnalyzer } from './images';
-import { ATTR_BLIND_BG, ATTR_DIM, ATTR_FIX, BLIND_VAR, ATTR_FIX_FILL, ATTR_FIX_INK, ATTR_FIX_STROKE, ContrastGuard, DIM_VAR, FIX_VAR } from './contrast';
+import { ATTR_BLIND_BG, ATTR_DIM, ATTR_FIX, BLIND_IMAGE_VAR, BLIND_VAR, ATTR_FIX_FILL, ATTR_FIX_INK, ATTR_FIX_STROKE, ContrastGuard, DIM_VAR, FIX_VAR } from './contrast';
 import { formatColor, parseColor, relativeLuminance } from '../shared/color';
 
 export const STYLE_CLASS = 'nyx-style';
@@ -880,6 +880,7 @@ export class DarkEngine {
       css += `[${ATTR_INLINE}~="${token}"] { ${prop}: var(--nyx-i-${token}) !important; }\n`;
     }
     css += `[${ATTR_BLIND_BG}] { background-color: var(${BLIND_VAR}) !important; }\n`;
+    css += `[${ATTR_BLIND_BG}="gradient"] { background-image: var(${BLIND_IMAGE_VAR}) !important; }\n`;
     css += `[${ATTR_DIM}]:not(img, video, canvas) { background-color: var(${DIM_VAR}) !important; background-blend-mode: multiply !important; }\n`;
     css += `:is(img, video, canvas)[${ATTR_DIM}] { filter: brightness(0.3) !important; }\n`;
     css += `[${ATTR_FIX_FILL}] { fill: var(--nyx-fix-f) !important; }\n[${ATTR_FIX_STROKE}] { stroke: var(--nyx-fix-s) !important; }\n`;

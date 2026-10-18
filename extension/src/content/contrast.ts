@@ -27,6 +27,24 @@ export const DIM_VAR = '--nyx-dim-c';
 /** A light background painted by a stylesheet Nyx could neither read nor fetch, mapped from its computed value. */
 export const ATTR_BLIND_BG = 'data-nyx-blind-bg';
 export const BLIND_VAR = '--nyx-blind-c';
+export const BLIND_IMAGE_VAR = '--nyx-blind-i';
+
+/** Splits a computed background-image into its layers (commas inside functions don't count). */
+function topLevelLayers(value: string): string[] {
+  const out: string[] = [];
+  let depth = 0, start = 0;
+  for (let i = 0; i < value.length; i++) {
+    const ch = value[i];
+    if (ch === '(') depth++;
+    else if (ch === ')') depth--;
+    else if (ch === ',' && depth === 0) {
+      out.push(value.slice(start, i).trim());
+      start = i + 1;
+    }
+  }
+  out.push(value.slice(start).trim());
+  return out;
+}
 
 /** Below this the text is unreadable, so it gets fixed. */
 const MIN_RATIO = 3;
@@ -191,15 +209,28 @@ export class ContrastGuard {
       if (this.blindDone.has(node)) break;
       this.blindDone.add(node);
       const cs = this.win.getComputedStyle(node);
-      // Photos and gradients are left to the image rules; a blurred glow (Stripe's hero) would
-      // turn into a gray blob.
-      if (cs.backgroundImage !== 'none' || cs.filter !== 'none') continue;
-      const bg = parseColor(cs.backgroundColor);
+      // A blurred glow (Stripe's hero) would turn into a gray blob.
+      if (cs.filter !== 'none') continue;
+      let bg = parseColor(cs.backgroundColor);
+      let rest: string | null = null;
+      if (cs.backgroundImage !== 'none') {
+        // Images are left to the image rules. A top gradient layer of light colors only is a
+        // light surface (Naver's popup: white over a blue gradient that shows only as its border).
+        // It becomes the mapped color; the layers under it stay.
+        const layers = topLevelLayers(cs.backgroundImage);
+        const first = layers[0];
+        if (first.includes('url(')) continue;
+        const colors = (first.match(/rgba?\([^)]*\)/g) ?? []).map((c) => parseColor(c));
+        if (!colors.length || colors.some((c) => !c || c.a < 0.5 || relativeLuminance(c) < 0.4)) continue;
+        bg = colors[0];
+        rest = layers.slice(1).join(', ');
+      }
       if (!bg || bg.a < 0.5 || relativeLuminance(bg) < 0.4) continue;
       const mapped = this.mapBackground(bg);
       if (!mapped) continue;
       (node as HTMLElement).style.setProperty(BLIND_VAR, mapped);
-      node.setAttribute(ATTR_BLIND_BG, '');
+      if (rest !== null) (node as HTMLElement).style.setProperty(BLIND_IMAGE_VAR, `linear-gradient(${mapped}, ${mapped})${rest ? ', ' + rest : ''}`);
+      node.setAttribute(ATTR_BLIND_BG, rest !== null ? 'gradient' : '');
       this.blindMapped.add(node as HTMLElement);
     }
   }
@@ -240,6 +271,7 @@ export class ContrastGuard {
     for (const el of this.blindMapped) {
       el.removeAttribute(ATTR_BLIND_BG);
       el.style.removeProperty(BLIND_VAR);
+      el.style.removeProperty(BLIND_IMAGE_VAR);
     }
     this.blindMapped.clear();
     this.blindDone = new WeakSet();
@@ -486,6 +518,14 @@ export class ContrastGuard {
         break;
       }
       const s = this.win.getComputedStyle(node);
+      // A light gradient surface we replaced with a solid mapped color.
+      if (node.getAttribute(ATTR_BLIND_BG) === 'gradient') {
+        const solid = parseColor(s.backgroundColor);
+        if (solid) {
+          layers.push({ ...solid, a: 1 });
+          break;
+        }
+      }
       if (s.backgroundImage && s.backgroundImage !== 'none' && !isIconBackground(s, node)) {
         // Text sits on this image, so even a button-sized pale image needs darkening.
         this.considerDimming(node, s.backgroundImage, true);

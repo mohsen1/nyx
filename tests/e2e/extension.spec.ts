@@ -203,6 +203,10 @@ test('a stylesheet that can be neither read nor fetched is darkened from compute
   await expect.poll(async () => luminance(await bg(page, 'body'))).toBeLessThan(0.08);
   await expect.poll(async () => luminance(await bg(page, '#card'))).toBeLessThan(0.1);
   await expect.poll(async () => luminance(await fg(page, '#text'))).toBeGreaterThan(0.3);
+  // A white top gradient layer over a gradient border (Naver's popup): the surface is mapped, the border stays.
+  await expect.poll(() => page.$eval('#popup', (el) => getComputedStyle(el).backgroundImage)).not.toContain('rgb(255, 255, 255)');
+  expect(await page.$eval('#popup', (el) => getComputedStyle(el).backgroundImage)).toContain('rgb(50, 131, 253)');
+  await expect.poll(async () => luminance(await fg(page, '#popup p'))).toBeGreaterThan(0.18);
   // Text drawn as a wide SVG (Apple's global nav) is lifted like an icon.
   await expect.poll(async () => luminance(await page.$eval('#wordmark', (el) => getComputedStyle(el).fill))).toBeGreaterThan(0.18);
 });
