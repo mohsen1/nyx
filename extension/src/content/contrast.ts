@@ -27,7 +27,7 @@ export const DIM_VAR = '--nyx-dim-c';
 const MIN_RATIO = 3;
 /** What fixed text is lifted to (WCAG AA for body text). */
 const TARGET_RATIO = 4.5;
-const BATCH = 150;
+const BATCH = 300;
 /** Icons are non-text: WCAG asks 3:1; below this they get lifted. */
 const ICON_MIN_RATIO = 2.5;
 const ICON_SHAPES = 'path, circle, rect, ellipse, line, polyline, polygon, use, text';
@@ -93,6 +93,14 @@ export class ContrastGuard {
   private dimmed = new Map<HTMLElement, RGBA>();
   private dimPending = new WeakSet<Element>();
   private lastBackdropScan = 0;
+  private canvasCache: { at: number; color: RGBA } | null = null;
+
+  /** The root background, re-read at most every 2 s (reading it forces a style recalc). */
+  private canvas(): RGBA {
+    const now = Date.now();
+    if (!this.canvasCache || now - this.canvasCache.at > 2000) this.canvasCache = { at: now, color: canvasColor(this.win.document) };
+    return this.canvasCache.color;
+  }
 
   constructor(
     private readonly win: Window & typeof globalThis,
@@ -123,11 +131,12 @@ export class ContrastGuard {
     if (hasOwnText(el) || this.isGlyphIcon(el)) this.io.observe(el);
   }
 
-  /** An icon-font glyph (<i class="fa fa-star"></i>): no text of its own, a ::before with content. */
+  /**
+   * Maybe an icon-font glyph (<i class="fa fa-star"></i>): empty, with a class. Whether its
+   * ::before really draws something is checked only once it's on screen.
+   */
   private isGlyphIcon(el: Element): boolean {
-    if (el.firstChild || (el.localName !== 'i' && el.localName !== 'span') || !el.hasAttribute('class')) return false;
-    const content = this.win.getComputedStyle(el, '::before').content;
-    return !!content && content !== 'none' && content !== 'normal' && content !== '""';
+    return !el.firstChild && (el.localName === 'i' || el.localName === 'span') && el.hasAttribute('class');
   }
 
   /** The element's text changed or it was just added: check it if it's on screen. */
@@ -137,7 +146,7 @@ export class ContrastGuard {
   }
 
   /** Styles changed somewhere: re-check everything on screen, soon. */
-  recheckVisible(delay = 250): void {
+  recheckVisible(delay = 600): void {
     if (this.recheckTimer !== null) this.win.clearTimeout(this.recheckTimer);
     this.recheckTimer = this.win.setTimeout(() => {
       this.recheckTimer = null;
@@ -175,7 +184,7 @@ export class ContrastGuard {
     this.scheduled = false;
     // New content is being checked: its backdrop may have just appeared too.
     const now = Date.now();
-    if (now - this.lastBackdropScan > 1000) {
+    if (now - this.lastBackdropScan > 3000) {
       this.lastBackdropScan = now;
       this.scanBackdrops();
     }
@@ -199,7 +208,7 @@ export class ContrastGuard {
         this.fixedShapes.delete(shape);
       }
     }
-    const canvas = canvasColor(this.win.document);
+    const canvas = this.canvas();
     const iconFixes = icons.flatMap((svg) => (svg.isConnected ? this.fixIcon(svg, canvas) : []));
     for (const [shape, prop, color] of iconFixes) {
       shape.style.setProperty(prop === 'fill' ? '--nyx-fix-f' : '--nyx-fix-s', color);
@@ -278,7 +287,17 @@ export class ContrastGuard {
     if (cs.visibility !== 'visible' || cs.display === 'none') return null;
     const fill = cs.getPropertyValue('-webkit-text-fill-color');
     // Icon-font glyphs draw in their ::before; read its color.
-    const color = el.firstChild ? cs.color : this.win.getComputedStyle(el, '::before').color || cs.color;
+    let color = cs.color;
+    if (!el.firstChild) {
+      const before = this.win.getComputedStyle(el, '::before');
+      const content = before.content;
+      if (!content || content === 'none' || content === 'normal' || content === '""') {
+        this.io.unobserve(el);
+        this.visible.delete(el);
+        return null;
+      }
+      color = before.color || color;
+    }
     const fg = parseColor(fill && fill !== cs.color && !/currentcolor/i.test(fill) ? fill : color);
     if (!fg || fg.a < 0.05) return null;
     const behind = this.backgroundBehind(el, canvas);

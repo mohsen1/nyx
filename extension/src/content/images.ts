@@ -205,6 +205,8 @@ export class ImageAnalyzer {
 
   /** The text element drawn over a large image/video/canvas, found by hit-testing across it. */
   private overlayText(img: Element): Element | null {
+    // Backdrops are big images; skip the layout-forcing hit-test for thumbnails and icons.
+    if (img instanceof HTMLImageElement && (img.naturalWidth < 600 || img.naturalHeight < 250)) return null;
     const r = img.getBoundingClientRect();
     const vw = this.win.innerWidth;
     if (r.width < Math.min(320, vw * 0.4) || r.height < 150) return null;
@@ -234,6 +236,7 @@ export class ImageAnalyzer {
   private bgDone = new WeakMap<HTMLElement, string>();
   private bgOriginal = new Map<HTMLElement, [value: string, priority: string]>();
   private recolored = new Map<string, Promise<string | null>>();
+  private noRecolor = new Set<string>();
 
   /**
    * A logo, icon or sprite drawn as a CSS background: dark artwork gets a recolored copy (dark
@@ -246,8 +249,16 @@ export class ImageAnalyzer {
     if (!urls || urls.length !== 1 || bg.includes('gradient(')) return;
     const url = /url\(\s*(['"]?)(.*?)\1\s*\)/.exec(bg)?.[2];
     if (!url || this.bgDone.get(el) === url) return;
-    this.bgDone.set(el, url);
+    // Repeated sprites (hundreds of vote arrows): once a URL is known not to need recoloring,
+    // skip the layout read entirely.
+    if (this.noRecolor.has(url)) {
+      this.bgDone.set(el, url);
+      return;
+    }
     const r = el.getBoundingClientRect();
+    // Off-screen ones wait for a later scan: decoding every icon on a long page up front is costly.
+    if (r.width < 4 || r.height < 4 || r.bottom < -1000 || r.top > this.win.innerHeight + 1000) return;
+    this.bgDone.set(el, url);
     // Large ones are backdrops (dimmed elsewhere), not artwork.
     if (r.width >= Math.min(320, this.win.innerWidth * 0.4) && r.height >= 120) return;
     let p = this.recolored.get(url);
@@ -276,11 +287,17 @@ export class ImageAnalyzer {
       this.recolored.set(url, p);
     }
     void p.then((copy) => {
+      if (!copy) this.noRecolor.add(url);
       if (!copy || !el.isConnected || this.bgDone.get(el) !== url) return;
       if (!this.bgOriginal.has(el)) this.bgOriginal.set(el, [el.style.getPropertyValue('background-image'), el.style.getPropertyPriority('background-image')]);
       el.style.setProperty('background-image', `url("${copy}")`, 'important');
       el.setAttribute('data-nyx-bg-recolor', '');
     });
+  }
+
+  /** Whether an element's background was already looked at (it's re-checked when its inline style changes). */
+  analyzedBackground(el: Element): boolean {
+    return this.bgDone.has(el as HTMLElement);
   }
 
   /** Puts back the page's own background images. */

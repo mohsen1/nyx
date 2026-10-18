@@ -160,8 +160,14 @@ class RootStyler {
    * Design systems compose thousands of colors in place; only those whose selectors match
    * something are worth resolving. Sorted in small time slices so a page never stalls.
    */
+  private lastSort = 0;
+
   private sortComposedProperties(budgetMs: number): void {
-    const end = performance.now() + budgetMs;
+    // Syncs come in bursts while a page loads; one slice per 200 ms is plenty.
+    const start = performance.now();
+    if (start - this.lastSort < 200) return;
+    this.lastSort = start;
+    const end = start + budgetMs;
     while (this.pendingProps.length && performance.now() < end) {
       const [key, entry] = this.pendingProps.pop()!;
       if (this.composedProps.has(key) || this.dormantProps.has(key)) continue;
@@ -203,7 +209,7 @@ class RootStyler {
     this.sortComposedProperties(6);
     const now = Date.now();
     if (!this.composedProps.size) return;
-    if (!force && !this.composedPropsDirty && now - this.lastPropResolve < 5000) return;
+    if (!force && (now - this.lastPropResolve < 500 || (!this.composedPropsDirty && now - this.lastPropResolve < 5000))) return;
     this.composedPropsDirty = false;
     this.lastPropResolve = now;
     const win = this.engine.win;
@@ -286,18 +292,18 @@ class RootStyler {
   private scanBackgrounds(): void {
     if (!this.engine.config.appearance.imageInversion) return;
     const now = Date.now();
-    if (!this.bgSelectorsChanged && now - this.lastBgScan < 3000) return;
+    if (!this.bgSelectorsChanged && now - this.lastBgScan < 15000) return;
     this.bgSelectorsChanged = false;
     this.lastBgScan = now;
     for (const selector of this.bgSelectors) {
       const query = selector.replace(/::?(before|after|placeholder|selection|marker|backdrop|first-line|first-letter)\b(\([^)]*\))?/gi, '');
       let els: Element[];
       try {
-        els = Array.from(this.root.querySelectorAll(query || '*')).slice(0, 50);
+        els = Array.from(this.root.querySelectorAll(query || '*')).slice(0, 20);
       } catch {
         continue;
       }
-      for (const el of els) this.engine.images.analyzeBackground(el as HTMLElement);
+      for (const el of els) if (!this.engine.images.analyzedBackground(el)) this.engine.images.analyzeBackground(el as HTMLElement);
     }
   }
 
@@ -307,7 +313,7 @@ class RootStyler {
    */
   private resolveComposed(): void {
     const now = Date.now();
-    if (!this.composed.size || (!this.composedDirty && now - this.lastComposedResolve < 5000)) return;
+    if (!this.composed.size || now - this.lastComposedResolve < 500 || (!this.composedDirty && now - this.lastComposedResolve < 5000)) return;
     this.composedDirty = false;
     this.lastComposedResolve = now;
     let css = '';
@@ -909,7 +915,15 @@ export class DarkEngine {
         continue;
       }
       const target = rec.target as Element;
-      if (isElement(target) && Array.from(rec.addedNodes).some((n) => n.nodeType === 3)) this.contrast.touch(target);
+      if (isElement(target)) {
+        const added = rec.addedNodes;
+        for (let k = 0; k < added.length; k++) {
+          if (added[k].nodeType === 3) {
+            this.contrast.touch(target);
+            break;
+          }
+        }
+      }
       if (target.localName === 'style' && !target.classList?.contains(STYLE_CLASS)) sheetsChanged = true;
       for (const node of Array.from(rec.addedNodes)) {
         if (!isElement(node)) continue;
