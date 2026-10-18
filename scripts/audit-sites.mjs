@@ -73,7 +73,25 @@ async function measure(png) {
 }
 
 const RESIDUAL = `(() => {
-  const parse = (c) => { const m = c.match(/[\\d.]+/g); if (!m) return null; const [r, g, b, a = 1] = m.map(Number); return { r, g, b, a }; };
+  // Any CSS color (oklch, lab, color(display-p3 ...)) to sRGB, through a 1x1 canvas.
+  const cx = document.createElement('canvas').getContext('2d', { willReadFrequently: true });
+  cx.canvas.width = cx.canvas.height = 1;
+  const cache = new Map();
+  const parse = (c) => {
+    if (cache.has(c)) return cache.get(c);
+    let out = null;
+    if (c && c !== 'transparent' && !/^rgba\\(0, 0, 0, 0\\)$/.test(c)) {
+      const alpha = (() => { const m = /\\/\\s*([\\d.]+%?)\\s*\\)$|rgba\\([^,]+,[^,]+,[^,]+,\\s*([\\d.]+)\\)/.exec(c); if (!m) return 1; const v = m[1] ?? m[2]; return v.endsWith('%') ? parseFloat(v) / 100 : +v; })();
+      cx.clearRect(0, 0, 1, 1);
+      cx.fillStyle = '#000'; cx.fillStyle = c;
+      cx.fillRect(0, 0, 1, 1);
+      const [r, g, b, a] = cx.getImageData(0, 0, 1, 1).data;
+      out = a ? { r: Math.round(r * 255 / a), g: Math.round(g * 255 / a), b: Math.round(b * 255 / a), a: alpha } : null;
+      if (out && alpha === 0) out = null;
+    }
+    cache.set(c, out);
+    return out;
+  };
   const lin = (v) => { v /= 255; return v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; };
   const lum = (c) => 0.2126 * lin(c.r) + 0.7152 * lin(c.g) + 0.0722 * lin(c.b);
   const over = (t, b) => ({ r: t.r * t.a + b.r * (1 - t.a), g: t.g * t.a + b.g * (1 - t.a), b: t.b * t.a + b.b * (1 - t.a), a: 1 });

@@ -45,4 +45,15 @@ describe('helpers', () => {
   it('computes WCAG contrast', () => {
     expect(contrastRatio(parseColor('#000')!, parseColor('#fff')!)).toBeCloseTo(21, 1);
   });
+
+  it('parses lab, lch and color() spaces (Tailwind v4 / design tokens)', () => {
+    expect(parseColor('lab(98% 0 0)')).toMatchObject({ r: 249, g: 249, b: 249 });
+    expect(parseColor('lab(0 0 0)')).toMatchObject({ r: 0, g: 0, b: 0 });
+    const red = parseColor('lch(54.29 106.84 40.85)')!;
+    expect(red.r).toBeGreaterThan(240);
+    expect(red.g).toBeLessThan(20);
+    expect(parseColor('color(display-p3 1 1 1)')).toMatchObject({ r: 255, g: 255, b: 255 });
+    expect(parseColor('color(display-p3 0 0 0 / 50%)')).toMatchObject({ r: 0, g: 0, b: 0, a: 0.5 });
+    expect(parseColor('color(srgb-linear 1 1 1)')).toMatchObject({ r: 255, g: 255, b: 255 });
+  });
 });

@@ -177,12 +177,31 @@ export function parseColor(input: string): RGBA | null {
     const h = parseHue(channels[2]);
     return oklabToRgba(oklchToOklab({ L, C, h, alpha: a }));
   }
+  if (fn === 'lab' || fn === 'lch') {
+    if (channels.length < 3) return null;
+    const L = parseNumberOrPercent(channels[0], 100);
+    let A: number, B: number;
+    if (fn === 'lab') {
+      A = parseNumberOrPercent(channels[1], 125);
+      B = parseNumberOrPercent(channels[2], 125);
+    } else {
+      const C = parseNumberOrPercent(channels[1], 150);
+      const h = (parseHue(channels[2]) * Math.PI) / 180;
+      A = C * Math.cos(h);
+      B = C * Math.sin(h);
+    }
+    if (![L, A, B].every(Number.isFinite)) return null;
+    return { ...linearToSrgb(mul(D65_TO_SRGB, mul(D50_TO_D65, labToXyzD50(L, A, B)))), a };
+  }
   if (fn === 'color') {
-    // color(srgb r g b / a) only; other spaces are left untouched.
-    if (channels[0] !== 'srgb' || channels.length < 4) return null;
-    const [r, g, b] = channels.slice(1).map((c) => parseNumberOrPercent(c, 1) * 255);
-    if (![r, g, b].every(Number.isFinite)) return null;
-    return { r: clamp(Math.round(r), 0, 255), g: clamp(Math.round(g), 0, 255), b: clamp(Math.round(b), 0, 255), a };
+    if (channels.length < 4) return null;
+    const space = channels[0];
+    const v = channels.slice(1, 4).map((c) => parseNumberOrPercent(c, 1));
+    if (!v.every(Number.isFinite)) return null;
+    if (space === 'srgb') return { r: clamp(Math.round(v[0] * 255), 0, 255), g: clamp(Math.round(v[1] * 255), 0, 255), b: clamp(Math.round(v[2] * 255), 0, 255), a };
+    if (space === 'srgb-linear') return { ...linearToSrgb(v), a };
+    if (space === 'display-p3') return { ...linearToSrgb(mul(D65_TO_SRGB, mul(P3_TO_D65, v.map(srgbToLinear)))), a };
+    return null;
   }
   return null; // lab()/lch(): uncommon in the wild, leave as-is
 }
@@ -204,6 +223,44 @@ function parseHex(h: string): RGBA | null {
     return { r, g, b, a };
   }
   return null;
+}
+
+type Mat = number[][];
+const mul = (m: Mat, v: number[]) => m.map((row) => row[0] * v[0] + row[1] * v[1] + row[2] * v[2]);
+const D50_TO_D65: Mat = [
+  [0.9554734527042182, -0.023098536874261423, 0.0632593086610217],
+  [-0.028369706963208136, 1.0099954580058226, 0.021041398966943008],
+  [0.012314001688319899, -0.020507696433477912, 1.3303659366080753],
+];
+const D65_TO_SRGB: Mat = [
+  [3.2409699419045226, -1.537383177570094, -0.4986107602930034],
+  [-0.9692436362808796, 1.8759675015077202, 0.04155505740717559],
+  [0.05563007969699366, -0.20397695888897652, 1.0569715142428786],
+];
+const P3_TO_D65: Mat = [
+  [0.4865709486482162, 0.26566769316909306, 0.1982172852343625],
+  [0.2289745640697488, 0.6917385218365064, 0.079286914093745],
+  [0, 0.04511338185890264, 1.043944368900976],
+];
+
+/** CIE Lab (D50) to XYZ (D50). */
+function labToXyzD50(L: number, a: number, b: number): number[] {
+  const k = 24389 / 27, e = 216 / 24389;
+  const fy = (L + 16) / 116, fx = a / 500 + fy, fz = fy - b / 200;
+  const x = fx ** 3 > e ? fx ** 3 : (116 * fx - 16) / k;
+  const y = L > k * e ? fy ** 3 : L / k;
+  const z = fz ** 3 > e ? fz ** 3 : (116 * fz - 16) / k;
+  return [x * 0.9642956764295677, y, z * 0.8251046025104602];
+}
+
+const srgbToLinear = (c: number) => (Math.abs(c) <= 0.04045 ? c / 12.92 : Math.sign(c) * ((Math.abs(c) + 0.055) / 1.055) ** 2.4);
+
+function linearToSrgb(v: number[]): { r: number; g: number; b: number } {
+  const [r, g, b] = v.map((c) => {
+    const x = c <= 0.0031308 ? 12.92 * c : 1.055 * Math.pow(c, 1 / 2.4) - 0.055;
+    return clamp(Math.round(x * 255), 0, 255);
+  });
+  return { r, g, b };
 }
 
 export function hslToRgb(h: number, s: number, l: number): { r: number; g: number; b: number } {
