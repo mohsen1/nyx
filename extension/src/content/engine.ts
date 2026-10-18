@@ -69,6 +69,10 @@ class RootStyler {
   /** Role copies of composed color variables, resolved from computed values; kept last. */
   private resolvedEl: HTMLStyleElement;
   private composed = new Map<string, [selector: string, name: string]>();
+  /** Selectors of rules that paint url() backgrounds: candidates for dark logos and sprites. */
+  private bgSelectors = new Set<string>();
+  private bgSelectorsChanged = false;
+  private lastBgScan = 0;
   private overrides = new Map<Node, SheetOverride>();
   private adoptedOverride: CSSStyleSheet | null = null;
   private adoptedSignature = '';
@@ -96,8 +100,34 @@ class RootStyler {
     if (this.composed.size < 400) this.composed.set(`${selector}\u0000${name}`, [selector, name]);
   };
 
+  private readonly onBackgroundImage = (selector: string) => {
+    if (this.bgSelectors.size < 600 && !this.bgSelectors.has(selector)) {
+      this.bgSelectors.add(selector);
+      this.bgSelectorsChanged = true;
+    }
+  };
+
   private options(baseUrl: string | null): TransformOptions {
-    return { ...this.engine.rewriteOptions(baseUrl), onComposedColor: this.onComposedColor };
+    return { ...this.engine.rewriteOptions(baseUrl), onComposedColor: this.onComposedColor, onBackgroundImage: this.onBackgroundImage };
+  }
+
+  /** Finds elements painted by url() backgrounds and lets the analyzer recolor dark artwork. */
+  private scanBackgrounds(): void {
+    if (!this.engine.config.appearance.imageInversion) return;
+    const now = Date.now();
+    if (!this.bgSelectorsChanged && now - this.lastBgScan < 3000) return;
+    this.bgSelectorsChanged = false;
+    this.lastBgScan = now;
+    for (const selector of this.bgSelectors) {
+      const query = selector.replace(/::?(before|after|placeholder|selection|marker|backdrop|first-line|first-letter)\b(\([^)]*\))?/gi, '');
+      let els: Element[];
+      try {
+        els = Array.from(this.root.querySelectorAll(query || '*')).slice(0, 50);
+      } catch {
+        continue;
+      }
+      for (const el of els) this.engine.images.analyzeBackground(el as HTMLElement);
+    }
   }
 
   /**
@@ -191,6 +221,7 @@ class RootStyler {
     }
     this.syncAdopted();
     this.resolveComposed();
+    this.scanBackgrounds();
   }
 
   private signature(sheet: CSSStyleSheet, owner: Element): string {
@@ -248,7 +279,7 @@ class RootStyler {
       .then((text) => {
         const o = this.overrides.get(owner);
         if (!text || !o || o.signature !== sig || !this.engine.running) return;
-        const css = this.engine.transformText(text, href, this.onComposedColor);
+        const css = this.engine.transformText(text, href, this.onComposedColor, this.onBackgroundImage);
         const media = (owner as HTMLLinkElement).media;
         const wrapped = css && media && media !== 'all' ? `@media ${media} { ${css} }` : css;
         o.el.textContent = append ? `${wrapped}\n${o.el.textContent ?? ''}` : wrapped;
@@ -294,6 +325,9 @@ class RootStyler {
         if (!value) continue;
         const role = PROPERTY_ROLES[prop];
         const hide = this.engine.config.appearance.backgroundImages === false && (token === 'bgi' || token === 'b');
+        if ((token === 'bgi' || token === 'b') && value.includes('url(') && !value.includes('data:image/png;base64') && this.engine.config.appearance.imageInversion) {
+          this.engine.images.analyzeBackground(el as HTMLElement);
+        }
         const mapped = rewriteValue(value, role, { ...opts, hideImages: hide });
         if (mapped === null) continue;
         tokens.push(token);
@@ -445,12 +479,17 @@ export class DarkEngine {
   }
 
   /** Transforms raw CSS text (cross-origin sheets) by parsing it in a detached sheet. */
-  transformText(text: string, href: string, onComposedColor?: TransformOptions['onComposedColor']): string {
+  transformText(
+    text: string,
+    href: string,
+    onComposedColor?: TransformOptions['onComposedColor'],
+    onBackgroundImage?: TransformOptions['onBackgroundImage'],
+  ): string {
     try {
       const sheet = new this.win.CSSStyleSheet();
       // replaceSync ignores @import; imported sheets are fetched separately when encountered.
       sheet.replaceSync(text.replace(/@import[^;]+;/g, ''));
-      return transformRules(sheet.cssRules, { ...this.rewriteOptions(href), onComposedColor });
+      return transformRules(sheet.cssRules, { ...this.rewriteOptions(href), onComposedColor, onBackgroundImage });
     } catch {
       return '';
     }
@@ -556,6 +595,7 @@ export class DarkEngine {
       el.removeAttribute(ATTR_INVERT);
       el.removeAttribute(ATTR_DIM);
     }
+    this.images.restoreBackgrounds();
     this.images.reset();
     this.contrast.reset();
     this.pendingHosts.clear();
@@ -577,6 +617,7 @@ export class DarkEngine {
       for (const el of Array.from(r.root.querySelectorAll('*'))) if (el.localName !== 'img') this.contrast.observe(el);
     }
     if (!config.appearance.imageInversion) {
+      this.images.restoreBackgrounds();
       for (const el of Array.from(this.doc.querySelectorAll(`[${ATTR_RECOLOR}]`))) unrecolor(el);
       for (const el of Array.from(this.doc.querySelectorAll(`[${ATTR_INVERT}]`))) el.removeAttribute(ATTR_INVERT);
     } else this.images.reapply();

@@ -14,6 +14,8 @@ export interface TransformOptions extends RewriteContext {
    * only the computed result is a color, so it is resolved at runtime.
    */
   onComposedColor?: (selector: string, name: string) => void;
+  /** Called for a rule that paints a url() background (a logo, icon or sprite may be dark artwork). */
+  onBackgroundImage?: (selector: string) => void;
 }
 
 /** A color function or color-mix() with var() among its arguments. */
@@ -43,6 +45,7 @@ export function transformDeclarations(style: CSSStyleDeclaration, opts: Transfor
     }
     const role = PROPERTY_ROLES[prop];
     if (!role) continue;
+    if (selector && BG_IMAGE_PROPS.has(prop) && value.includes('url(') && !selector.includes('&')) opts.onBackgroundImage?.(selector);
     const hide = !!opts.hideImages && BG_IMAGE_PROPS.has(prop);
     const v = rewriteValue(value, role, { ...opts, hideImages: hide });
     if (v !== null) emit(prop, v, important);

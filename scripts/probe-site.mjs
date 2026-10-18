@@ -5,7 +5,7 @@ import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 const ext = process.env.NYX_EXT || join(process.cwd(), 'dist/chrome'), url = process.argv[2];
-const ctx = await chromium.launchPersistentContext(mkdtempSync(join(tmpdir(), 'p-')), { channel: 'chromium', headless: true, colorScheme: 'light', viewport: { width: 1280, height: 860 }, args: [`--disable-extensions-except=${ext}`, `--load-extension=${ext}`] });
+const ctx = await chromium.launchPersistentContext(mkdtempSync(join(tmpdir(), 'p-')), { channel: 'chromium', headless: true, colorScheme: 'light', viewport: { width: 1280, height: 860 }, userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36', args: [`--disable-extensions-except=${ext}`, `--load-extension=${ext}`] });
 const w = ctx.serviceWorkers()[0] ?? await ctx.waitForEvent('serviceworker');
 await w.evaluate(async () => { const s = (await chrome.storage.local.get('settings')).settings ?? {}; s.global = { ...(s.global ?? {}), mode: 'on', defaultThemeId: 'dark', updatedAt: Date.now() }; await chrome.storage.local.set({ settings: s }); });
 const p = await ctx.newPage();

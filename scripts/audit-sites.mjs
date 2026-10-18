@@ -37,6 +37,8 @@ const context = await chromium.launchPersistentContext(mkdtempSync(join(tmpdir()
   colorScheme: 'light',
   viewport: { width: 1280, height: 860 },
   locale: 'en-US',
+  // Some sites (Reddit) block the headless user agent outright.
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36',
   args: [`--disable-extensions-except=${ext}`, `--load-extension=${ext}`],
 });
 const worker = context.serviceWorkers()[0] ?? (await context.waitForEvent('serviceworker'));
@@ -86,7 +88,8 @@ const RESIDUAL = `(() => {
       cx.fillStyle = '#000'; cx.fillStyle = c;
       cx.fillRect(0, 0, 1, 1);
       const [r, g, b, a] = cx.getImageData(0, 0, 1, 1).data;
-      out = a ? { r: Math.round(r * 255 / a), g: Math.round(g * 255 / a), b: Math.round(b * 255 / a), a: alpha } : null;
+      // getImageData returns un-premultiplied values; the alpha comes from the string.
+      out = a ? { r, g, b, a: alpha } : null;
       if (out && alpha === 0) out = null;
     }
     cache.set(c, out);

@@ -241,6 +241,11 @@ test('a logo mixing color with a gray wordmark is recolored, keeping the color',
   await expect.poll(() => page.getAttribute('#mixed', 'data-nyx-recolor')).toBe('');
   expect(await page.$eval('#mixed', (el) => getComputedStyle(el).content)).toMatch(/^url\("data:image\/png/);
   expect(await page.getAttribute('#mixed', 'data-nyx-invert')).toBeNull();
+  // The same logo drawn as a CSS background, from a stylesheet and from an inline style.
+  for (const sel of ['#bglogo', '#inlinelogo']) {
+    await expect.poll(() => page.getAttribute(sel, 'data-nyx-bg-recolor'), { timeout: 8000 }).toBe('');
+    expect(await page.$eval(sel, (el) => getComputedStyle(el).backgroundImage)).toMatch(/^url\("data:image\/png/);
+  }
 });
 
 test('text on a button with an icon background is still checked (Gmail Compose)', async ({ context, worker }) => {

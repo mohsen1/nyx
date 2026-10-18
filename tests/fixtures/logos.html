@@ -1,9 +1,14 @@
 <!doctype html>
 <html lang="en">
 <head><meta charset="utf-8"><title>Logos</title>
-<style>body { background: #fff; color: #222; font: 16px system-ui, sans-serif; }</style></head>
+<style>
+  body { background: #fff; color: #222; font: 16px system-ui, sans-serif; }
+  .site-logo { display: block; width: 120px; height: 48px; background: url(logo-mixed.svg) no-repeat; }
+</style></head>
 <body>
   <header><img id="mixed" src="logo-mixed.svg" width="120" height="48" alt="Mail"></header>
   <p>A colored mark next to a gray wordmark, like Gmail's logo.</p>
+  <a class="site-logo" id="bglogo" href="#" aria-label="Home"></a>
+  <span id="inlinelogo" style="display: block; width: 120px; height: 48px; background-image: url(logo-mixed.svg)"></span>
 </body>
 </html>

@@ -231,6 +231,69 @@ export class ImageAnalyzer {
     return null;
   }
 
+  private bgDone = new WeakMap<HTMLElement, string>();
+  private bgOriginal = new Map<HTMLElement, [value: string, priority: string]>();
+  private recolored = new Map<string, Promise<string | null>>();
+
+  /**
+   * A logo, icon or sprite drawn as a CSS background: dark artwork gets a recolored copy (dark
+   * pixels lightened, colors kept) at its natural size, so sprite positions still line up.
+   */
+  analyzeBackground(el: HTMLElement): void {
+    const bg = this.win.getComputedStyle(el).backgroundImage;
+    if (!bg || bg === 'none' || bg.includes('data:image/png;base64,iVBOR') && this.bgOriginal.has(el)) return;
+    const urls = bg.match(/url\(/g);
+    if (!urls || urls.length !== 1 || bg.includes('gradient(')) return;
+    const url = /url\(\s*(['"]?)(.*?)\1\s*\)/.exec(bg)?.[2];
+    if (!url || this.bgDone.get(el) === url) return;
+    this.bgDone.set(el, url);
+    const r = el.getBoundingClientRect();
+    // Large ones are backdrops (dimmed elsewhere), not artwork.
+    if (r.width >= Math.min(320, this.win.innerWidth * 0.4) && r.height >= 120) return;
+    let p = this.recolored.get(url);
+    if (!p) {
+      p = (async () => {
+        const src = url.startsWith('data:') ? url : await this.fetcher(url, 'dataUrl');
+        if (!src) return null;
+        const img = new this.win.Image();
+        img.decoding = 'async';
+        img.src = src;
+        await img.decode();
+        const w = img.naturalWidth, h = img.naturalHeight;
+        if (!w || !h || w * h > MAX_NATURAL_AREA) return null;
+        const stats = this.draw(img, w, h);
+        if (!shouldInvert(stats) && !shouldRecolor(stats)) return null;
+        const canvas = this.win.document.createElement('canvas');
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext('2d', { willReadFrequently: true })!;
+        ctx.drawImage(img, 0, 0);
+        const data = ctx.getImageData(0, 0, w, h);
+        recolorPixels(data.data);
+        ctx.putImageData(data, 0, 0);
+        return canvas.toDataURL('image/png');
+      })().catch(() => null);
+      this.recolored.set(url, p);
+    }
+    void p.then((copy) => {
+      if (!copy || !el.isConnected || this.bgDone.get(el) !== url) return;
+      if (!this.bgOriginal.has(el)) this.bgOriginal.set(el, [el.style.getPropertyValue('background-image'), el.style.getPropertyPriority('background-image')]);
+      el.style.setProperty('background-image', `url("${copy}")`, 'important');
+      el.setAttribute('data-nyx-bg-recolor', '');
+    });
+  }
+
+  /** Puts back the page's own background images. */
+  restoreBackgrounds(): void {
+    for (const [el, [value, priority]] of this.bgOriginal) {
+      if (value) el.style.setProperty('background-image', value, priority);
+      else el.style.removeProperty('background-image');
+      el.removeAttribute('data-nyx-bg-recolor');
+    }
+    this.bgOriginal.clear();
+    this.bgDone = new WeakMap();
+  }
+
   /** Pixel statistics of a CSS background image, loaded through the extension when cross-origin. */
   statsForUrl(url: string): Promise<PixelStats | null> {
     let p = this.backgroundStats.get(url);
