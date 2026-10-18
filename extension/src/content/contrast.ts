@@ -145,6 +145,11 @@ export class ContrastGuard {
     const decisions: Array<[HTMLElement, string | null]> = [];
     for (const el of batch) {
       if (!el.isConnected) continue;
+      // Mid-transition colors are not the page's real colors; look again once it settles.
+      if (typeof el.getAnimations === 'function' && el.getAnimations().some((a) => a.playState === 'running')) {
+        this.win.setTimeout(() => this.enqueue(el), 600);
+        continue;
+      }
       decisions.push([el as HTMLElement, this.fixFor(el, canvas)]);
     }
     for (const [el, color] of decisions) {
