@@ -178,7 +178,9 @@ export function rewriteValue(value: string, role: ColorRole, ctx: RewriteContext
           // rgb(var(--grey-50)) / rgba(var(--brand-rgb), .5) / hsl(var(--background) / 50%):
           // the variable holds bare channels, so point it at a channel copy.
           const m = CHANNEL_VAR.exec(inner)!;
-          out += `${ident}(var(${channelVarName(m[1], role)}, var(${m[1]}))${m[2]})`;
+          // The alpha may itself be a variable (Bootstrap: rgba(var(--bs-bg-rgb), var(--bs-bg-opacity))).
+          const rest = m[2] ? rewriteValue(m[2], role, ctx) ?? m[2] : '';
+          out += `${ident}(var(${channelVarName(m[1], role)}, var(${m[1]}))${rest})`;
           changed = true;
         } else if (COLOR_FUNCS.has(lower) && mapWithVarAlpha(lower, inner, role, ctx) !== null) {
           // Tailwind: rgb(255 255 255 / var(--tw-bg-opacity)). The color is literal; only alpha varies.
@@ -265,7 +267,7 @@ export function roleVarName(name: string, role: ColorRole): string {
 const CHANNEL_NAME = /(rgb|hsl|channels?)(-|$)/i;
 
 /** A color function whose channels all come from one variable, plus whatever follows (alpha). */
-const CHANNEL_VAR = /^\s*var\(\s*(--[a-zA-Z0-9_-]+)\s*\)(\s*(?:[,/][^()]*)?)$/;
+const CHANNEL_VAR = /^\s*var\(\s*(--[a-zA-Z0-9_-]+)\s*\)(\s*(?:[,/].*)?)$/s;
 
 /**
  * Copies of channel-list variables (`--grey-50: 249, 249, 248`) get their own prefix, because they

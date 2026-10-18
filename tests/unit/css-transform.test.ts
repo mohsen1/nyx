@@ -38,6 +38,10 @@ describe('rewriteValue', () => {
     expect(rewriteValue('rgb(var(--grey-50))', 'background', ctx)).toBe('rgb(var(--nyx-bc--grey-50, var(--grey-50)))');
     expect(rewriteValue('rgba(var(--brand-rgb), 0.1)', 'background', ctx)).toBe('rgba(var(--nyx-bc--brand-rgb, var(--brand-rgb)), 0.1)');
     expect(rewriteValue('hsl(var(--background) / 50%)', 'background', ctx)).toBe('hsl(var(--nyx-bc--background, var(--background)) / 50%)');
+    // Bootstrap 5.3: the alpha is a variable too.
+    expect(rewriteValue('rgba(var(--bs-tertiary-bg-rgb), var(--bs-bg-opacity))', 'background', ctx)).toBe(
+      'rgba(var(--nyx-bc--bs-tertiary-bg-rgb, var(--bs-tertiary-bg-rgb)), var(--nyx-b--bs-bg-opacity, var(--bs-bg-opacity)))',
+    );
   });
 
   it('maps literal channels whose alpha is a variable (Tailwind)', () => {
