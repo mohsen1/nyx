@@ -29,7 +29,8 @@ function serve(): Promise<void> {
     let body: string | Buffer = readFileSync(path);
     if (path.endsWith('.html')) body = body.toString().replaceAll('CROSS_ORIGIN', `http://127.0.0.1:${port}`);
     const cors: Record<string, string> = req.url!.includes('nocors') ? {} : { 'access-control-allow-origin': '*' };
-    res.writeHead(200, { 'content-type': TYPES[extname(path)] ?? 'application/octet-stream', ...cors }).end(body);
+    const delay = Number(new URL(req.url!, 'http://x').searchParams.get('delay') ?? 0);
+    setTimeout(() => res.writeHead(200, { 'content-type': TYPES[extname(path)] ?? 'application/octet-stream', ...cors }).end(body), delay);
   });
   return new Promise((r) => server.listen(0, () => ((port = (server.address() as { port: number }).port), r())));
 }
@@ -314,6 +315,18 @@ test('backdrops beside the content and canvas heroes are darkened', async ({ con
   await expect.poll(() => page.getAttribute('#submit', 'data-nyx-dim-bg'), { timeout: 8000 }).toBe('');
   // A short full-width header strip with nothing on it (timeanddate.com).
   await expect.poll(() => page.getAttribute('#banner', 'data-nyx-dim-bg'), { timeout: 8000 }).toBe('');
+});
+
+test('a light page that transitions its background is not mistaken for a dark one (Bandcamp)', async ({ context }) => {
+  const page = await context.newPage();
+  // The fixture's load event waits on a slow image, so the DOMContentLoaded check runs alone.
+  await page.goto(url('transition.html'), { waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(1000);
+  expect(await page.getAttribute('html', 'data-nyx-active')).toBe('');
+  await page.waitForLoadState('load');
+  await page.waitForTimeout(800);
+  expect(await page.getAttribute('html', 'data-nyx-active')).toBe('');
+  expect(luminance(await bg(page, 'body'))).toBeLessThan(0.05);
 });
 
 test('colors composed from several variables are resolved and darkened (iCloud)', async ({ context }) => {

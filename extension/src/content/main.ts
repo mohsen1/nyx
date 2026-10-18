@@ -146,7 +146,7 @@ class Controller {
   private detect(): void {
     if (!this.decision?.enabled || !document.body) return;
     const run = () => detectDarkPage(document);
-    const report = this.engine?.running ? this.engine.withoutStyles(run) : run();
+    const report = this.engine?.running ? this.engine.withoutStyles(run, true) : run();
     this.detected = true;
     if (report.dark !== this.builtInDarkMode) {
       this.builtInDarkMode = report.dark;

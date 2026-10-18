@@ -903,9 +903,20 @@ export class DarkEngine {
   }
 
   /** Temporarily disables our styles, runs `fn`, and re-enables them (used for measurements). */
-  withoutStyles<T>(fn: () => T): T {
+  /**
+   * Runs `fn` with our styles switched off. With `still`, the page's transitions are suspended
+   * too: a site that transitions background-color would otherwise report its mid-animation
+   * (still dark) color, and switching our styles back would replay the animation.
+   */
+  withoutStyles<T>(fn: () => T, still = false): T {
     const els = Array.from(this.doc.querySelectorAll<HTMLStyleElement>(`style.${STYLE_CLASS}`));
     const sheets = els.map((e) => e.sheet).filter((s): s is CSSStyleSheet => !!s);
+    let freeze: HTMLStyleElement | null = null;
+    if (still) {
+      freeze = this.doc.createElement('style');
+      freeze.textContent = '*, *::before, *::after { transition: none !important; }';
+      (this.doc.head ?? this.doc.documentElement).appendChild(freeze);
+    }
     sheets.forEach((s) => (s.disabled = true));
     const inline = Array.from(this.doc.querySelectorAll(`[${ATTR_INLINE}]`));
     const tokens = inline.map((el) => el.getAttribute(ATTR_INLINE));
@@ -915,6 +926,10 @@ export class DarkEngine {
     } finally {
       sheets.forEach((s) => (s.disabled = false));
       inline.forEach((el, i) => el.setAttribute(ATTR_INLINE, tokens[i] ?? ''));
+      if (freeze) {
+        void this.doc.documentElement.offsetWidth; // settle on our colors before transitions return
+        freeze.remove();
+      }
     }
   }
 
