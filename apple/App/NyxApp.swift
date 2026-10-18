@@ -1,8 +1,14 @@
 import SwiftUI
+#if os(macOS)
+import AppKit
+#endif
 
 @main
 struct NyxApp: App {
     @StateObject private var model = AppModel()
+    #if os(macOS)
+    @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
+    #endif
 
     var body: some Scene {
         WindowGroup {
@@ -15,6 +21,37 @@ struct NyxApp: App {
         #endif
     }
 }
+
+#if os(macOS)
+/// Whether Nyx shows an icon in the Dock. Without one it runs as an accessory app: no Dock icon
+/// or menu bar, and it quits when its window closes (there is no other way back to the window).
+enum DockIcon {
+    static let key = "showInDock"
+
+    static var isShown: Bool {
+        UserDefaults.standard.object(forKey: key) as? Bool ?? true
+    }
+
+    static func apply(_ show: Bool) {
+        NSApp.setActivationPolicy(show ? .regular : .accessory)
+        // Switching to accessory hides the app; keep the settings window in front.
+        DispatchQueue.main.async {
+            NSApp.activate(ignoringOtherApps: true)
+            NSApp.windows.first { $0.canBecomeMain }?.makeKeyAndOrderFront(nil)
+        }
+    }
+}
+
+final class AppDelegate: NSObject, NSApplicationDelegate {
+    func applicationWillFinishLaunching(_ notification: Notification) {
+        if !DockIcon.isShown { NSApp.setActivationPolicy(.accessory) }
+    }
+
+    func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
+        !DockIcon.isShown
+    }
+}
+#endif
 
 /// Observable view of SettingsStore for SwiftUI.
 @MainActor

@@ -6,6 +6,9 @@ import SafariServices
 struct ContentView: View {
     @EnvironmentObject private var model: AppModel
     @State private var link = ""
+    #if os(macOS)
+    @AppStorage(DockIcon.key) private var showInDock = true
+    #endif
 
     var body: some View {
         NavigationStack {
@@ -101,6 +104,17 @@ struct ContentView: View {
                 } footer: {
                     Text("Turn on Nyx and allow it on all websites.")
                 }
+
+                #if os(macOS)
+                Section {
+                    Toggle(isOn: $showInDock) {
+                        Label("Show in Dock", systemImage: "dock.rectangle")
+                    }
+                    .onChange(of: showInDock) { _, show in DockIcon.apply(show) }
+                } footer: {
+                    if !showInDock { Text("Open Nyx again from Spotlight or Launchpad.") }
+                }
+                #endif
 
                 Section {
                     LabeledContent("Version", value: version)
