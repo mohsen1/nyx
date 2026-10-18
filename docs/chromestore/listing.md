@@ -46,7 +46,7 @@ Nyx is free and open source: https://github.com/mohsen1/nyx
 
 - `storage`: Saves the user's settings (status, schedule, themes, per-website choices) and syncs them through the browser's sync storage.
 - `alarms`: Re-checks settings every few minutes so a schedule or a "pause until tomorrow" ends on time, and picks up settings synced from other devices.
-- Host permission `<all_urls>`: Nyx darkens any website the user visits, so its content script must run on every page. It also reads the stylesheets and images a page loads, including ones served from other domains such as CDNs, to compute dark colors for them. Nothing is sent anywhere.
+- Host permission `<all_urls>`: Nyx darkens any website the user visits, so its content script must run on every page. It also reads the stylesheets and images a page loads, including ones served from other domains such as CDNs, to compute dark colors for them. When the user chooses Report a problem, it captures the visible tab, with and without Nyx, and copies the image to the clipboard for the user to paste into a GitHub issue. Nothing is sent anywhere.
 - Remote code: No. All code is in the package.
 
 **Data usage:** Nyx does not collect or use any of the listed data types. Certify all three statements (not sold to third parties, not used for unrelated purposes, not used for creditworthiness).
