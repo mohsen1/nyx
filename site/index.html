@@ -4,9 +4,218 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#f6f5fb" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0e0d13" media="(prefers-color-scheme: dark)">
   <title>Nyx – Dark Mode for Every Website</title>
+  <meta name="description" content="Nyx is a free, open-source dark mode extension for Safari on iPhone, iPad and Mac. It builds a dark style for each website from the site's own colors.">
+  <meta property="og:title" content="Nyx – Dark Mode for Every Website">
+  <meta property="og:description" content="A free, open-source dark mode extension for Safari on iPhone, iPad and Mac.">
+  <meta property="og:image" content="https://mohsen1.github.io/nyx/images/demo-dark.png">
+  <meta name="twitter:card" content="summary_large_image">
   <link rel="icon" href="icon.png">
-  <meta http-equiv="refresh" content="0; url=https://github.com/mohsen1/nyx">
+  <link rel="apple-touch-icon" href="icon.png">
+  <link rel="stylesheet" href="style.css">
 </head>
-<body><p>Redirecting to <a href="https://github.com/mohsen1/nyx">github.com/mohsen1/nyx</a>…</p></body>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+
+  <header class="site-header">
+    <div class="wrap">
+      <a class="brand" href="./"><img src="icon.png" alt="" width="30" height="30">Nyx</a>
+      <nav class="nav" aria-label="Main">
+        <a class="wide" href="#features">Features</a>
+        <a class="mid" href="#install">Install</a>
+        <a href="privacy/">Privacy</a>
+        <a href="support/">Support</a>
+        <a href="https://github.com/mohsen1/nyx">GitHub</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main">
+    <section class="hero">
+      <div class="wrap">
+        <p class="eyebrow">Free and open source</p>
+        <h1>Dark mode for every website.</h1>
+        <p class="lede">Nyx is a Safari extension for iPhone, iPad and Mac. It builds a dark style for each page from that page’s own colors, so sites stay easy to read and still look like themselves.</p>
+        <div class="buttons">
+          <a class="button primary" href="#install">Get Nyx</a>
+          <a class="button" href="https://github.com/mohsen1/nyx">
+            View source on GitHub
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M8 7h9v9"/></svg>
+          </a>
+        </div>
+        <p class="platforms">Safari on iOS, iPadOS and macOS. Also runs in Chrome, Edge and Firefox.</p>
+
+        <div class="compare">
+          <input type="radio" name="view" id="v-original">
+          <input type="radio" name="view" id="v-dark" checked>
+          <input type="radio" name="view" id="v-sepia">
+          <input type="radio" name="view" id="v-dracula">
+          <input type="radio" name="view" id="v-blue">
+          <div class="tabs" aria-label="Choose a preview">
+            <label for="v-original">Original</label>
+            <label for="v-dark">Dark</label>
+            <label for="v-sepia">Sepia</label>
+            <label for="v-dracula">Dracula</label>
+            <label for="v-blue">Blue</label>
+          </div>
+          <div class="frame">
+            <img class="i-original" src="images/demo-original.png" width="1100" height="720" loading="lazy" decoding="async" alt="A sample news page in its original light design.">
+            <img class="i-dark" src="images/demo-dark.png" width="1100" height="720" decoding="async" fetchpriority="high" alt="The same page with the Nyx Dark theme. Links stay blue and the red brand color is kept.">
+            <img class="i-sepia" src="images/demo-sepia.png" width="1100" height="720" loading="lazy" decoding="async" alt="The same page with the Nyx Sepia theme.">
+            <img class="i-dracula" src="images/demo-dracula.png" width="1100" height="720" loading="lazy" decoding="async" alt="The same page with the Nyx Dracula theme.">
+            <img class="i-blue" src="images/demo-blue.png" width="1100" height="720" loading="lazy" decoding="async" alt="The same page with a Nyx blue theme.">
+          </div>
+          <p class="caption">
+            <span class="c-original">The page as its designer made it.</span>
+            <span class="c-dark">Dark: links stay blue, the brand red stays red, cards stay distinct.</span>
+            <span class="c-sepia">Sepia: warm and soft for long reads at night.</span>
+            <span class="c-dracula">Dracula: one of seven editor-inspired themes.</span>
+            <span class="c-blue">Blue: one of the color themes.</span>
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section aria-labelledby="how">
+      <div class="wrap">
+        <div class="section-head">
+          <p class="eyebrow">How it works</p>
+          <h2 id="how">Not an invert filter.</h2>
+          <p class="lede">Inverting a page turns photos into negatives and brand colors into strangers. Nyx reads the page’s stylesheets and writes a dark style for that page.</p>
+        </div>
+        <div class="principles">
+          <div class="principle">
+            <h3>Sites keep their character</h3>
+            <p>Links stay blue, highlights still stand out, and brand colors stay recognizable.</p>
+          </div>
+          <div class="principle">
+            <h3>Layouts stay readable</h3>
+            <p>Cards, menus and code blocks stay distinguishable from the page behind them.</p>
+          </div>
+          <div class="principle">
+            <h3>Text meets contrast rules</h3>
+            <p>Every text color is checked against its background to meet WCAG contrast.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="features" aria-labelledby="features-title">
+      <div class="wrap">
+        <div class="section-head">
+          <p class="eyebrow">Features</p>
+          <h2 id="features-title">Dark when you want it, how you want it.</h2>
+        </div>
+        <div class="features">
+          <article class="card">
+            <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg>Auto, On or Off</h3>
+            <p>Auto follows your system’s Dark Mode or a schedule (20:00 to 07:00 by default). On always darkens websites; Off never does.</p>
+          </article>
+          <article class="card">
+            <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg>Per-website settings</h3>
+            <p>From the toolbar menu, give any site its own status and theme, pause it until tomorrow, or fine-tune dynamic colors, background images and image inversion.</p>
+          </article>
+          <article class="card">
+            <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4"/></svg>Precise scopes</h3>
+            <p>Apply a setting to a whole domain, a subdomain, a host with a port such as <code>192.168.1.2:8080</code>, or a single page.</p>
+          </article>
+          <article class="card">
+            <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Respects built-in dark modes</h3>
+            <p>Sites that already have a dark mode are left alone, and Nyx checks again when a site switches its own theme. You can override this per site.</p>
+          </article>
+          <article class="card">
+            <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="13.5" cy="6.5" r="1.5"/><circle cx="17.5" cy="10.5" r="1.5"/><circle cx="8.5" cy="7.5" r="1.5"/><circle cx="6.5" cy="12.5" r="1.5"/><path d="M12 2a10 10 0 0 0 0 20c1.1 0 2-.9 2-2v-.5c0-.6.2-1.1.6-1.4.4-.4.9-.6 1.4-.6H18a4 4 0 0 0 4-4C22 6.5 17.5 2 12 2Z"/></svg>26 built-in themes</h3>
+            <p>Dark, Black, Gray and Sepia, six color themes, moody themes, and editor themes like Dracula, Nord, One Dark, Solarized, Gruvbox, Catppuccin and Tokyo Night.</p>
+          </article>
+          <article class="card">
+            <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg>Custom, shareable themes</h3>
+            <p>Pick a background color, text color, image brightness and grayscale. Share any theme as a link that others can import into Nyx.</p>
+          </article>
+          <article class="card">
+            <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/></svg>Gentle on images</h3>
+            <p>Photos are dimmed and desaturated to match your theme. Dark logos and icons on transparent backgrounds are inverted so you can still see them.</p>
+          </article>
+          <article class="card">
+            <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M7 14h10"/></svg>Keyboard shortcuts</h3>
+            <p>Toggle the current site, step it through Auto, On, Off and Default, pause it until tomorrow, cycle themes, or set the global status.</p>
+          </article>
+          <article class="card">
+            <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17.5 19H9a7 7 0 1 1 6.7-9h1.8a4.5 4.5 0 1 1 0 9Z"/></svg>Made for Apple devices</h3>
+            <p>Settings sync through iCloud. Use Nyx from Shortcuts, a Focus Filter, or a Control Center control.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="install" aria-labelledby="install-title">
+      <div class="wrap">
+        <div class="section-head">
+          <p class="eyebrow">Install</p>
+          <h2 id="install-title">Get Nyx.</h2>
+          <p class="lede">The App Store release is on its way. Until then you can build Nyx yourself, for free.</p>
+        </div>
+        <div class="install">
+          <article class="card">
+            <h3>Safari on iPhone, iPad and Mac</h3>
+            <p>Build the Nyx app with Xcode, then turn on the extension in Safari.</p>
+            <ol>
+              <li>Clone the repository and follow the steps in <a href="https://github.com/mohsen1/nyx/blob/main/apple/README.md"><code>apple/README.md</code></a>.</li>
+              <li>Run the app on your Mac, iPhone or iPad.</li>
+              <li>Turn on Nyx in Safari’s extension settings. The <a href="support/">support page</a> shows where.</li>
+            </ol>
+            <div class="buttons">
+              <a class="button primary" href="https://github.com/mohsen1/nyx/blob/main/apple/README.md">Build instructions</a>
+            </div>
+          </article>
+          <article class="card">
+            <h3>Chrome, Edge and Firefox</h3>
+            <p>Build the extension with Node.js and load it unpacked.</p>
+            <pre><code>npm install
+npm run build</code></pre>
+            <ol>
+              <li><strong>Chrome or Edge:</strong> open <code>chrome://extensions</code>, turn on Developer mode, choose “Load unpacked” and pick <code>dist/chrome</code>.</li>
+              <li><strong>Firefox:</strong> open <code>about:debugging</code>, choose “Load Temporary Add-on” and pick <code>dist/firefox/manifest.json</code>.</li>
+            </ol>
+            <div class="buttons">
+              <a class="button" href="https://github.com/mohsen1/nyx#install">Read more on GitHub</a>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section aria-labelledby="privacy-title">
+      <div class="wrap privacy-band">
+        <div>
+          <p class="eyebrow">Privacy</p>
+          <h2 id="privacy-title">Nyx collects no data.</h2>
+          <p class="lede">What you browse stays between you and Safari. Nyx has no accounts, no servers and nothing to send them.</p>
+          <div class="buttons" style="margin-top:24px">
+            <a class="button" href="privacy/">Read the privacy policy</a>
+          </div>
+        </div>
+        <ul class="checklist">
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span>No analytics, ads, crash reporting or third-party SDKs.</span></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span>Settings live on your device and sync only through your own iCloud account.</span></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span>No network requests of its own. Nyx only re-reads stylesheets and images the page already loads.</span></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span>Open source under the MIT license, so you can check every line.</span></li>
+        </ul>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap">
+      <span>Nyx is open source under the MIT license.</span>
+      <nav aria-label="Footer">
+        <a href="https://github.com/mohsen1/nyx">GitHub</a>
+        <a href="privacy/">Privacy Policy</a>
+        <a href="support/">Support</a>
+        <a href="https://github.com/mohsen1/nyx/issues">Report an issue</a>
+      </nav>
+    </div>
+  </footer>
+</body>
 </html>
