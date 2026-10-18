@@ -2,12 +2,13 @@
 // override for each of them, plus overrides for inline styles and presentational attributes.
 
 import { Palette } from '../shared/palette';
-import { PROPERTY_ROLES, rewriteValue, type RewriteContext } from '../shared/css-values';
+import { PROPERTY_ROLES, rewriteCustomProperty, rewriteValue, type RewriteContext } from '../shared/css-values';
 import type { AppearanceOptions } from '../shared/settings';
 import type { Theme } from '../shared/theme';
 import { transformRules, transformSheet } from './sheet-transform';
 import { ImageAnalyzer } from './images';
-import { ATTR_FIX, ContrastGuard, FIX_VAR } from './contrast';
+import { ATTR_DIM, ATTR_FIX, ContrastGuard, DIM_VAR, FIX_VAR } from './contrast';
+import { parseColor } from '../shared/color';
 
 export const STYLE_CLASS = 'nyx-style';
 const ATTR_INLINE = 'data-nyx-inline';
@@ -244,6 +245,19 @@ class RootStyler {
         if (style.getPropertyValue(name) !== mapped) style.setProperty(name, mapped);
       }
     }
+    // Custom properties set inline (often from script): give them role copies like sheet ones.
+    if (style.length > 0) {
+      const names: string[] = [];
+      for (let k = 0; k < style.length; k++) {
+        const name = style[k];
+        if (name.startsWith('--') && !name.startsWith('--nyx-')) names.push(name);
+      }
+      for (const name of names) {
+        for (const [copy, value] of rewriteCustomProperty(name, style.getPropertyValue(name), opts)) {
+          if (style.getPropertyValue(copy) !== value) style.setProperty(copy, value);
+        }
+      }
+    }
     const current = el.getAttribute(ATTR_INLINE);
     const next = tokens.join(' ');
     if (next) {
@@ -333,12 +347,14 @@ export class DarkEngine {
     this.win = doc.defaultView as Window & typeof globalThis;
     this.config = config;
     this.palette = this.makePalette(config);
-    this.contrast = new ContrastGuard(this.win);
     this.images = new ImageAnalyzer(this.win, (el, invert) => {
       if (!this.running) return;
       if (invert && this.config.appearance.imageInversion) el.setAttribute(ATTR_INVERT, '');
       else el.removeAttribute(ATTR_INVERT);
-    }, fetcher);
+    }, fetcher, (el) => {
+      if (this.running) el.setAttribute(ATTR_DIM, '');
+    });
+    this.contrast = new ContrastGuard(this.win, this.images, () => parseColor(this.config.theme.background) ?? { r: 28, g: 28, b: 30, a: 1 });
   }
 
   private makePalette(c: EngineConfig): Palette {
@@ -410,6 +426,8 @@ export class DarkEngine {
     for (const [token, prop] of INLINE_PROPS) {
       css += `[${ATTR_INLINE}~="${token}"] { ${prop}: var(--nyx-i-${token}) !important; }\n`;
     }
+    css += `[${ATTR_DIM}]:not(img) { background-color: var(${DIM_VAR}) !important; background-blend-mode: multiply !important; }\n`;
+    css += `img[${ATTR_DIM}] { filter: brightness(0.3) !important; }\n`;
     css += `[${ATTR_FIX}] { color: var(${FIX_VAR}) !important; -webkit-text-fill-color: var(${FIX_VAR}) !important; }\n`;
     return css;
   }
@@ -460,7 +478,17 @@ export class DarkEngine {
       el.removeAttribute(ATTR_INLINE);
       for (const [token] of INLINE_PROPS) (el as HTMLElement).style.removeProperty(`--nyx-i-${token}`);
     }
-    for (const el of Array.from(this.doc.querySelectorAll(`[${ATTR_INVERT}]`))) el.removeAttribute(ATTR_INVERT);
+    // Role copies of inline custom properties.
+    for (const el of Array.from(this.doc.querySelectorAll('[style*="--nyx-"]'))) {
+      const style = (el as HTMLElement).style;
+      const ours: string[] = [];
+      for (let k = 0; k < style.length; k++) if (style[k].startsWith('--nyx-')) ours.push(style[k]);
+      for (const name of ours) style.removeProperty(name);
+    }
+    for (const el of Array.from(this.doc.querySelectorAll(`[${ATTR_INVERT}], img[${ATTR_DIM}]`))) {
+      el.removeAttribute(ATTR_INVERT);
+      el.removeAttribute(ATTR_DIM);
+    }
     this.images.reset();
     this.contrast.reset();
     this.pendingHosts.clear();

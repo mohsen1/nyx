@@ -217,8 +217,20 @@ test('text whose color Nyx could not map is lifted to a readable contrast', asyn
     return (Math.max(fgL, bgL) + 0.05) / (Math.min(fgL, bgL) + 0.05);
   };
   await expect.poll(() => ratio('#name')).toBeGreaterThan(4.4);
+  // Custom properties set inline get role copies, so this is mapped rather than rescued.
+  await expect.poll(async () => luminance(await bg(page, '#inlinevar'))).toBeLessThan(0.08);
+  expect(await page.getAttribute('#name', 'data-nyx-fix')).toBeNull();
   await page.waitForSelector('#scripted');
   await expect.poll(() => ratio('#scripted')).toBeGreaterThan(4.4);
+});
+
+test('a large pale background image is darkened so text on it stays readable', async ({ context }) => {
+  const page = await context.newPage();
+  await page.goto(url('pale-hero.html'));
+  await page.waitForLoadState('load');
+  await expect.poll(() => page.getAttribute('#hero', 'data-nyx-dim-bg')).toBe('');
+  expect(await page.$eval('#hero', (el) => getComputedStyle(el).backgroundBlendMode)).toBe('multiply');
+  expect(luminance(await fg(page, '#title'))).toBeGreaterThan(0.4);
 });
 
 test('re-detects when a site switches its own theme', async ({ context }) => {

@@ -14,9 +14,12 @@ import {
   type RGBA,
 } from '../shared/color';
 import { canvasColor } from './detect';
+import { isPaleSurface, type ImageAnalyzer } from './images';
 
 export const ATTR_FIX = 'data-nyx-fix';
 export const FIX_VAR = '--nyx-fix-c';
+export const ATTR_DIM = 'data-nyx-dim-bg';
+export const DIM_VAR = '--nyx-dim-c';
 
 /** Below this the text is unreadable, so it gets fixed. */
 const MIN_RATIO = 3;
@@ -57,8 +60,15 @@ export class ContrastGuard {
   private inlineOriginals = new Map<HTMLElement, string>();
   private scheduled = false;
   private recheckTimer: number | null = null;
+  /** Elements whose pale background image was darkened, with the color now behind their text. */
+  private dimmed = new Map<HTMLElement, RGBA>();
+  private dimPending = new WeakSet<Element>();
 
-  constructor(private readonly win: Window & typeof globalThis) {
+  constructor(
+    private readonly win: Window & typeof globalThis,
+    private readonly images: ImageAnalyzer,
+    private readonly themeBackground: () => RGBA,
+  ) {
     this.io = new win.IntersectionObserver(
       (entries) => {
         for (const e of entries) {
@@ -101,6 +111,12 @@ export class ContrastGuard {
     this.recheckTimer = null;
     for (const el of this.fixed) this.unfix(el);
     this.fixed.clear();
+    for (const el of this.dimmed.keys()) {
+      el.removeAttribute(ATTR_DIM);
+      el.style.removeProperty(DIM_VAR);
+    }
+    this.dimmed.clear();
+    this.dimPending = new WeakSet();
   }
 
   private enqueue(el: Element): void {
@@ -175,6 +191,31 @@ export class ContrastGuard {
   }
 
   /**
+   * A large pale background image (a light hero, a paper texture) stays bright on a dark page and
+   * leaves text on it unreadable. Multiply it with a dark gray so it lands near the theme background.
+   */
+  private considerDimming(el: Element, backgroundImage: string): void {
+    if (this.dimPending.has(el)) return;
+    this.dimPending.add(el);
+    const url = /url\(\s*(['"]?)(.*?)\1\s*\)/.exec(backgroundImage)?.[2];
+    if (!url) return;
+    const r = el.getBoundingClientRect();
+    if (r.width < Math.min(320, this.win.innerWidth * 0.4) || r.height < 120) return;
+    void this.images.statsForUrl(url).then((stats) => {
+      if (!stats || !isPaleSurface(stats) || !el.isConnected) return;
+      const bg = this.themeBackground();
+      const k = Math.min(0.45, (relativeLuminance(bg) + 0.05) * 2.2);
+      const gray = Math.round(255 * k);
+      const behind = { r: Math.round(240 * k), g: Math.round(240 * k), b: Math.round(240 * k), a: 1 };
+      const host = el as HTMLElement;
+      host.style.setProperty(DIM_VAR, `rgb(${gray}, ${gray}, ${gray})`);
+      host.setAttribute(ATTR_DIM, '');
+      this.dimmed.set(host, behind);
+      this.recheckVisible(50);
+    });
+  }
+
+  /**
    * The solid color behind an element, or null when it can't be known (an image, gradient or
    * text clipped to a background is in the way).
    */
@@ -182,8 +223,16 @@ export class ContrastGuard {
     const layers: RGBA[] = [];
     for (let node: Element | null = el; node; node = node.parentElement ?? ((node.getRootNode() as ShadowRoot).host || null)) {
       if (node.localName === 'html') break;
+      const dimmedTo = this.dimmed.get(node as HTMLElement);
+      if (dimmedTo) {
+        layers.push(dimmedTo);
+        break;
+      }
       const s = this.win.getComputedStyle(node);
-      if (s.backgroundImage && s.backgroundImage !== 'none') return null;
+      if (s.backgroundImage && s.backgroundImage !== 'none') {
+        this.considerDimming(node, s.backgroundImage);
+        return null;
+      }
       if (s.backgroundClip === 'text' || s.getPropertyValue('-webkit-background-clip') === 'text') return null;
       const c = parseColor(s.backgroundColor);
       if (c && c.a > 0.01) {

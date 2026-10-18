@@ -2,6 +2,8 @@
 // diagrams) would disappear on a dark page, so those images are inverted; photos are not.
 
 export type ImageVerdictHandler = (el: HTMLImageElement, invert: boolean) => void;
+/** Called for a large pale image that has text on top of it (a hero backdrop). */
+export type BackdropHandler = (el: HTMLImageElement) => void;
 type Fetcher = (url: string, as: 'text' | 'dataUrl') => Promise<string | null>;
 
 const SAMPLE = 48;
@@ -40,14 +42,21 @@ export function computeStats(data: Uint8ClampedArray): PixelStats {
   return { transparent: transparent / total, dark: dark / o, light: light / o, colorful: colorful / o };
 }
 
+/** A background image that reads as a pale surface (paper texture, light hero gradient), not a photo. */
+export function isPaleSurface(s: PixelStats): boolean {
+  return s.transparent < 0.5 && s.light > 0.6 && s.dark < 0.1 && s.colorful < 0.25;
+}
+
 export class ImageAnalyzer {
   private verdicts = new Map<string, Promise<boolean>>();
+  private backgroundStats = new Map<string, Promise<PixelStats | null>>();
   private tracked = new Set<HTMLImageElement>();
 
   constructor(
     private win: Window & typeof globalThis,
     private onVerdict: ImageVerdictHandler,
     private fetcher: Fetcher,
+    private onBackdrop: BackdropHandler = () => undefined,
   ) {}
 
   observe(img: HTMLImageElement): void {
@@ -65,9 +74,19 @@ export class ImageAnalyzer {
     for (const img of this.tracked) if (img.isConnected) this.analyze(img);
   }
 
-  private analyze(img: HTMLImageElement): void {
+  private analyze(img: HTMLImageElement, retry = true): void {
     const src = img.currentSrc || img.src;
     if (!src) return;
+    if (this.isBackdrop(img)) {
+      void this.statsForUrl(src).then((stats) => {
+        if (stats && isPaleSurface(stats) && img.isConnected) this.onBackdrop(img);
+      });
+      return;
+    }
+    // Text over a hero image often renders after the image loads (web components, hydration).
+    if (retry && img.naturalWidth * img.naturalHeight > MAX_NATURAL_AREA / 4) {
+      this.win.setTimeout(() => img.isConnected && this.tracked.has(img) && this.analyze(img, false), 1500);
+    }
     if (img.naturalWidth * img.naturalHeight > MAX_NATURAL_AREA) return; // photos and large art
     let verdict = this.verdicts.get(src);
     if (!verdict) {
@@ -77,6 +96,47 @@ export class ImageAnalyzer {
     verdict.then((invert) => {
       if (img.isConnected && (img.currentSrc || img.src) === src) this.onVerdict(img, invert);
     });
+  }
+
+  /** A large image with text drawn over it, found by hit-testing points across it. */
+  private isBackdrop(img: HTMLImageElement): boolean {
+    const r = img.getBoundingClientRect();
+    const vw = this.win.innerWidth;
+    if (r.width < Math.min(320, vw * 0.4) || r.height < 150) return false;
+    const doc = this.win.document;
+    for (const [fx, fy] of [[0.5, 0.3], [0.5, 0.5], [0.3, 0.4], [0.7, 0.4]]) {
+      const x = r.left + r.width * fx;
+      const y = r.top + r.height * fy;
+      if (x < 0 || y < 0 || x > vw || y > this.win.innerHeight) continue;
+      // Descend into shadow roots: hero text often lives in a component around the image.
+      let top = doc.elementFromPoint(x, y);
+      for (let depth = 0; top?.shadowRoot && depth < 8; depth++) {
+        const inner = top.shadowRoot.elementFromPoint(x, y);
+        if (!inner || inner === top) break;
+        top = inner;
+      }
+      if (!top || top === img || img.contains(top) || top.contains(img)) continue;
+      if (top.textContent && top.textContent.trim().length > 2) return true;
+    }
+    return false;
+  }
+
+  /** Pixel statistics of a CSS background image, loaded through the extension when cross-origin. */
+  statsForUrl(url: string): Promise<PixelStats | null> {
+    let p = this.backgroundStats.get(url);
+    if (!p) {
+      p = (async () => {
+        const src = url.startsWith('data:') ? url : await this.fetcher(url, 'dataUrl');
+        if (!src) return null;
+        const img = new this.win.Image();
+        img.decoding = 'async';
+        img.src = src;
+        await img.decode();
+        return this.draw(img, img.naturalWidth || 32, img.naturalHeight || 32);
+      })().catch(() => null);
+      this.backgroundStats.set(url, p);
+    }
+    return p;
   }
 
   private draw(source: CanvasImageSource, w: number, h: number): PixelStats {
