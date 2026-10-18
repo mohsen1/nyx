@@ -52,25 +52,52 @@ apple/               Safari container app (iOS + macOS), native messaging, App I
    `--nyx-t--x` and `--nyx-o--x`, one per role. Uses are rewritten to
    `var(--nyx-t--x, var(--x))`, so a variable used for both background and
    text gets the right value in each place.
-6. **Inline styles and attributes.**
+   - **Channel lists** (`--grey-50: 249, 249, 248`, shadcn's `0 0% 100%`) get
+     channel copies (`--nyx-bc--x`), used only inside `rgb(var(--x))` /
+     `hsl(var(--x) / a)`, so triplets that aren't colors are never touched.
+   - Literal colors with a variable alpha (Tailwind's
+     `rgb(255 255 255 / var(--tw-bg-opacity))`) map the channels and keep the
+     alpha.
+   - Inline custom properties (`style="--fill: #fff"`) get copies too.
+6. **Runtime resolution.** Some colors can't be mapped from the stylesheet
+   text, so the engine reads what the page computes and adds rules after
+   every override:
+   - colors composed from several variables (`hsl(var(--h), var(--s),
+     var(--l))`, as a variable or right in a property), evaluated on a hidden
+     probe element;
+   - longhands left empty in the CSSOM by an unserializable `var()`
+     shorthand;
+   - `background-color: currentColor`, from the page's own text color.
+   Only selectors that match something are resolved, in small time slices.
+7. **Inline styles and attributes.**
    - `style=""` colors are mapped into `--nyx-i-*` properties on the element,
-     which an attribute rule applies.
+     which an attribute rule applies. Inline `!important` colors are
+     overwritten in place and restored when Nyx stops.
    - `bgcolor`, `<font color>`, SVG `fill`, `stroke` and `stop-color` values
-     get attribute-selector rules.
-7. **Images.** Images get `brightness()` and `grayscale()` from the theme.
-   Small images that are mostly dark pixels on transparency are inverted;
-   pixels are read through the background script when cross-origin.
-8. **Contrast guard.** Whatever produced the final colors, text that is on screen is
+     get attribute-selector rules; legacy `background="tile.gif"` is dropped.
+   - Gradient text (`background-clip: text`) and mask icons
+     (`mask-image: url()`) map their background as ink.
+8. **Images.** Images get `brightness()` and `grayscale()` from the theme.
+   Pixels are read through the background script when cross-origin.
+   - Dark artwork on transparency is inverted; logos that mix color with dark
+     parts (Gmail's wordmark) are redrawn with only the dark pixels lightened
+     and shown through `content: url()`. CSS background logos and sprites get
+     the same treatment at natural size.
+   - Large pale backdrops with text on them (hero images, `<video>`,
+     `<canvas>`, full-page background images) are darkened.
+9. **Contrast guard.** Whatever produced the final colors, text that is on screen is
    checked against the solid background actually behind it. Text below 3:1 (a color
    the rewriter could not see: an unreadable stylesheet, a variable set from script,
-   an inline `!important`) is lifted to 4.5:1, keeping its hue. It runs lazily on
-   elements as they scroll into view and again when stylesheets change. Text over
-   images or gradients is left alone.
-9. **Detection.** After `DOMContentLoaded` (and again on `load`, or when
+   an inline `!important`) is lifted to 4.5:1, keeping its hue, accounting for
+   opacity. It also covers icon-font glyphs, form fields and gray SVG icons. It
+   runs lazily on elements as they scroll into view and again when stylesheets
+   change. Text over photos or gradients is left alone.
+10. **Detection.** After `DOMContentLoaded` (and again on `load`, or when
    `<html>`/`<body>` theme classes change) Nyx briefly disables its styles and
-   samples the rendered page. If the page is already dark, Nyx steps aside,
-   unless "ignore built-in dark mode" applies.
-10. **Keep up.** The engine stays current through three mechanisms:
+   samples the rendered page, looking through modal backdrops. If most of the
+   viewport is already dark (75%), Nyx steps aside, unless "ignore built-in
+   dark mode" applies.
+11. **Keep up.** The engine stays current through three mechanisms:
    - **MutationObservers** catch new stylesheets, inline style changes and
      shadow roots.
    - **A one-second poll** catches CSSOM changes (`insertRule`) and custom
