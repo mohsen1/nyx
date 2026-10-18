@@ -119,8 +119,15 @@ export class ContrastGuard {
       if (!el.parentElement?.closest('svg')) this.io.observe(el);
       return;
     }
-    if (SKIP.has(el.localName) || !hasOwnText(el)) return;
-    this.io.observe(el);
+    if (SKIP.has(el.localName)) return;
+    if (hasOwnText(el) || this.isGlyphIcon(el)) this.io.observe(el);
+  }
+
+  /** An icon-font glyph (<i class="fa fa-star"></i>): no text of its own, a ::before with content. */
+  private isGlyphIcon(el: Element): boolean {
+    if (el.firstChild || (el.localName !== 'i' && el.localName !== 'span') || !el.hasAttribute('class')) return false;
+    const content = this.win.getComputedStyle(el, '::before').content;
+    return !!content && content !== 'none' && content !== 'normal' && content !== '""';
   }
 
   /** The element's text changed or it was just added: check it if it's on screen. */
@@ -270,7 +277,9 @@ export class ContrastGuard {
     const cs = this.win.getComputedStyle(el);
     if (cs.visibility !== 'visible' || cs.display === 'none') return null;
     const fill = cs.getPropertyValue('-webkit-text-fill-color');
-    const fg = parseColor(fill && fill !== cs.color && !/currentcolor/i.test(fill) ? fill : cs.color);
+    // Icon-font glyphs draw in their ::before; read its color.
+    const color = el.firstChild ? cs.color : this.win.getComputedStyle(el, '::before').color || cs.color;
+    const fg = parseColor(fill && fill !== cs.color && !/currentcolor/i.test(fill) ? fill : color);
     if (!fg || fg.a < 0.05) return null;
     const behind = this.backgroundBehind(el, canvas);
     if (!behind) return null;

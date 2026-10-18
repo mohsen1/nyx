@@ -2,3 +2,4 @@
 .meta { color: #333; }
 .ic { fill: #444746; }
 .ic-red { fill: #c5221f; }
+.star::before { content: "\2605"; color: #3c4043; font-size: 20px; }

@@ -745,7 +745,7 @@ export class DarkEngine {
     css += `[${ATTR_DIM}]:not(img, video, canvas) { background-color: var(${DIM_VAR}) !important; background-blend-mode: multiply !important; }\n`;
     css += `:is(img, video, canvas)[${ATTR_DIM}] { filter: brightness(0.3) !important; }\n`;
     css += `[${ATTR_FIX_FILL}] { fill: var(--nyx-fix-f) !important; }\n[${ATTR_FIX_STROKE}] { stroke: var(--nyx-fix-s) !important; }\n`;
-    css += `[${ATTR_FIX}] { color: var(${FIX_VAR}) !important; -webkit-text-fill-color: var(${FIX_VAR}) !important; }\n`;
+    css += `[${ATTR_FIX}], [${ATTR_FIX}]::before, [${ATTR_FIX}]::after { color: var(${FIX_VAR}) !important; -webkit-text-fill-color: var(${FIX_VAR}) !important; }\n`;
     return css;
   }
 

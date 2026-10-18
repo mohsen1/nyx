@@ -179,7 +179,7 @@ for (const url of urls) {
   const row = { url, name };
   try {
     await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30000 });
-    await page.waitForTimeout(4000);
+    await page.waitForTimeout(WEBKIT ? 8000 : 4000);
     row.active = await page.evaluate(() => document.documentElement.hasAttribute('data-nyx-active'));
     row.nyxStyles = await page.evaluate(() => document.querySelectorAll('style[data-nyx=override]').length);
     // Text the contrast guard had to rescue: each one is a color the rewriter missed.
