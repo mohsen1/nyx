@@ -66,7 +66,7 @@ struct Theme: Identifiable, Hashable {
         return Swift.min(1, Swift.max(lo, n))
     }
 
-    /// Parses a share link: `https://mohsen1.github.io/nyx/theme/?…`, `nyx://theme?…`,
+    /// Parses a share link: `https://azimi.me/nyx/theme/?…`, `nyx://theme?…`,
     /// or links shared from Noir (`https://getnoir.app/theme?…`, `noir://theme?…`).
     init?(shareURL url: URL) {
         guard let components = URLComponents(url: url, resolvingAgainstBaseURL: false) else { return nil }

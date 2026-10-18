@@ -44,7 +44,7 @@ function manifest(target) {
         match_about_blank: true,
       },
       {
-        matches: ['https://mohsen1.github.io/nyx/theme/*'],
+        matches: ['https://azimi.me/nyx/theme/*', 'https://mohsen1.github.io/nyx/theme/*'],
         js: ['theme-import.js'],
         run_at: 'document_end',
       },

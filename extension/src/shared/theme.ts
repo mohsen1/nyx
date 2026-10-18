@@ -24,7 +24,7 @@ export interface Theme {
 
 export const DEFAULT_THEME_ID = 'dark';
 
-export const SHARE_BASE_URL = 'https://mohsen1.github.io/nyx/theme/';
+export const SHARE_BASE_URL = 'https://azimi.me/nyx/theme/';
 export const NOIR_SHARE_HOST = 'getnoir.app';
 
 /** Built-in theme library (colors are original to this project). Shared with the Apple app. */
