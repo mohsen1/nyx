@@ -2,7 +2,7 @@
 // override for each of them, plus overrides for inline styles and presentational attributes.
 
 import { Palette } from '../shared/palette';
-import { PROPERTY_ROLES, rewriteCustomProperty, rewriteValue, roleVarName, type RewriteContext } from '../shared/css-values';
+import { channelVarName, PROPERTY_ROLES, rewriteChannels, rewriteCustomProperty, rewriteValue, roleVarName, type RewriteContext } from '../shared/css-values';
 import type { AppearanceOptions } from '../shared/settings';
 import type { Theme } from '../shared/theme';
 import { stripImports, transformRules, transformSheet, type TransformOptions } from './sheet-transform';
@@ -349,8 +349,16 @@ class RootStyler {
       for (const name of names) {
         const values = new Set(styles.map((cs) => cs.getPropertyValue(name).trim()));
         if (values.size !== 1) continue; // differs per element: can't define it once
-        const c = this.engine.evaluateColor([...values][0]);
-        if (!c) continue;
+        const value = [...values][0];
+        const c = this.engine.evaluateColor(value);
+        if (!c) {
+          // A channel list for rgb()/hsl() to wrap: give it mapped channel copies.
+          for (const role of roles) {
+            const channels = rewriteChannels(value, role, this.engine.palette);
+            if (channels !== null) decls.push(`${channelVarName(name, role)}: ${channels}`);
+          }
+          continue;
+        }
         for (const role of roles) decls.push(`${roleVarName(name, role)}: ${formatColor(this.engine.palette.mapRgba(c, role))}`);
       }
       if (decls.length) css += `${selector} { ${decls.join('; ')} }\n`;

@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Split channels</title>
+  <style>
+    /* XenForo 2.3: each color is an hsla() channel list assembled from one variable per channel. */
+    :root {
+      --c-text--h: 0; --c-text--s: 0%; --c-text--l: 13%; --c-text--a: 1;
+      --c-text: var(--c-text--h),var(--c-text--s),var(--c-text--l),var(--c-text--a);
+      --c-content--h: 0; --c-content--s: 0%; --c-content--l: 100%; --c-content--a: 1;
+      --c-content: var(--c-content--h),var(--c-content--s),var(--c-content--l),var(--c-content--a);
+    }
+    html { color: hsla(var(--c-text)); background: #fafafa; }
+    body { margin: 0; font: 16px system-ui, sans-serif; }
+    .block { margin: 24px; padding: 24px; background: hsla(var(--c-content)); }
+  </style>
+</head>
+<body>
+  <div class="block" id="block"><p id="text">A forum thread title</p></div>
+</body>
+</html>

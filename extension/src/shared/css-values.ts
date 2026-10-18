@@ -325,8 +325,10 @@ export function channelVarName(name: string, role: ColorRole): string {
 }
 
 const N = '(\\d{1,3}(?:\\.\\d+)?)';
-const RGB_CHANNELS = new RegExp(`^\\s*${N}\\s*(,|\\s)\\s*${N}\\s*\\2\\s*${N}\\s*$`);
-const HSL_CHANNELS = new RegExp(`^\\s*${N}(?:deg)?\\s*(,|\\s)\\s*${N}%\\s*\\2\\s*${N}%\\s*$`);
+// An optional fourth channel is the alpha (XenForo: `--xf-textColor: 0,0%,13%,1`).
+const ALPHA = '(\\s*[,/]\\s*(?:\\d*\\.)?\\d+%?)?';
+const RGB_CHANNELS = new RegExp(`^\\s*${N}\\s*(,|\\s)\\s*${N}\\s*\\2\\s*${N}${ALPHA}\\s*$`);
+const HSL_CHANNELS = new RegExp(`^\\s*${N}(?:deg)?\\s*(,|\\s)\\s*${N}%\\s*\\2\\s*${N}%${ALPHA}\\s*$`);
 
 function rgbToHsl(r: number, g: number, b: number): [number, number, number] {
   r /= 255; g /= 255; b /= 255;
@@ -352,7 +354,7 @@ export function rewriteChannels(value: string, role: ColorRole, palette: Palette
     const c = mapped ? parseColor(mapped) : null;
     if (!c) return null;
     const sep = m[2] === ',' ? ', ' : ' ';
-    return [c.r, c.g, c.b].join(sep);
+    return [c.r, c.g, c.b].join(sep) + (m[5] ?? '');
   }
   m = HSL_CHANNELS.exec(value);
   if (m) {
@@ -363,7 +365,7 @@ export function rewriteChannels(value: string, role: ColorRole, palette: Palette
     if (!c) return null;
     const [H, S, L] = rgbToHsl(c.r, c.g, c.b);
     const sep = m[2] === ',' ? ', ' : ' ';
-    return `${round1(H)}${sep}${round1(S)}%${sep}${round1(L)}%`;
+    return `${round1(H)}${sep}${round1(S)}%${sep}${round1(L)}%${m[5] ?? ''}`;
   }
   return null;
 }

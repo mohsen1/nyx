@@ -40,6 +40,9 @@ const COMPOSED_LONGHAND: Record<string, string> = {
 /** A color function or color-mix() with var() among its arguments. */
 const COMPOSED_COLOR = /\b(rgba?|hsla?|hwb|oklch|oklab|lab|lch|color|color-mix)\([^;]*var\(/i;
 
+/** A channel list assembled from one variable per channel: `var(--c--h),var(--c--s),var(--c--l),var(--c--a)`. */
+const SPLIT_CHANNELS = /^\s*var\([^()]+\)(\s*,\s*var\([^()]+\)){2,3}\s*$/;
+
 const BG_IMAGE_PROPS = new Set(['background', 'background-image']);
 
 /** Builds the declaration block for one CSSStyleDeclaration; empty string when nothing changes. */
@@ -73,7 +76,7 @@ export function transformDeclarations(style: CSSStyleDeclaration, opts: Transfor
     const important = style.getPropertyPriority(prop) === 'important';
     if (prop.startsWith('--')) {
       for (const [name, v] of rewriteCustomProperty(prop, value, opts)) emit(name, v, important);
-      if (selector && !selector.includes('&') && COMPOSED_COLOR.test(value)) opts.onComposedColor?.(selector, prop);
+      if (selector && !selector.includes('&') && (COMPOSED_COLOR.test(value) || SPLIT_CHANNELS.test(value))) opts.onComposedColor?.(selector, prop);
       continue;
     }
     let role = PROPERTY_ROLES[prop];

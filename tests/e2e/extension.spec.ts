@@ -341,6 +341,14 @@ test('a light page that transitions its background is not mistaken for a dark on
   expect(luminance(await bg(page, 'body'))).toBeLessThan(0.05);
 });
 
+test('channel lists assembled from one variable per channel are mapped (XenForo)', async ({ context }) => {
+  const page = await context.newPage();
+  await page.goto(url('split-channels.html'));
+  await page.waitForLoadState('load');
+  await expect.poll(async () => luminance(await fg(page, '#text')), { timeout: 8000 }).toBeGreaterThan(0.5);
+  await expect.poll(async () => luminance(await bg(page, '#block')), { timeout: 8000 }).toBeLessThan(0.08);
+});
+
 test('colors composed from several variables are resolved and darkened (iCloud)', async ({ context }) => {
   const page = await context.newPage();
   await page.goto(url('composed.html'));

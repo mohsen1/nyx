@@ -61,6 +61,13 @@ describe('rewriteValue', () => {
     expect(rewriteChannels('1px 2px 3px', 'background', palette)).toBeNull();
   });
 
+  it('keeps a fourth channel as the alpha (XenForo)', () => {
+    const text = rewriteChannels('0,0%,13%,1', 'text', palette)!;
+    expect(text).toMatch(/,1$/);
+    expect(parseFloat(text.split(',')[2])).toBeGreaterThan(70);
+    expect(rewriteChannels('255 255 255 / 0.5', 'background', palette)).toMatch(/^\d+ \d+ \d+ \/ 0\.5$/);
+  });
+
   it('defines channel copies for channel lists and aliases only', () => {
     const names = (v: string) => rewriteCustomProperty('--x', v, ctx).map(([n]) => n);
     expect(names('249, 249, 248')).toContain('--nyx-bc--x');
