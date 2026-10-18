@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light dark">
-  <meta name="theme-color" content="#a9b5e2" media="(prefers-color-scheme: light)">
-  <meta name="theme-color" content="#0d0b26" media="(prefers-color-scheme: dark)">
+  <meta name="theme-color" content="#f6f5fb" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0e0d13" media="(prefers-color-scheme: dark)">
   <title>Nyx support: set up the Safari dark mode extension</title>
   <meta name="description" content="How to turn on the Nyx dark mode extension in Safari on Mac, iPhone and iPad, and what to do when a website looks wrong in dark mode.">
   <link rel="canonical" href="https://azimi.me/nyx/support/">
@@ -17,16 +17,13 @@
   <meta property="og:image" content="https://azimi.me/nyx/images/og-image.png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
-  <meta property="og:image:alt" content="Hacker News, light on the left and darkened by Nyx on the right, split along a diagonal line.">
+  <meta property="og:image:alt" content="A Wikipedia article, light on the left and darkened by Nyx on the right.">
   <meta name="twitter:card" content="summary_large_image">
   <link rel="icon" href="../icon-32.png" sizes="32x32" type="image/png">
   <link rel="icon" href="../icon.png" sizes="256x256" type="image/png">
   <link rel="apple-touch-icon" href="../apple-touch-icon.png">
   <link rel="sitemap" type="application/xml" href="../sitemap.xml">
-  <link rel="preload" as="font" type="font/woff2" href="../fonts/josefin-sans.woff2" crossorigin>
   <link rel="stylesheet" href="../style.css">
-  <script>try{var t=localStorage.getItem('nyx-site-theme');if(t==='light'||t==='dark')document.documentElement.dataset.theme=t}catch(e){}document.documentElement.classList.add('js')</script>
-  <script src="../site.js" defer></script>
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
@@ -117,94 +114,85 @@
 <body>
   <a class="skip" href="#main">Skip to content</a>
 
-  <header class="sky">
-    <svg class="moon" viewBox="0 0 200 200" aria-hidden="true" focusable="false"><defs><mask id="moon-cut"><rect width="200" height="200" fill="#fff"/><circle cx="128" cy="78" r="70" fill="#000"/></mask></defs><circle cx="92" cy="108" r="80" fill="currentColor" mask="url(#moon-cut)"/></svg>
-    <svg class="roof-props" viewBox="0 0 220 64" aria-hidden="true" focusable="false"><path d="M18 20h34v8h-4v36H22V28h-4Z M88 32h26v7h-3v25H91V39h-3Z"/><path class="aerial" d="M170 64V10M154 18h32M158 28h24M162 38h16"/></svg>
-    <div class="sky-bar">
-      <a class="brand" href="../"><svg viewBox="0 0 1024 1024" aria-hidden="true" focusable="false"><rect width="1024" height="1024" rx="228" fill="#241a5e"/><path fill="#fff4dc" d="M470 250a290 290 0 1 0 270 400 255 255 0 0 1-270-400Z"/></svg><span>Nyx</span></a>
+  <header class="site-header">
+    <div class="wrap">
+      <a class="brand" href="../"><img src="../icon.png" alt="" width="28" height="28">Nyx</a>
       <nav class="nav" aria-label="Main">
-        <a class="n-wide" href="../#how">How it works</a>
-        <a class="n-wide" href="../#themes">Themes</a>
-        <a href="../#install">Install</a>
-        <a href="./" aria-current="page">Support</a>
-        <a class="n-mid" href="https://github.com/mohsen1/nyx">GitHub</a>
+        <a class="wide" href="../#how">How it works</a>
+        <a class="wide" href="../#themes">Themes</a>
+        <a class="mid" href="../privacy/">Privacy</a>
+        <a class="mid" href="../support/" aria-current="page">Support</a>
+        <a href="https://github.com/mohsen1/nyx">GitHub</a>
+        <a class="nav-cta" href="../#install">Get Nyx</a>
       </nav>
-      <button class="lamp" type="button" aria-pressed="false" hidden><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20.5 14.1A8.5 8.5 0 1 1 9.9 3.5a6.6 6.6 0 0 0 10.6 10.6Z"/></svg><span>Dark</span></button>
     </div>
   </header>
 
-  <main id="main" class="floor f-doc">
-    <div class="wrap">
-      <div class="win doc-window">
-        <article class="doc">
-          <h1>Nyx support</h1>
-          <p class="meta">Turning Nyx on, and what to do when a site looks wrong.</p>
-          <p>Nyx isn’t on the App Store yet. If you haven’t installed it, the <a href="../#install">install steps</a> are on the home page.</p>
+  <main id="main" class="doc">
+    <h1>Nyx support</h1>
+    <p class="meta">Turning Nyx on, and what to do when a site looks wrong.</p>
+    <p>Nyx isn’t on the App Store yet. If you haven’t installed it, the <a href="../#install">install steps</a> are on the home page.</p>
 
-          <h2>Turn on Nyx on Mac</h2>
-          <ol>
-            <li>Open the Nyx app once.</li>
-            <li>In Safari, choose <span class="path">Safari → Settings → Extensions</span>.</li>
-            <li>Select the checkbox next to <strong>Nyx</strong>.</li>
-            <li>Allow Nyx on all websites. You can narrow this down later under <span class="path">Edit Websites</span>.</li>
-          </ol>
+    <h2>Turn on Nyx on Mac</h2>
+    <ol>
+      <li>Open the Nyx app once.</li>
+      <li>In Safari, choose <span class="path">Safari → Settings → Extensions</span>.</li>
+      <li>Select the checkbox next to <strong>Nyx</strong>.</li>
+      <li>Allow Nyx on all websites. You can narrow this down later under <span class="path">Edit Websites</span>.</li>
+    </ol>
 
-          <h2>Turn on Nyx on iPhone and iPad</h2>
-          <ol>
-            <li>Open the Nyx app once.</li>
-            <li>Go to <span class="path">Settings → Apps → Safari → Extensions</span>.</li>
-            <li>Tap <strong>Nyx</strong> and turn it on.</li>
-            <li>Under permissions, allow Nyx on <strong>All Websites</strong>.</li>
-          </ol>
-          <p>After that, the extensions button in Safari’s address bar opens the Nyx menu, where you can change settings for the site you’re on.</p>
+    <h2>Turn on Nyx on iPhone and iPad</h2>
+    <ol>
+      <li>Open the Nyx app once.</li>
+      <li>Go to <span class="path">Settings → Apps → Safari → Extensions</span>.</li>
+      <li>Tap <strong>Nyx</strong> and turn it on.</li>
+      <li>Under permissions, allow Nyx on <strong>All Websites</strong>.</li>
+    </ol>
+    <p>After that, the extensions button in Safari’s address bar opens the Nyx menu, where you can change settings for the site you’re on.</p>
 
-          <h2>Common questions</h2>
+    <h2>Common questions</h2>
 
-          <details>
-            <summary>Nyx is on, but pages are still light.</summary>
-            <p>First check that Nyx is allowed on that website (see the steps above). If the status is <strong>Auto</strong>, Nyx only darkens pages while your device is in Dark Mode or during your schedule. Choose <strong>On</strong> to keep it on all the time. Tabs that were open before you turned Nyx on may need a reload.</p>
-          </details>
+    <details>
+      <summary>Nyx is on, but pages are still light.</summary>
+      <p>First check that Nyx is allowed on that website (see the steps above). If the status is <strong>Auto</strong>, Nyx only darkens pages while your device is in Dark Mode or during your schedule. Choose <strong>On</strong> to keep it on all the time. Tabs that were open before you turned Nyx on may need a reload.</p>
+    </details>
 
-          <details>
-            <summary>A website looks wrong with Nyx.</summary>
-            <p>Open the Nyx menu on that website. You can try another theme, turn Nyx off for that site only, or choose <strong>Pause Until Tomorrow</strong>. To get it fixed, choose <strong>Report a problem with this website</strong> in the same menu. It opens a GitHub issue with the address already filled in.</p>
-          </details>
+    <details>
+      <summary>A website looks wrong with Nyx.</summary>
+      <p>Open the Nyx menu on that website. You can try another theme, turn Nyx off for that site only, or choose <strong>Pause Until Tomorrow</strong>. To get it fixed, choose <strong>Report a problem with this website</strong> in the same menu. It opens a GitHub issue with the address already filled in.</p>
+    </details>
 
-          <details>
-            <summary>Why doesn’t Nyx change a website that already has a dark mode?</summary>
-            <p>A site’s own dark design usually looks better than anything Nyx can generate, so Nyx leaves it alone. If you’d rather use your Nyx theme there, turn on <strong>Ignore built-in dark mode</strong> for that website in the Nyx menu.</p>
-          </details>
+    <details>
+      <summary>Why doesn’t Nyx change a website that already has a dark mode?</summary>
+      <p>A site’s own dark design usually looks better than anything Nyx can generate, so Nyx leaves it alone. If you’d rather use your Nyx theme there, turn on <strong>Ignore built-in dark mode</strong> for that website in the Nyx menu.</p>
+    </details>
 
-          <details>
-            <summary>Can I make my own theme?</summary>
-            <p>Yes. In Nyx’s settings, open <strong>Themes</strong> and pick a background color, a text color, image brightness and grayscale. Any theme can be shared as a link.</p>
-          </details>
+    <details>
+      <summary>Can I make my own theme?</summary>
+      <p>Yes. In Nyx’s settings, open <strong>Themes</strong> and pick a background color, a text color, image brightness and grayscale. Any theme can be shared as a link.</p>
+    </details>
 
-          <details>
-            <summary>Do my settings sync between devices?</summary>
-            <p>On Apple devices, yes, as long as you’re signed in to iCloud. Settings go through your own iCloud account. In Chrome and Firefox, Nyx uses the browser’s built-in sync instead.</p>
-          </details>
+    <details>
+      <summary>Do my settings sync between devices?</summary>
+      <p>On Apple devices, yes, as long as you’re signed in to iCloud. Settings go through your own iCloud account. In Chrome and Firefox, Nyx uses the browser’s built-in sync instead.</p>
+    </details>
 
-          <details>
-            <summary>Does Nyx collect my browsing data?</summary>
-            <p>No. Nyx doesn’t collect any data. The <a href="../privacy/">privacy policy</a> explains what it does read and why.</p>
-          </details>
+    <details>
+      <summary>Does Nyx collect my browsing data?</summary>
+      <p>No. Nyx doesn’t collect any data. The <a href="../privacy/">privacy policy</a> explains what it does read and why.</p>
+    </details>
 
-          <h2>Contact</h2>
-          <p>Questions, bugs and feature requests all go to <a href="https://github.com/mohsen1/nyx/issues">github.com/mohsen1/nyx/issues</a>. If something breaks on a particular page, include its address along with your device and OS version.</p>
-        </article>
-      </div>
-    </div>
+    <h2>Contact</h2>
+    <p>Questions, bugs and feature requests all go to <a href="https://github.com/mohsen1/nyx/issues">github.com/mohsen1/nyx/issues</a>. If something breaks on a particular page, include its address along with your device and OS version.</p>
   </main>
 
-  <footer class="street">
-    <div class="wrap street-row">
-      <p>Nyx is open source under the MIT license.</p>
+  <footer class="site-footer">
+    <div class="wrap">
+      <span>Nyx is open source under the MIT license.</span>
       <nav aria-label="Footer">
         <a href="https://github.com/mohsen1/nyx">GitHub</a>
-        <a href="../privacy/">Privacy policy</a>
-        <a href="./" aria-current="page">Support</a>
-        <a href="https://github.com/mohsen1/nyx/releases">Releases</a>
+        <a href="../privacy/">Privacy Policy</a>
+        <a href="./">Support</a>
         <a href="https://github.com/mohsen1/nyx/issues">Report an issue</a>
       </nav>
     </div>

@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light dark">
-  <meta name="theme-color" content="#a9b5e2" media="(prefers-color-scheme: light)">
-  <meta name="theme-color" content="#0d0b26" media="(prefers-color-scheme: dark)">
+  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
   <title>Nyx: Safari dark mode extension for iPhone, iPad and Mac</title>
   <meta name="description" content="Free, open-source dark mode extension for Safari on iPhone, iPad and Mac, also for Chrome, Edge and Firefox. It darkens websites using their own colors.">
   <link rel="canonical" href="https://azimi.me/nyx/">
@@ -19,21 +19,18 @@
   <meta property="og:image:type" content="image/png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
-  <meta property="og:image:alt" content="Hacker News, light on the left and darkened by Nyx on the right, split along a diagonal line.">
+  <meta property="og:image:alt" content="Hacker News, light on the left and darkened by Nyx on the right.">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Nyx: dark mode for websites that don’t have one">
   <meta name="twitter:description" content="A free, open-source dark mode extension for Safari on iPhone, iPad and Mac that darkens websites using their own colors instead of inverting them.">
   <meta name="twitter:image" content="https://azimi.me/nyx/images/og-image.png">
-  <meta name="twitter:image:alt" content="Hacker News, light on the left and darkened by Nyx on the right, split along a diagonal line.">
+  <meta name="twitter:image:alt" content="Hacker News, light on the left and darkened by Nyx on the right.">
   <link rel="icon" href="icon-32.png" sizes="32x32" type="image/png">
   <link rel="icon" href="icon.png" sizes="256x256" type="image/png">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="sitemap" type="application/xml" href="sitemap.xml">
-  <link rel="preload" as="font" type="font/woff2" href="fonts/josefin-sans.woff2" crossorigin>
-  <link rel="preload" as="image" href="images/gutenberg-light.webp" imagesrcset="images/gutenberg-light-1280.webp 1280w, images/gutenberg-light.webp 2560w" imagesizes="(max-width: 1023px) calc(100vw - 72px), 720px" fetchpriority="high">
+  <link rel="preload" as="image" href="images/compare/hackernews-nyx.webp" imagesrcset="images/compare/hackernews-nyx-1280.webp 1280w, images/compare/hackernews-nyx.webp 2560w" imagesizes="(max-width: 1120px) calc(100vw - 32px), 1080px" media="(min-width: 641px)" fetchpriority="high">
   <link rel="stylesheet" href="style.css">
-  <script>try{var t=localStorage.getItem('nyx-site-theme');if(t==='light'||t==='dark')document.documentElement.dataset.theme=t}catch(e){}document.documentElement.classList.add('js')</script>
-  <script src="site.js" defer></script>
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
@@ -67,10 +64,10 @@
         "browserRequirements": "Safari, Chrome, Edge or Firefox",
         "image": "https://azimi.me/nyx/icon.png",
         "screenshot": [
-          "https://azimi.me/nyx/images/split-hackernews.webp",
-          "https://azimi.me/nyx/images/split-gutenberg.webp",
-          "https://azimi.me/nyx/images/split-xkcd.webp",
-          "https://azimi.me/nyx/images/split-craigslist.webp"
+          "https://azimi.me/nyx/images/compare/hackernews-nyx.webp",
+          "https://azimi.me/nyx/images/compare/craigslist-nyx.webp",
+          "https://azimi.me/nyx/images/compare/xkcd-nyx.webp",
+          "https://azimi.me/nyx/images/popup-light.webp"
         ],
         "downloadUrl": "https://github.com/mohsen1/nyx/releases/latest",
         "installUrl": "https://azimi.me/nyx/#install",
@@ -106,317 +103,221 @@
 <body>
   <a class="skip" href="#main">Skip to content</a>
 
-  <header class="sky">
-    <svg class="moon" viewBox="0 0 200 200" aria-hidden="true" focusable="false"><defs><mask id="moon-cut"><rect width="200" height="200" fill="#fff"/><circle cx="128" cy="78" r="70" fill="#000"/></mask></defs><circle cx="92" cy="108" r="80" fill="currentColor" mask="url(#moon-cut)"/></svg>
-    <svg class="roof-props" viewBox="0 0 220 64" aria-hidden="true" focusable="false"><path d="M18 20h34v8h-4v36H22V28h-4Z M88 32h26v7h-3v25H91V39h-3Z"/><path class="aerial" d="M170 64V10M154 18h32M158 28h24M162 38h16"/></svg>
-    <div class="sky-bar">
-      <a class="brand" href="./"><svg viewBox="0 0 1024 1024" aria-hidden="true" focusable="false"><rect width="1024" height="1024" rx="228" fill="#241a5e"/><path fill="#fff4dc" d="M470 250a290 290 0 1 0 270 400 255 255 0 0 1-270-400Z"/></svg><span>Nyx</span></a>
+  <header class="site-header">
+    <div class="wrap">
+      <a class="brand" href="./"><img src="icon.png" alt="" width="28" height="28">Nyx</a>
       <nav class="nav" aria-label="Main">
-        <a class="n-wide" href="#how">How it works</a>
-        <a class="n-wide" href="#themes">Themes</a>
-        <a href="#install">Install</a>
-        <a href="support/">Support</a>
-        <a class="n-mid" href="https://github.com/mohsen1/nyx">GitHub</a>
+        <a class="wide" href="#how">How it works</a>
+        <a class="wide" href="#themes">Themes</a>
+        <a class="mid" href="privacy/">Privacy</a>
+        <a class="mid" href="support/">Support</a>
+        <a href="https://github.com/mohsen1/nyx">GitHub</a>
+        <a class="nav-cta" href="#install">Get Nyx</a>
       </nav>
-      <button class="lamp" type="button" aria-pressed="false" hidden><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20.5 14.1A8.5 8.5 0 1 1 9.9 3.5a6.6 6.6 0 0 0 10.6 10.6Z"/></svg><span>Dark</span></button>
     </div>
   </header>
 
   <main id="main">
-    <section class="floor f-roof hero" aria-labelledby="hero-title">
-      <div class="wrap hero-grid">
-        <div class="hero-copy">
-          <h1 id="hero-title">Dark mode for websites that don’t have one.</h1>
-          <p class="lede">Nyx is a free, open-source extension for Safari on iPhone, iPad and Mac, and for Chrome, Edge and Firefox. It reads the colors in each page’s stylesheets and swaps in darker ones, so you can still tell which site you’re on.</p>
-          <div class="actions">
-            <a class="btn btn-primary" href="https://github.com/mohsen1/nyx/releases/latest">
-              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5M5 19.5h14"/></svg>
-              Download for Chrome, Edge or Firefox
-            </a>
-            <a class="btn" href="#install-safari">Build it for Safari</a>
-          </div>
-          <p class="scope">Not on the App Store or the Chrome Web Store yet. Both installs go through GitHub for now.</p>
-        </div>
-
-        <figure class="hero-figure">
-          <input class="vh" type="radio" name="site" id="s-gutenberg" checked>
-          <input class="vh" type="radio" name="site" id="s-hackernews">
-          <input class="vh" type="radio" name="site" id="s-xkcd">
-          <input class="vh" type="radio" name="site" id="s-craigslist">
-          <div class="win win-hero">
-            <span class="shutter shutter-l" aria-hidden="true"></span>
-            <span class="shutter shutter-r" aria-hidden="true"></span>
-            <div class="viewer">
-              <div class="shot" data-site="gutenberg">
-                <img class="lit" src="images/gutenberg-light.webp" srcset="images/gutenberg-light-1280.webp 1280w, images/gutenberg-light.webp 2560w" sizes="(max-width: 1023px) calc(100vw - 72px), 720px" width="2560" height="1600" fetchpriority="high" alt="Project Gutenberg’s home page as it ships: white background, light blue header, gold heading.">
-                <img class="nyx" src="images/gutenberg-dark.webp" srcset="images/gutenberg-dark-1280.webp 1280w, images/gutenberg-dark.webp 2560w" sizes="(max-width: 1023px) calc(100vw - 72px), 720px" width="2560" height="1600" fetchpriority="high" alt="The same page with Nyx’s Dark theme: dark background, the header a darker teal, the heading still gold.">
-              </div>
-              <div class="shot" data-site="hackernews">
-                <img class="lit" src="images/hackernews-light.webp" srcset="images/hackernews-light-1280.webp 1280w, images/hackernews-light.webp 2560w" sizes="(max-width: 1023px) calc(100vw - 72px), 720px" width="2560" height="1600" loading="lazy" alt="Hacker News as it ships: an orange bar over a beige list of stories.">
-                <img class="nyx" src="images/hackernews-dark.webp" srcset="images/hackernews-dark-1280.webp 1280w, images/hackernews-dark.webp 2560w" sizes="(max-width: 1023px) calc(100vw - 72px), 720px" width="2560" height="1600" loading="lazy" alt="Hacker News with Nyx’s Dark theme: a dark orange bar over a dark gray list.">
-              </div>
-              <div class="shot" data-site="xkcd">
-                <img class="lit" src="images/xkcd-light.webp" srcset="images/xkcd-light-1280.webp 1280w, images/xkcd-light.webp 2560w" sizes="(max-width: 1023px) calc(100vw - 72px), 720px" width="2560" height="1600" loading="lazy" alt="xkcd as it ships: white boxes on a blue-gray background, with a comic strip.">
-                <img class="nyx" src="images/xkcd-dark.webp" srcset="images/xkcd-dark-1280.webp 1280w, images/xkcd-dark.webp 2560w" sizes="(max-width: 1023px) calc(100vw - 72px), 720px" width="2560" height="1600" loading="lazy" alt="xkcd with Nyx’s Sepia theme: brown boxes, the header still blue-gray, the comic dimmed but not inverted.">
-              </div>
-              <div class="shot" data-site="craigslist">
-                <img class="lit" src="images/craigslist-light.webp" srcset="images/craigslist-light-1280.webp 1280w, images/craigslist-light.webp 2560w" sizes="(max-width: 1023px) calc(100vw - 72px), 720px" width="2560" height="1600" loading="lazy" alt="craigslist as it ships: blue links on white and light gray columns.">
-                <img class="nyx" src="images/craigslist-dark.webp" srcset="images/craigslist-dark-1280.webp 1280w, images/craigslist-dark.webp 2560w" sizes="(max-width: 1023px) calc(100vw - 72px), 720px" width="2560" height="1600" loading="lazy" alt="craigslist with Nyx’s Dracula theme: lighter blue links on dark blue-gray columns, the purple logo now pink.">
-              </div>
-              <div class="seam" aria-hidden="true"></div>
-              <div class="knob" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M9 7 4 12l5 5M15 7l5 5-5 5"/></svg></div>
-              <span class="tag tag-lit" aria-hidden="true">As it ships</span>
-              <span class="tag tag-nyx" aria-hidden="true">With Nyx</span>
-              <input class="seam-range" type="range" min="0" max="100" value="50" step="1" aria-label="Divider between the page as it ships and the page with Nyx" aria-valuetext="50% with Nyx" hidden>
-            </div>
-          </div>
-          <div class="plaques" role="group" aria-label="Choose a website">
-            <label for="s-gutenberg">Gutenberg<small>Dark</small></label>
-            <label for="s-hackernews">Hacker News<small>Dark</small></label>
-            <label for="s-xkcd">xkcd<small>Sepia</small></label>
-            <label for="s-craigslist">craigslist<small>Dracula</small></label>
-          </div>
-          <figcaption>
-            <span class="legend">Left of the line is the page as it ships, right is the page with Nyx. </span>
-            <span class="cap" data-site="gutenberg">The header stays teal and the heading stays gold, a few shades darker. Book covers are dimmed, not inverted.</span>
-            <span class="cap" data-site="hackernews">The orange bar is still orange, and the story list moves to the Dark theme’s gray.</span>
-            <span class="cap" data-site="xkcd">The Sepia theme. The comic is dimmed a little and keeps its black lines on white.</span>
-            <span class="cap" data-site="craigslist">The Dracula theme, one of seven taken from code editors. Links are still blue.</span>
-            <span class="hint">Drag across the window to move the line.</span>
-          </figcaption>
-        </figure>
-      </div>
-    </section>
-
-    <section class="floor f-dusk" id="how" aria-labelledby="how-title">
-      <div class="wrap how-grid">
-        <div class="how-copy">
-          <h2 id="how-title">It starts from the page’s own CSS.</h2>
-          <p class="lede">The quick way to darken a page is to invert it, which turns photos into negatives and orange bars blue. Nyx reads the page’s stylesheets instead and picks a new color for each one, depending on whether it paints a background, text, a border or a shadow.</p>
-          <dl class="rules">
-            <div>
-              <dt><span class="pair" aria-hidden="true"><i style="--c:#1a0dab"></i><i style="--c:#a9c0ff"></i></span>Colors keep their hue</dt>
-              <dd>A blue link becomes a lighter blue, not yellow. A saturated background stays saturated and gets darker.</dd>
-            </div>
-            <div>
-              <dt><span class="pair" aria-hidden="true"><i style="--c:#f3f1ec"></i><i style="--c:#272626"></i></span>Cards stand apart</dt>
-              <dd>Light backgrounds map to a few shades of the theme’s background, so a menu or a code block is still a shade apart from the page behind it.</dd>
-            </div>
-            <div>
-              <dt><span class="ratio" aria-hidden="true">4.5:1</span>Text stays legible</dt>
-              <dd>Colored text is lightened until it reaches at least 4.5:1 contrast with the background, the WCAG level for body text.</dd>
-            </div>
-          </dl>
-        </div>
-        <figure class="triptych">
-          <div class="win win-tri">
-            <div class="pane mini" style="--m-page:#f6f6ef;--m-bar:#ff6600;--m-bar-ink:#000;--m-link:#1a0dab;--m-label:#3d3d3d">
-              <p class="mini-label">The page</p>
-              <div class="mini-bar">News</div>
-              <p class="mini-link">A link in the page’s blue</p>
-            </div>
-            <div class="pane mini" style="--m-page:#090910;--m-bar:#0099ff;--m-bar-ink:#fff;--m-link:#e5f254;--m-label:#cfcfcf">
-              <p class="mini-label">Inverted</p>
-              <div class="mini-bar">News</div>
-              <p class="mini-link">A link in the page’s blue</p>
-            </div>
-            <div class="pane mini" style="--m-page:#242423;--m-bar:#be4a00;--m-bar-ink:#e3e3e6;--m-link:#a9c0ff;--m-label:#c9c9cc">
-              <p class="mini-label">Nyx, Dark theme</p>
-              <div class="mini-bar">News</div>
-              <p class="mini-link">A link in the page’s blue</p>
-            </div>
-          </div>
-          <figcaption>Three colors from a light page. Inverting turns the orange bar blue and the blue link yellow. The right pane shows the colors Nyx’s code picks for them with the Dark theme.</figcaption>
-        </figure>
-      </div>
-    </section>
-
-    <section class="floor f-blue themes" id="themes" aria-labelledby="themes-title">
+    <section class="hero" aria-labelledby="hero-title">
       <div class="wrap">
-        <div class="section-head">
-          <h2 id="themes-title"><span class="num">26</span> built-in themes</h2>
-          <p class="lede">Seven basics, six single colors, six moodier ones and seven from code editors. Pick one to see a sample page in it. The sample’s colors were worked out by Nyx’s own color code for each theme.</p>
+        <h1 id="hero-title">Dark mode for websites that don’t have one.</h1>
+        <p class="lede">Nyx is a free Safari extension for iPhone, iPad and Mac. It reads the colors each page uses and picks darker ones, so a site still looks like itself.</p>
+        <div class="actions">
+          <a class="button primary" href="#install">Get Nyx</a>
+          <a class="link-arrow" href="#how">See how it works</a>
         </div>
-        <div class="themes-grid">
-          <div class="facade">
-            <fieldset class="collection">
-              <legend>Essentials</legend>
-              <div class="panes">
-                <label class="swatch" style="--bg:#1c1c1e;--fg:#e3e3e6"><input type="radio" name="theme" id="t-dark" value="dark" checked><span class="glass" aria-hidden="true">Aa</span><span class="name">Dark</span></label>
-                <label class="swatch" style="--bg:#000000;--fg:#d6d6d6"><input type="radio" name="theme" id="t-black" value="black"><span class="glass" aria-hidden="true">Aa</span><span class="name">Black</span></label>
-                <label class="swatch" style="--bg:#36373b;--fg:#e4e5e8"><input type="radio" name="theme" id="t-gray" value="gray"><span class="glass" aria-hidden="true">Aa</span><span class="name">Gray</span></label>
-                <label class="swatch" style="--bg:#3a3026;--fg:#eadcc4"><input type="radio" name="theme" id="t-sepia" value="sepia"><span class="glass" aria-hidden="true">Aa</span><span class="name">Sepia</span></label>
-                <label class="swatch" style="--bg:#2b2d31;--fg:#c9cbd0"><input type="radio" name="theme" id="t-dimmed" value="dimmed"><span class="glass" aria-hidden="true">Aa</span><span class="name">Dimmed</span></label>
-                <label class="swatch" style="--bg:#000000;--fg:#ffffff"><input type="radio" name="theme" id="t-high-contrast" value="high-contrast"><span class="glass" aria-hidden="true">Aa</span><span class="name">High Contrast</span></label>
-                <label class="swatch" style="--bg:#1e1e1e;--fg:#dddddd"><input type="radio" name="theme" id="t-grayscale" value="grayscale"><span class="glass" aria-hidden="true">Aa</span><span class="name">Grayscale</span></label>
-              </div>
-            </fieldset>
-            <fieldset class="collection">
-              <legend>Colors</legend>
-              <div class="panes">
-                <label class="swatch" style="--bg:#13201a;--fg:#cfe8d8"><input type="radio" name="theme" id="t-green" value="green"><span class="glass" aria-hidden="true">Aa</span><span class="name">Green</span></label>
-                <label class="swatch" style="--bg:#221f10;--fg:#f0e3a6"><input type="radio" name="theme" id="t-yellow" value="yellow"><span class="glass" aria-hidden="true">Aa</span><span class="name">Yellow</span></label>
-                <label class="swatch" style="--bg:#24170e;--fg:#f3cfae"><input type="radio" name="theme" id="t-orange" value="orange"><span class="glass" aria-hidden="true">Aa</span><span class="name">Orange</span></label>
-                <label class="swatch" style="--bg:#251314;--fg:#f2c9cb"><input type="radio" name="theme" id="t-red" value="red"><span class="glass" aria-hidden="true">Aa</span><span class="name">Red</span></label>
-                <label class="swatch" style="--bg:#1d1628;--fg:#e2d4f5"><input type="radio" name="theme" id="t-purple" value="purple"><span class="glass" aria-hidden="true">Aa</span><span class="name">Purple</span></label>
-                <label class="swatch" style="--bg:#111a2a;--fg:#cfdcf3"><input type="radio" name="theme" id="t-blue" value="blue"><span class="glass" aria-hidden="true">Aa</span><span class="name">Blue</span></label>
-              </div>
-            </fieldset>
-            <fieldset class="collection">
-              <legend>Editor Themes</legend>
-              <div class="panes">
-                <label class="swatch" style="--bg:#282a36;--fg:#f8f8f2"><input type="radio" name="theme" id="t-dracula" value="dracula"><span class="glass" aria-hidden="true">Aa</span><span class="name">Dracula</span></label>
-                <label class="swatch" style="--bg:#2e3440;--fg:#d8dee9"><input type="radio" name="theme" id="t-nord" value="nord"><span class="glass" aria-hidden="true">Aa</span><span class="name">Nord</span></label>
-                <label class="swatch" style="--bg:#282c34;--fg:#abb2bf"><input type="radio" name="theme" id="t-one-dark" value="one-dark"><span class="glass" aria-hidden="true">Aa</span><span class="name">One Dark</span></label>
-                <label class="swatch" style="--bg:#002b36;--fg:#93a1a1"><input type="radio" name="theme" id="t-solarized" value="solarized"><span class="glass" aria-hidden="true">Aa</span><span class="name">Solarized</span></label>
-                <label class="swatch" style="--bg:#282828;--fg:#ebdbb2"><input type="radio" name="theme" id="t-gruvbox" value="gruvbox"><span class="glass" aria-hidden="true">Aa</span><span class="name">Gruvbox</span></label>
-                <label class="swatch" style="--bg:#1e1e2e;--fg:#cdd6f4"><input type="radio" name="theme" id="t-catppuccin" value="catppuccin"><span class="glass" aria-hidden="true">Aa</span><span class="name">Catppuccin Mocha</span></label>
-                <label class="swatch" style="--bg:#1a1b26;--fg:#a9b1d6"><input type="radio" name="theme" id="t-tokyo-night" value="tokyo-night"><span class="glass" aria-hidden="true">Aa</span><span class="name">Tokyo Night</span></label>
-              </div>
-            </fieldset>
-            <fieldset class="collection">
-              <legend>Moody</legend>
-              <div class="panes">
-                <label class="swatch" style="--bg:#0b1d26;--fg:#bfe0ea"><input type="radio" name="theme" id="t-deep-sea" value="deep-sea"><span class="glass" aria-hidden="true">Aa</span><span class="name">Deep Sea</span></label>
-                <label class="swatch" style="--bg:#142018;--fg:#cfe0c8"><input type="radio" name="theme" id="t-forest" value="forest"><span class="glass" aria-hidden="true">Aa</span><span class="name">Forest</span></label>
-                <label class="swatch" style="--bg:#21140f;--fg:#f0c9a8"><input type="radio" name="theme" id="t-ember" value="ember"><span class="glass" aria-hidden="true">Aa</span><span class="name">Ember</span></label>
-                <label class="swatch" style="--bg:#1a1510;--fg:#e8c27a"><input type="radio" name="theme" id="t-candlelight" value="candlelight"><span class="glass" aria-hidden="true">Aa</span><span class="name">Candlelight</span></label>
-                <label class="swatch" style="--bg:#0f1424;--fg:#d0d8ee"><input type="radio" name="theme" id="t-midnight" value="midnight"><span class="glass" aria-hidden="true">Aa</span><span class="name">Midnight</span></label>
-                <label class="swatch" style="--bg:#050d06;--fg:#33ff66"><input type="radio" name="theme" id="t-terminal" value="terminal"><span class="glass" aria-hidden="true">Aa</span><span class="name">Terminal</span></label>
-              </div>
-            </fieldset>
+      </div>
+
+      <figure class="compare" data-compare>
+        <div class="compare-frame" style="--pos: 40%">
+          <picture class="compare-light">
+            <source media="(max-width: 640px)" srcset="images/compare/hackernews-light-m.webp" width="1170" height="1755" data-light-phone>
+            <img src="images/compare/hackernews-light.webp" srcset="images/compare/hackernews-light-1280.webp 1280w, images/compare/hackernews-light.webp 2560w" sizes="(max-width: 1120px) calc(100vw - 32px), 1080px" width="2560" height="1600" fetchpriority="high" decoding="async" alt="" data-light>
+          </picture>
+          <picture class="compare-nyx">
+            <source media="(max-width: 640px)" srcset="images/compare/hackernews-nyx-m.webp" width="1170" height="1755" data-nyx-phone>
+            <img src="images/compare/hackernews-nyx.webp" srcset="images/compare/hackernews-nyx-1280.webp 1280w, images/compare/hackernews-nyx.webp 2560w" sizes="(max-width: 1120px) calc(100vw - 32px), 1080px" width="2560" height="1600" fetchpriority="high" decoding="async" alt="" data-nyx>
+          </picture>
+          <span class="compare-seam" aria-hidden="true"><span class="compare-handle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18-6-6 6-6M15 6l6 6-6 6"/></svg></span></span>
+          <span class="compare-tag compare-tag-light" aria-hidden="true">Original</span>
+          <span class="compare-tag compare-tag-nyx" aria-hidden="true">With Nyx</span>
+          <input class="compare-range" type="range" min="4" max="96" value="40" aria-label="Drag to compare the original page with Nyx" data-range>
+        </div>
+        <figcaption>
+          <div class="segmented" role="radiogroup" aria-label="Website">
+            <button type="button" role="radio" aria-checked="true" data-site="hackernews" data-caption="Hacker News in the Dark theme. The orange header stays orange, just darker.">Hacker News</button>
+            <button type="button" role="radio" aria-checked="false" data-site="craigslist" data-caption="Craigslist in the Dracula theme. Links stay blue, emoji and icons keep their colors.">Craigslist</button>
+            <button type="button" role="radio" aria-checked="false" data-site="xkcd" data-caption="xkcd in the Sepia theme. The comic is dimmed a little, never inverted.">xkcd</button>
           </div>
-          <figure class="sample-wrap">
-            <div class="win win-sample">
-              <div class="sample" aria-hidden="true">
-                <div class="s-bar">The Evening Edition</div>
-                <div class="s-body">
-                  <svg class="s-photo" viewBox="0 0 320 140" preserveAspectRatio="xMidYMid slice"><defs><linearGradient id="sp-sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4b6fd6"/><stop offset=".6" stop-color="#f4a072"/><stop offset="1" stop-color="#ffd68a"/></linearGradient></defs><rect width="320" height="140" fill="url(#sp-sky)"/><circle cx="236" cy="96" r="22" fill="#fff3c4"/><path d="M0 104 60 82l46 18 58-30 64 34 50-20 42 16v40H0Z" fill="#2f6b4f"/><path d="M0 122 70 106l70 12 80-16 100 18v20H0Z" fill="#1d4a37"/></svg>
-                  <p class="s-head">Clear skies tonight, with the moon rising at 19:42</p>
-                  <p class="s-byline">Harbor desk, 18:30</p>
-                  <p class="s-text">Temperatures fall to 9° after sunset. <span class="s-mark">Frost is likely in the hills</span>, so bring plants in. <a class="s-link">Read the full forecast</a>.</p>
-                  <div class="s-card"><span class="s-red">Road closed</span> Harbor Street, 20:00 to 06:00</div>
-                </div>
-              </div>
-            </div>
-            <label class="swatch swatch-off" style="--bg:#ffffff;--fg:#1b1b1f"><input type="radio" name="theme" id="t-off" value="off"><span>Show the sample without Nyx</span></label>
-            <figcaption>A sample page in the theme you picked. Images are dimmed to each theme’s image brightness, and Grayscale and Terminal take the color out.</figcaption>
-          </figure>
+          <p class="compare-caption" data-caption-text aria-live="polite">Hacker News in the Dark theme. The orange header stays orange, just darker.</p>
+        </figcaption>
+      </figure>
+    </section>
+
+    <section class="band" id="how" aria-labelledby="how-title">
+      <div class="wrap">
+        <h2 id="how-title">It keeps each site recognizable.</h2>
+        <p class="lede">Inverting a page turns photos into negatives and orange buttons blue. Nyx reads the page’s stylesheets instead and picks a new color for each one, depending on whether it paints a background, text, a border or a shadow.</p>
+        <div class="points">
+          <div class="point">
+            <h3>Colors keep their hue</h3>
+            <p>A blue link becomes a lighter blue. A red header stays red, just darker.</p>
+          </div>
+          <div class="point">
+            <h3>Layers stay apart</h3>
+            <p>Menus, cards and code blocks keep a shade of difference from the page behind them.</p>
+          </div>
+          <div class="point">
+            <h3>Text stays readable</h3>
+            <p>Any text that ends up too faint is lifted to at least 4.5:1 contrast, the WCAG level for body text.</p>
+          </div>
         </div>
-        <p class="custom">You can also make your own theme from a background color, a text color, image brightness and grayscale, and share it as a link that someone else can import.</p>
       </div>
     </section>
 
-    <section class="floor f-eve" id="features" aria-labelledby="features-title">
+    <section class="section" id="themes" aria-labelledby="themes-title">
       <div class="wrap">
-        <div class="section-head">
-          <h2 id="features-title">What you can set</h2>
-        </div>
-        <div class="win win-ribbon">
-          <ul class="ribbon">
-            <li class="r-a">
-              <h3>Auto, On or Off</h3>
-              <p>Auto follows your system’s Dark Mode or a schedule, <span class="num">20:00</span> to <span class="num">07:00</span> by default. On always darkens websites; Off never does.</p>
-            </li>
-            <li class="r-b">
-              <h3>Per-website settings</h3>
-              <p>From the toolbar menu, give any site its own status and theme, pause it until tomorrow, or fine-tune dynamic colors, background images and image inversion.</p>
-            </li>
-            <li class="r-c">
-              <h3>Domain, subdomain or page</h3>
-              <p>Apply a setting to a whole domain, a subdomain, a host with a port such as <code>192.168.1.2:8080</code>, or a single page.</p>
-            </li>
-            <li class="r-d">
-              <h3>Leaves dark sites alone</h3>
-              <p>If a site already has a dark mode, Nyx stays out of the way, and it checks again when the site switches its own theme. You can turn this off for any site.</p>
-            </li>
-            <li class="r-e">
-              <h3>Images</h3>
-              <p>Photos are dimmed to the theme’s image brightness, and grayed out if the theme sets grayscale. Small dark icons on transparent backgrounds are inverted so they don’t vanish.</p>
-            </li>
-            <li class="r-f">
-              <h3>Keyboard shortcuts</h3>
-              <p>Toggle the current site, step it through Auto, On, Off and Default, pause it until tomorrow, cycle themes, or set the global status.</p>
-            </li>
-            <li class="r-g">
-              <h3>iCloud, Shortcuts and Control Center</h3>
-              <p>Settings sync between your Apple devices through iCloud. You can also change them from Shortcuts, a Focus Filter or a Control Center control.</p>
-            </li>
+        <h2 id="themes-title">26 themes. Or your own.</h2>
+        <p class="lede">From plain Dark and Black to Sepia, Dracula and Solarized. Make your own from a background color, a text color, image brightness and grayscale, and share it as a link.</p>
+        <ul class="themes">
+          <li class="theme-group"><h3 class="theme-group-name">Essentials</h3>
+            <ul class="theme-row">
+              <li class="theme" style="--t-bg:#1c1c1e;--t-fg:#e3e3e6"><span class="theme-page" aria-hidden="true"><span class="theme-aa">Aa</span><span class="theme-line">Reading at night</span></span><span class="theme-name">Dark</span></li>
+              <li class="theme" style="--t-bg:#000000;--t-fg:#d6d6d6"><span class="theme-page" aria-hidden="true"><span class="theme-aa">Aa</span><span class="theme-line">Reading at night</span></span><span class="theme-name">Black</span></li>
+              <li class="theme" style="--t-bg:#36373b;--t-fg:#e4e5e8"><span class="theme-page" aria-hidden="true"><span class="theme-aa">Aa</span><span class="theme-line">Reading at night</span></span><span class="theme-name">Gray</span></li>
+              <li class="theme" style="--t-bg:#3a3026;--t-fg:#eadcc4"><span class="theme-page" aria-hidden="true"><span class="theme-aa">Aa</span><span class="theme-line">Reading at night</span></span><span class="theme-name">Sepia</span></li>
+              <li class="theme" style="--t-bg:#2b2d31;--t-fg:#c9cbd0"><span class="theme-page" aria-hidden="true"><span class="theme-aa">Aa</span><span class="theme-line">Reading at night</span></span><span class="theme-name">Dimmed</span></li>
+              <li class="theme" style="--t-bg:#000000;--t-fg:#ffffff"><span class="theme-page" aria-hidden="true"><span class="theme-aa">Aa</span><span class="theme-line">Reading at night</span></span><span class="theme-name">High Contrast</span></li>
+              <li class="theme" style="--t-bg:#1e1e1e;--t-fg:#dddddd"><span class="theme-page" aria-hidden="true"><span class="theme-aa">Aa</span><span class="theme-line">Reading at night</span></span><span class="theme-name">Grayscale</span></li>
+            </ul>
+          </li>
+          <li class="theme-group"><h3 class="theme-group-name">Colors</h3>
+            <ul class="theme-row">
+              <li class="theme" style="--t-bg:#13201a;--t-fg:#cfe8d8"><span class="theme-page" aria-hidden="true"><span class="theme-aa">Aa</span><span class="theme-line">Reading at night</span></span><span class="theme-name">Green</span></li>
+              <li class="theme" style="--t-bg:#221f10;--t-fg:#f0e3a6"><span class="theme-page" aria-hidden="true"><span class="theme-aa">Aa</span><span class="theme-line">Reading at night</span></span><span class="theme-name">Yellow</span></li>
+              <li class="theme" style="--t-bg:#24170e;--t-fg:#f3cfae"><span class="theme-page" aria-hidden="true"><span class="theme-aa">Aa</span><span class="theme-line">Reading at night</span></span><span class="theme-name">Orange</span></li>
+              <li class="theme" style="--t-bg:#251314;--t-fg:#f2c9cb"><span class="theme-page" aria-hidden="true"><span class="theme-aa">Aa</span><span class="theme-line">Reading at night</span></span><span class="theme-name">Red</span></li>
+              <li class="theme" style="--t-bg:#1d1628;--t-fg:#e2d4f5"><span class="theme-page" aria-hidden="true"><span class="theme-aa">Aa</span><span class="theme-line">Reading at night</span></span><span class="theme-name">Purple</span></li>
+              <li class="theme" style="--t-bg:#111a2a;--t-fg:#cfdcf3"><span class="theme-page" aria-hidden="true"><span class="theme-aa">Aa</span><span class="theme-line">Reading at night</span></span><span class="theme-name">Blue</span></li>
+            </ul>
+          </li>
+          <li class="theme-group"><h3 class="theme-group-name">From code editors</h3>
+            <ul class="theme-row">
+              <li class="theme" style="--t-bg:#282a36;--t-fg:#f8f8f2"><span class="theme-page" aria-hidden="true"><span class="theme-aa">Aa</span><span class="theme-line">Reading at night</span></span><span class="theme-name">Dracula</span></li>
+              <li class="theme" style="--t-bg:#2e3440;--t-fg:#d8dee9"><span class="theme-page" aria-hidden="true"><span class="theme-aa">Aa</span><span class="theme-line">Reading at night</span></span><span class="theme-name">Nord</span></li>
+              <li class="theme" style="--t-bg:#282c34;--t-fg:#abb2bf"><span class="theme-page" aria-hidden="true"><span class="theme-aa">Aa</span><span class="theme-line">Reading at night</span></span><span class="theme-name">One Dark</span></li>
+              <li class="theme" style="--t-bg:#002b36;--t-fg:#93a1a1"><span class="theme-page" aria-hidden="true"><span class="theme-aa">Aa</span><span class="theme-line">Reading at night</span></span><span class="theme-name">Solarized</span></li>
+              <li class="theme" style="--t-bg:#282828;--t-fg:#ebdbb2"><span class="theme-page" aria-hidden="true"><span class="theme-aa">Aa</span><span class="theme-line">Reading at night</span></span><span class="theme-name">Gruvbox</span></li>
+              <li class="theme" style="--t-bg:#1e1e2e;--t-fg:#cdd6f4"><span class="theme-page" aria-hidden="true"><span class="theme-aa">Aa</span><span class="theme-line">Reading at night</span></span><span class="theme-name">Catppuccin Mocha</span></li>
+              <li class="theme" style="--t-bg:#1a1b26;--t-fg:#a9b1d6"><span class="theme-page" aria-hidden="true"><span class="theme-aa">Aa</span><span class="theme-line">Reading at night</span></span><span class="theme-name">Tokyo Night</span></li>
+            </ul>
+          </li>
+          <li class="theme-group"><h3 class="theme-group-name">Moody</h3>
+            <ul class="theme-row">
+              <li class="theme" style="--t-bg:#0b1d26;--t-fg:#bfe0ea"><span class="theme-page" aria-hidden="true"><span class="theme-aa">Aa</span><span class="theme-line">Reading at night</span></span><span class="theme-name">Deep Sea</span></li>
+              <li class="theme" style="--t-bg:#142018;--t-fg:#cfe0c8"><span class="theme-page" aria-hidden="true"><span class="theme-aa">Aa</span><span class="theme-line">Reading at night</span></span><span class="theme-name">Forest</span></li>
+              <li class="theme" style="--t-bg:#21140f;--t-fg:#f0c9a8"><span class="theme-page" aria-hidden="true"><span class="theme-aa">Aa</span><span class="theme-line">Reading at night</span></span><span class="theme-name">Ember</span></li>
+              <li class="theme" style="--t-bg:#1a1510;--t-fg:#e8c27a"><span class="theme-page" aria-hidden="true"><span class="theme-aa">Aa</span><span class="theme-line">Reading at night</span></span><span class="theme-name">Candlelight</span></li>
+              <li class="theme" style="--t-bg:#0f1424;--t-fg:#d0d8ee"><span class="theme-page" aria-hidden="true"><span class="theme-aa">Aa</span><span class="theme-line">Reading at night</span></span><span class="theme-name">Midnight</span></li>
+              <li class="theme" style="--t-bg:#050d06;--t-fg:#33ff66"><span class="theme-page" aria-hidden="true"><span class="theme-aa">Aa</span><span class="theme-line">Reading at night</span></span><span class="theme-name">Terminal</span></li>
+            </ul>
+          </li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="section split" aria-labelledby="site-title">
+      <div class="wrap">
+        <div class="split-text">
+          <h2 id="site-title">One small menu for each site.</h2>
+          <p class="lede">Click the Nyx button in Safari’s toolbar to change how the site in front of you looks.</p>
+          <ul class="ticks">
+            <li>Set it to Auto, On or Off, or give it its own theme.</li>
+            <li>Pause it until tomorrow when a page looks wrong.</li>
+            <li>Apply a setting to a whole domain, one subdomain or a single page.</li>
+            <li>Sites with their own dark mode are left alone, unless you say otherwise.</li>
           </ul>
         </div>
+        <picture class="split-shot">
+          <source srcset="images/popup-dark.webp" media="(prefers-color-scheme: dark)">
+          <img src="images/popup-light.webp" width="640" height="756" loading="lazy" decoding="async" alt="The Nyx menu for a website: status, theme, pause until tomorrow, and settings for all websites.">
+        </picture>
       </div>
     </section>
 
-    <section class="floor f-night privacy" id="privacy" aria-labelledby="privacy-title">
-      <div class="wrap privacy-grid">
-        <div class="curtained" aria-hidden="true">
-          <div class="win win-curtain"><div class="curtain"></div></div>
-        </div>
-        <div>
-          <h2 id="privacy-title">Nyx collects no data.</h2>
-          <p class="lede">Nyx has no servers and no accounts, so there is nowhere for your browsing to go.</p>
-          <ul class="checks">
-            <li>No analytics, ads, crash reporting or third-party SDKs.</li>
-            <li>Settings live on your device and sync only through your own iCloud account.</li>
-            <li>The only network requests Nyx makes are for stylesheets and images the page already loads, to read their colors.</li>
-            <li>The code is on GitHub under the MIT license if you want to check any of this.</li>
-          </ul>
-          <a class="text-link" href="privacy/">Read the privacy policy</a>
-        </div>
-      </div>
-    </section>
-
-    <section class="floor f-street install" id="install" aria-labelledby="install-title">
+    <section class="band" aria-labelledby="where-title">
       <div class="wrap">
-        <div class="section-head">
-          <h2 id="install-title">Install from GitHub for now</h2>
-          <p class="lede">Nyx isn’t on the App Store or the Chrome Web Store yet. For Safari, build it from source with Xcode. For Chrome, Edge and Firefox, download a zip from the latest GitHub release or build it with Node.js.</p>
+        <h2 id="where-title">Works where you read.</h2>
+        <div class="facts">
+          <div class="fact">
+            <h3>iPhone, iPad and Mac</h3>
+            <p>Auto follows your device’s Dark Mode, or a schedule you set (8 PM to 7 AM by default).</p>
+          </div>
+          <div class="fact">
+            <h3>Synced through iCloud</h3>
+            <p>Change a setting on your Mac and your iPhone has it too. It syncs through your own iCloud account.</p>
+          </div>
+          <div class="fact">
+            <h3>Shortcuts and Control Center</h3>
+            <p>Switch it with a Shortcut, a Focus Filter, a Control Center control, or a keyboard shortcut on Mac.</p>
+          </div>
+          <div class="fact">
+            <h3>Chrome, Edge and Firefox</h3>
+            <p>The same extension, the same themes. Settings sync through your browser’s own sync.</p>
+          </div>
         </div>
-        <div class="doors">
-          <article class="door" id="install-safari" aria-labelledby="door-safari">
-            <h3 class="transom" id="door-safari">Safari</h3>
-            <div class="door-panel">
-              <p>Build the Nyx app with Xcode for iPhone, iPad or Mac, then turn on the extension in Safari.</p>
-              <ol class="steps">
-                <li>Clone the repository and follow the steps in <a href="https://github.com/mohsen1/nyx/blob/main/apple/README.md"><code>apple/README.md</code></a>.</li>
-                <li>Run the app on your Mac, iPhone or iPad.</li>
-                <li>Turn on Nyx in Safari’s extension settings. The <a href="support/">support page</a> shows where.</li>
-              </ol>
-              <a class="btn btn-brass" href="https://github.com/mohsen1/nyx/blob/main/apple/README.md">Safari build instructions</a>
-            </div>
-          </article>
-          <article class="door" id="install-chrome" aria-labelledby="door-chrome">
-            <h3 class="transom" id="door-chrome">Chrome · Edge · Firefox</h3>
-            <div class="door-panel">
-              <p>Download <code>nyx-chrome</code> or <code>nyx-firefox</code> from the <a href="https://github.com/mohsen1/nyx/releases/latest">latest release</a>, or build the extension with Node.js:</p>
-              <pre><code>npm install
-npm run build</code></pre>
-              <ol class="steps">
-                <li><strong>Chrome or Edge:</strong> unzip the download, open <code>chrome://extensions</code>, turn on Developer mode, choose “Load unpacked” and pick the unzipped folder (or <code>dist/chrome</code> if you built it).</li>
-                <li><strong>Firefox:</strong> open <code>about:debugging</code>, choose “Load Temporary Add-on” and pick the zip (or <code>dist/firefox/manifest.json</code>).</li>
-              </ol>
-              <div class="actions">
-                <a class="btn btn-brass" href="https://github.com/mohsen1/nyx/releases/latest">Download the latest release</a>
-                <a class="text-link" href="https://github.com/mohsen1/nyx/blob/main/DEVELOPMENT.md#chrome-edge-firefox">Build instructions</a>
-              </div>
-            </div>
-          </article>
+      </div>
+    </section>
+
+    <section class="section privacy" aria-labelledby="privacy-title">
+      <div class="wrap">
+        <h2 id="privacy-title">Nyx collects no data.</h2>
+        <p class="lede">No accounts, no analytics, no ads. The only requests Nyx makes are for stylesheets and images the page already loads, so it can read their colors. The code is on GitHub if you want to check.</p>
+        <p><a class="link-arrow" href="privacy/">Read the privacy policy</a></p>
+      </div>
+    </section>
+
+    <section class="band install" id="install" aria-labelledby="install-title">
+      <div class="wrap">
+        <h2 id="install-title">Get Nyx.</h2>
+        <p class="lede">Nyx is free and open source. The App Store and Chrome Web Store versions are on their way; until then, install it from GitHub.</p>
+        <div class="install-grid">
+          <div class="install-item">
+            <h3>Safari on iPhone, iPad and Mac</h3>
+            <ol>
+              <li>Build the app with Xcode from the <a href="https://github.com/mohsen1/nyx/blob/main/apple/README.md">Safari instructions</a>.</li>
+              <li>Run it on your Mac, iPhone or iPad.</li>
+              <li>Turn on Nyx in Safari’s extension settings. <a href="support/">Support</a> shows where.</li>
+            </ol>
+            <a class="button" href="https://github.com/mohsen1/nyx/blob/main/apple/README.md">Safari instructions</a>
+          </div>
+          <div class="install-item">
+            <h3>Chrome, Edge and Firefox</h3>
+            <ol>
+              <li>Download <code>nyx-chrome</code> or <code>nyx-firefox</code> from the latest release.</li>
+              <li>Chrome or Edge: unzip it, open <code>chrome://extensions</code>, turn on Developer mode and choose “Load unpacked”.</li>
+              <li>Firefox: open <code>about:debugging</code> and choose “Load Temporary Add-on”.</li>
+            </ol>
+            <a class="button primary" href="https://github.com/mohsen1/nyx/releases/latest">Download the latest release</a>
+          </div>
         </div>
       </div>
     </section>
   </main>
 
-  <footer class="street">
-    <div class="wrap street-row">
-      <p>Nyx is open source under the MIT license.</p>
+  <footer class="site-footer">
+    <div class="wrap">
+      <span>Nyx is open source under the MIT license.</span>
       <nav aria-label="Footer">
         <a href="https://github.com/mohsen1/nyx">GitHub</a>
-        <a href="privacy/">Privacy policy</a>
+        <a href="privacy/">Privacy Policy</a>
         <a href="support/">Support</a>
         <a href="https://github.com/mohsen1/nyx/releases">Releases</a>
         <a href="https://github.com/mohsen1/nyx/issues">Report an issue</a>
       </nav>
     </div>
   </footer>
+
+  <script src="compare.js" defer></script>
 </body>
 </html>
