@@ -15,6 +15,9 @@
     .panel { background: var(--panel); padding: 16px; }
     /* A var() shorthand with a later longhand: the CSSOM loses the value (m3.material.io). */
     .lost { --card-bg: #f8f1f6; background: var(--card-bg); background-repeat: no-repeat; padding: 16px; }
+    /* Globo: the header paints its background with its text color. */
+    .brand { color: #06aa48; background-color: currentcolor; padding: 12px; }
+    .brand span { color: #fff; }
     /* Bulma 1.0 composes colors right in the property. */
     .menu { --menu-l: 98%; background-color: hsl(var(--bg-h), var(--bg-s), var(--menu-l)); color: hsl(var(--bg-h), var(--bg-s), 20%); padding: 16px; }
   </style>
@@ -23,6 +26,7 @@
   <p id="text">Background and text built from split variables</p>
   <div class="panel" id="panel">A panel mixed from the background</div>
   <nav class="menu" id="menu">A menu composed in place</nav>
+  <header class="brand" id="brand"><span id="brand-label">MENU</span></header>
   <div class="lost" id="lost">A card whose background value the CSSOM can't show</div>
 </body>
 </html>

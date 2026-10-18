@@ -81,6 +81,11 @@ export function transformDeclarations(style: CSSStyleDeclaration, opts: Transfor
     if (v !== null) emit(prop, v, important);
     const composed = selector && !selector.includes('&') && COMPOSED_LONGHAND[prop] && !clipText ? composedColorIn(value) : null;
     if (composed) opts.onComposedProperty?.(selector!, prop, important, composed);
+    // background-color: currentColor paints with the *text* color, which Nyx lightens for reading;
+    // resolve it at runtime from the page's own text color, mapped as a background.
+    else if (selector && !selector.includes('&') && prop === 'background-color' && /^\s*currentcolor\s*$/i.test(value)) {
+      opts.onComposedProperty?.(selector, prop, important, 'currentcolor');
+    }
   }
 
   // Shorthands containing var() leave their longhands empty ("pending substitution").

@@ -311,6 +311,8 @@ test('colors composed from several variables are resolved and darkened (iCloud)'
   await expect.poll(async () => luminance(await bg(page, '#panel'))).toBeLessThan(0.08);
   await expect.poll(async () => luminance(await bg(page, '#menu'))).toBeLessThan(0.08);
   await expect.poll(async () => luminance(await bg(page, '#lost'))).toBeLessThan(0.08);
+  // background-color: currentColor is mapped as a background (darker), so white labels stay readable.
+  await expect.poll(async () => luminance(await bg(page, '#brand'))).toBeLessThan(0.2);
   expect(luminance(await fg(page, '#menu'))).toBeGreaterThan(0.4);
   expect(luminance(await fg(page, '#text'))).toBeGreaterThan(0.5);
 });

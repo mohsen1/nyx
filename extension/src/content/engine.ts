@@ -214,6 +214,22 @@ class RootStyler {
     this.lastPropResolve = now;
     const win = this.engine.win;
     // Values lost to the CSSOM are read from the computed style, once, with our rules off.
+    // currentColor backgrounds: the page's own text color, read with all of Nyx's styles off.
+    const current = Array.from(this.composedProps.entries()).filter(([key, [, , , v]]) => v === 'currentcolor' && !this.lostValues.has(key));
+    if (current.length) {
+      this.engine.withoutStyles(() => {
+        for (const [key, [selector]] of current) {
+          const query = selector.replace(/::?(before|after|placeholder|selection|marker|backdrop|first-line|first-letter)\b(\([^)]*\))?/gi, '');
+          let el: Element | null = null;
+          try {
+            el = this.root.querySelector(query || '*');
+          } catch {
+            /* invalid */
+          }
+          this.lostValues.set(key, el ? win.getComputedStyle(el).color.trim() : '');
+        }
+      });
+    }
     const lost = Array.from(this.composedProps.entries()).filter(([key, [, , , v]]) => v === '' && !this.lostValues.has(key));
     if (lost.length) {
       const sheet = this.propsEl.sheet;
@@ -235,7 +251,7 @@ class RootStyler {
     }
     let css = '';
     for (const [key, [selector, prop, important, raw]] of this.composedProps) {
-      const value = raw === '' ? this.lostValues.get(key) ?? '' : raw;
+      const value = raw === '' || raw === 'currentcolor' ? this.lostValues.get(key) ?? '' : raw;
       if (!value) continue;
       const query = selector.replace(/::?(before|after|placeholder|selection|marker|backdrop|first-line|first-letter)\b(\([^)]*\))?/gi, '');
       let els: Element[];
