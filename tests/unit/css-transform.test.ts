@@ -60,8 +60,12 @@ describe('rewriteValue', () => {
   it('defines channel copies for channel lists and aliases only', () => {
     const names = (v: string) => rewriteCustomProperty('--x', v, ctx).map(([n]) => n);
     expect(names('249, 249, 248')).toContain('--nyx-bc--x');
-    expect(names('var(--y)')).toContain('--nyx-tc--x');
-    expect(rewriteCustomProperty('--x', 'var(--y)', ctx).find(([n]) => n === '--nyx-bc--x')![1]).toBe('var(--nyx-bc--y, var(--y))');
+    expect(names('var(--y)')).not.toContain('--nyx-tc--x'); // a plain alias: no channel copies
+    expect(rewriteCustomProperty('--x-rgb', 'var(--y)', ctx).map(([n]) => n)).toContain('--nyx-tc--x-rgb');
+    const channelVars = new Set<string>();
+    rewriteCustomProperty('--grey', '249, 249, 248', { ...ctx, channelVars });
+    expect(rewriteCustomProperty('--surface', 'var(--grey)', { ...ctx, channelVars }).map(([n]) => n)).toContain('--nyx-bc--surface');
+    expect(rewriteCustomProperty('--x-rgb', 'var(--y)', ctx).find(([n]) => n === '--nyx-bc--x-rgb')![1]).toBe('var(--nyx-bc--y, var(--y))');
     expect(names('12px')).toEqual([]);
   });
 

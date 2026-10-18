@@ -424,8 +424,10 @@ export class DarkEngine {
     return new Palette({ background: c.theme.background, text: c.theme.text, dynamicColors: c.appearance.dynamicColors });
   }
 
+  private channelVars = new Set<string>();
+
   rewriteOptions(baseUrl: string | null): RewriteContext {
-    return { palette: this.palette, baseUrl, hideImages: !this.config.appearance.backgroundImages };
+    return { palette: this.palette, baseUrl, hideImages: !this.config.appearance.backgroundImages, channelVars: this.channelVars };
   }
 
   private textCache = new Map<string, Promise<string | null>>();

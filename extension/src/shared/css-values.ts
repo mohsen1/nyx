@@ -85,6 +85,8 @@ export interface RewriteContext {
   baseUrl: string | null;
   /** Drop url() images (the "hide background images" option). */
   hideImages?: boolean;
+  /** Names of custom properties seen holding a channel list (`249, 249, 248`); shared across sheets. */
+  channelVars?: Set<string>;
 }
 
 /** Finds the index of the parenthesis that closes the one opened just before `start`. */
@@ -259,6 +261,9 @@ export function roleVarName(name: string, role: ColorRole): string {
   return `${ROLE_PREFIX[role]}${name}`;
 }
 
+/** Names that conventionally hold channel lists: --bs-primary-rgb, --accent-hsl, --gray-channel. */
+const CHANNEL_NAME = /(rgb|hsl|channels?)(-|$)/i;
+
 /** A color function whose channels all come from one variable, plus whatever follows (alpha). */
 const CHANNEL_VAR = /^\s*var\(\s*(--[a-zA-Z0-9_-]+)\s*\)(\s*(?:[,/][^()]*)?)$/;
 
@@ -337,13 +342,20 @@ export function rewriteCustomProperty(name: string, value: string, ctx: RewriteC
     }
   }
   // Channel lists, and aliases that may point at one (`--body-bg-rgb: var(--grey-50-rgb)`).
+  // Design systems have thousands of aliases, so only those that look like channel variables
+  // or point at a known channel list get copies.
   const alias = /^\s*var\(\s*(--[a-zA-Z0-9_-]+)\s*\)\s*$/.exec(value);
+  if (alias) {
+    if (!CHANNEL_NAME.test(name) && !CHANNEL_NAME.test(alias[1]) && !ctx.channelVars?.has(alias[1])) return out;
+    ctx.channelVars?.add(name);
+    for (const role of ALL_ROLES) out.push([channelVarName(name, role), `var(${channelVarName(alias[1], role)}, var(${alias[1]}))`]);
+    return out;
+  }
   for (const role of ALL_ROLES) {
-    if (alias) out.push([channelVarName(name, role), `var(${channelVarName(alias[1], role)}, var(${alias[1]}))`]);
-    else {
-      const v = rewriteChannels(value, role, ctx.palette);
-      if (v !== null) out.push([channelVarName(name, role), v]);
-    }
+    const v = rewriteChannels(value, role, ctx.palette);
+    if (v === null) break;
+    ctx.channelVars?.add(name);
+    out.push([channelVarName(name, role), v]);
   }
   return out;
 }
