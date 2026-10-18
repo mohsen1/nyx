@@ -475,7 +475,7 @@
       "Don't put eyebrow or kicker labels above headlines; the headline opens the section.",
       "Don't wrap features in a grid of equal shadowed cards; use rule-topped columns.",
       "Don't shadow text sections, install cards or the summary box.",
-      "Don't add icons as decoration; an icon appears only where it labels a control (the compare handle).",
+      "Don't add icons as decoration; an icon appears only where it labels something: the compare handle, and the Lucide icon above each point, fact and install-card title (plus the privacy lock).",
       "Don't set headlines in uppercase or with open letter-spacing."
     ]
   }

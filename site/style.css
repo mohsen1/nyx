@@ -196,6 +196,9 @@ p { margin: 0; }
 .section h2, .band h2 { max-width: 16em; }
 .section > .wrap > .lede, .band > .wrap > .lede { margin-top: 20px; }
 
+/* Lucide icons label a point, a fact or an install card: one size, one stroke, in the tint. */
+.icon { display: block; width: 28px; height: 28px; margin-bottom: 14px; color: var(--tint); fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; }
+.icon-lead { width: 44px; height: 44px; margin: 0 auto 20px; stroke-width: 1.5; }
 .points { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0 40px; margin-top: clamp(48px, 6vw, 72px); }
 .point { padding-top: 22px; border-top: 1px solid var(--line); }
 .point p, .fact p { margin-top: 8px; color: var(--ink-2); }

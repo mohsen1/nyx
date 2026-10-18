@@ -230,7 +230,7 @@ A neutral Apple grayscale with a single indigo tint, mirrored for dark appearanc
 - **Original tag** (`tag-dark-glass`, white text) and **With Nyx tag** (`tag-light-glass`, ink text) are colored for the half of the picture they sit on, not for the visitor's appearance, so they do not change in dark mode. The compare seam and handle are fixed white for the same reason.
 
 ### Named Rules
-**The One Tint Rule.** Indigo is the only hue the site contributes. It marks what you can act on (links, primary button, focus) and the ticks list, and nothing decorative. No gradients, no glows, no second accent.
+**The One Tint Rule.** Indigo is the only hue the site contributes. It marks what you can act on (links, primary button, focus), the ticks list and the icons that label points, facts and install cards, and nothing decorative. No gradients, no glows, no second accent.
 
 **The Content Brings the Color Rule.** Screenshots and theme swatches carry their own colors; the chrome around them stays neutral so they read as true.
 
@@ -287,7 +287,7 @@ The site is flat. Depth appears only on things that are pictures of the product:
 
 Corners are soft and few. Anything you press is a full pill (`rounded.pill`): buttons, the nav CTA, segmented track and options, compare tags, the skip link. The compare handle is a circle. Large imagery and install cards use 18px (`rounded.frame`); the popup shot and document summary use 14px (`rounded.panel`); theme swatches use 12px (`rounded.swatch`); the brand icon 7px; inline code and focus outlines 6px. Lines are 1px hairlines in `hairline`, drawn as top rules, never as boxes around content. The only angle in the system is the compare seam, which leans 6% of the frame width each way from its midpoint.
 
-Small arrows are drawn in CSS from two bordered edges: the forward chevron after a link arrow, the tick in the ticks list, and the disclosure chevron on details rows. The only SVG icon is the Lucide-style left-right chevrons inside the compare handle.
+Small arrows are drawn in CSS from two bordered edges: the forward chevron after a link arrow, the tick in the ticks list, and the disclosure chevron on details rows. SVG icons come from Lucide (ISC license), inlined: the left-right chevrons inside the compare handle, and one icon above each point, fact and install-card title, plus a lock above the privacy headline. They use 24px artwork drawn at 28px (44px for the privacy lock), a 1.75 stroke (1.5 for the lock), round caps and joins, in the tint. An icon labels the title right below it; buttons, nav links, ticks and document pages carry none.
 
 ## Components
 
@@ -330,10 +330,10 @@ The site's proof and its one signature interaction.
 - **Style:** an unbulleted list with 14px between items; each item has a 30px left indent and an indigo CSS tick (12 by 7px, 2px stroke) on the first line.
 
 ### Points and Facts
-- **Style:** a column of h3 title plus a secondary-ink paragraph, separated by a hairline top rule with 22px above the title. No background, no border box, no icon.
+- **Style:** a column of a 28px Lucide icon in the tint, an h3 title 14px below it, and a secondary-ink paragraph, separated by a hairline top rule with 22px above the icon. No background and no border box.
 
 ### Install Item
-- **Style:** a page-colored panel on a band section, 18px corners, fluid 24 to 36px padding, no shadow. Title, an ordered list of steps in secondary ink with 8px gaps, then a pill button pinned to the bottom so both cards' buttons line up.
+- **Style:** a page-colored panel on a band section, 18px corners, fluid 24 to 36px padding, no shadow. A 28px Lucide icon for the browser (compass for Safari, globe for Chrome, Edge and Firefox), the title, an ordered list of steps in secondary ink with 8px gaps, then a pill button pinned to the bottom so both cards' buttons line up.
 
 ### Document Pages
 - **Measure:** 680px column with 56 to 96px top and 72 to 112px bottom padding.
@@ -362,5 +362,5 @@ The site's proof and its one signature interaction.
 - **Don't** put eyebrow or kicker labels above headlines; the headline opens the section.
 - **Don't** wrap features in a grid of equal shadowed cards; use rule-topped columns.
 - **Don't** shadow text sections, install cards or the summary box.
-- **Don't** add icons as decoration; an icon appears only where it labels a control (the compare handle).
+- **Don't** add icons as decoration; an icon appears only where it labels something: the compare handle, and the Lucide icon above each point, fact and install-card title (plus the privacy lock). No icons in buttons, nav links or document pages.
 - **Don't** set headlines in uppercase or with open letter-spacing.
