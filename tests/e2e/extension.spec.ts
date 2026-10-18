@@ -272,6 +272,25 @@ test('text on a button with an icon background is still checked (Gmail Compose)'
   expect(await fill('#icon-red')).toBe('rgb(197, 34, 31)');
 });
 
+test('backdrops beside the content and canvas heroes are darkened', async ({ context }) => {
+  const page = await context.newPage();
+  await page.goto(url('backdrops.html'));
+  await page.waitForLoadState('load');
+  // A full-page pale image behind a sign-in card, a sibling of the text rather than an ancestor.
+  await expect.poll(() => page.getAttribute('#backdrop', 'data-nyx-dim-bg'), { timeout: 8000 }).toBe('');
+  // A pale <canvas> with a heading drawn over it.
+  await expect.poll(() => page.getAttribute('#canvas', 'data-nyx-dim-bg'), { timeout: 8000 }).toBe('');
+});
+
+test('colors composed from several variables are resolved and darkened (iCloud)', async ({ context }) => {
+  const page = await context.newPage();
+  await page.goto(url('composed.html'));
+  await page.waitForLoadState('load');
+  await expect.poll(async () => luminance(await bg(page, 'body'))).toBeLessThan(0.05);
+  await expect.poll(async () => luminance(await bg(page, '#panel'))).toBeLessThan(0.08);
+  expect(luminance(await fg(page, '#text'))).toBeGreaterThan(0.5);
+});
+
 test('re-detects when a site switches its own theme', async ({ context }) => {
   const page = await context.newPage();
   await page.goto(url('toggle.html'));

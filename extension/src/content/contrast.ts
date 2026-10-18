@@ -92,6 +92,7 @@ export class ContrastGuard {
   /** Elements whose pale background image was darkened, with the color now behind their text. */
   private dimmed = new Map<HTMLElement, RGBA>();
   private dimPending = new WeakSet<Element>();
+  private lastBackdropScan = 0;
 
   constructor(
     private readonly win: Window & typeof globalThis,
@@ -133,6 +134,7 @@ export class ContrastGuard {
     if (this.recheckTimer !== null) this.win.clearTimeout(this.recheckTimer);
     this.recheckTimer = this.win.setTimeout(() => {
       this.recheckTimer = null;
+      this.scanBackdrops();
       for (const el of this.visible) this.enqueue(el);
     }, delay);
   }
@@ -164,6 +166,12 @@ export class ContrastGuard {
 
   private flush(): void {
     this.scheduled = false;
+    // New content is being checked: its backdrop may have just appeared too.
+    const now = Date.now();
+    if (now - this.lastBackdropScan > 1000) {
+      this.lastBackdropScan = now;
+      this.scanBackdrops();
+    }
     const batch: Element[] = [];
     for (const el of this.queue) {
       batch.push(el);
@@ -276,16 +284,41 @@ export class ContrastGuard {
   }
 
   /**
+   * Full-page background images often sit beside the content rather than under it in the tree
+   * (a sign-in page's backdrop behind its card), so ancestor walks never meet them. Hit-test a
+   * grid across the viewport for them.
+   */
+  private scanBackdrops(): void {
+    const doc = this.win.document;
+    const w = this.win.innerWidth, h = this.win.innerHeight;
+    for (const fx of [0.1, 0.5, 0.9]) {
+      for (const fy of [0.2, 0.5, 0.85]) {
+        for (const el of doc.elementsFromPoint(w * fx, h * fy)) {
+          if (el.localName === 'html') break;
+          if ((el.localName === 'img' || el.localName === 'video' || el.localName === 'canvas') && !el.hasAttribute(ATTR_DIM)) {
+            this.images.reconsiderBackdrop(el as HTMLImageElement | HTMLVideoElement | HTMLCanvasElement);
+          }
+          const s = this.win.getComputedStyle(el);
+          if (s.backgroundImage.includes('url(') && !isIconBackground(s, el)) this.considerDimming(el, s.backgroundImage);
+          const c = parseColor(s.backgroundColor);
+          if (c && c.a >= 0.99) break; // anything further down is hidden
+        }
+      }
+    }
+  }
+
+  /**
    * A large pale background image (a light hero, a paper texture) stays bright on a dark page and
    * leaves text on it unreadable. Multiply it with a dark gray so it lands near the theme background.
    */
   private considerDimming(el: Element, backgroundImage: string): void {
     if (this.dimPending.has(el)) return;
-    this.dimPending.add(el);
     const url = /url\(\s*(['"]?)(.*?)\1\s*\)/.exec(backgroundImage)?.[2];
     if (!url) return;
+    // Not yet laid out, or small: may grow later, so don't remember it.
     const r = el.getBoundingClientRect();
     if (r.width < Math.min(320, this.win.innerWidth * 0.4) || r.height < 120) return;
+    this.dimPending.add(el);
     void this.images.statsForUrl(url).then((stats) => {
       if (!stats || !isPaleSurface(stats) || !el.isConnected) return;
       const bg = this.themeBackground();

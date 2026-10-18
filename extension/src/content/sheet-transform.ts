@@ -8,12 +8,21 @@ import { PROPERTY_ROLES, SHORTHANDS_WITH_COLOR, rewriteCustomProperty, rewriteVa
 export interface TransformOptions extends RewriteContext {
   /** Called for @import rules whose sheet cannot be read (cross-origin); returns override CSS or null. */
   onInaccessibleImport?: (href: string, media: string) => void;
+  /**
+   * Called for a custom property whose value builds a color out of other variables, e.g.
+   * `--bg: hsl(var(--bg-h), var(--bg-s), var(--bg-l))`. Its parts can't be mapped one by one;
+   * only the computed result is a color, so it is resolved at runtime.
+   */
+  onComposedColor?: (selector: string, name: string) => void;
 }
+
+/** A color function or color-mix() with var() among its arguments. */
+const COMPOSED_COLOR = /\b(rgba?|hsla?|hwb|oklch|oklab|lab|lch|color|color-mix)\([^;]*var\(/i;
 
 const BG_IMAGE_PROPS = new Set(['background', 'background-image']);
 
 /** Builds the declaration block for one CSSStyleDeclaration; empty string when nothing changes. */
-export function transformDeclarations(style: CSSStyleDeclaration, opts: TransformOptions): string {
+export function transformDeclarations(style: CSSStyleDeclaration, opts: TransformOptions, selector?: string): string {
   let out = '';
   const seen = new Set<string>();
   const emit = (prop: string, value: string, important: boolean) => {
@@ -29,6 +38,7 @@ export function transformDeclarations(style: CSSStyleDeclaration, opts: Transfor
     const important = style.getPropertyPriority(prop) === 'important';
     if (prop.startsWith('--')) {
       for (const [name, v] of rewriteCustomProperty(prop, value, opts)) emit(name, v, important);
+      if (selector && !selector.includes('&') && COMPOSED_COLOR.test(value)) opts.onComposedColor?.(selector, prop);
       continue;
     }
     const role = PROPERTY_ROLES[prop];
@@ -86,7 +96,7 @@ export function transformRules(rules: CSSRuleList, opts: TransformOptions): stri
       continue;
     }
     if (isStyleRule(rule)) {
-      const decls = transformDeclarations(rule.style, opts);
+      const decls = transformDeclarations(rule.style, opts, rule.selectorText);
       const nested = (rule as CSSStyleRule & { cssRules?: CSSRuleList }).cssRules;
       const inner = nested && nested.length ? transformRules(nested, opts) : '';
       if (decls || inner) out += `${rule.selectorText} { ${decls}${inner} }\n`;

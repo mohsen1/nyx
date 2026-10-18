@@ -2,13 +2,13 @@
 // override for each of them, plus overrides for inline styles and presentational attributes.
 
 import { Palette } from '../shared/palette';
-import { PROPERTY_ROLES, rewriteCustomProperty, rewriteValue, type RewriteContext } from '../shared/css-values';
+import { PROPERTY_ROLES, rewriteCustomProperty, rewriteValue, roleVarName, type RewriteContext } from '../shared/css-values';
 import type { AppearanceOptions } from '../shared/settings';
 import type { Theme } from '../shared/theme';
-import { transformRules, transformSheet } from './sheet-transform';
+import { transformRules, transformSheet, type TransformOptions } from './sheet-transform';
 import { ImageAnalyzer } from './images';
 import { ATTR_DIM, ATTR_FIX, ATTR_FIX_FILL, ATTR_FIX_STROKE, ContrastGuard, DIM_VAR, FIX_VAR } from './contrast';
-import { parseColor } from '../shared/color';
+import { formatColor, parseColor } from '../shared/color';
 
 export const STYLE_CLASS = 'nyx-style';
 const ATTR_INLINE = 'data-nyx-inline';
@@ -66,6 +66,9 @@ const isElement = (n: Node): n is Element => n.nodeType === 1;
 class RootStyler {
   private baseEl: HTMLStyleElement;
   private attrEl: HTMLStyleElement;
+  /** Role copies of composed color variables, resolved from computed values; kept last. */
+  private resolvedEl: HTMLStyleElement;
+  private composed = new Map<string, [selector: string, name: string]>();
   private overrides = new Map<Node, SheetOverride>();
   private adoptedOverride: CSSStyleSheet | null = null;
   private adoptedSignature = '';
@@ -84,6 +87,50 @@ class RootStyler {
     this.attrEl = doc.createElement('style');
     this.attrEl.className = STYLE_CLASS;
     this.attrEl.dataset.nyx = 'attributes';
+    this.resolvedEl = doc.createElement('style');
+    this.resolvedEl.className = STYLE_CLASS;
+    this.resolvedEl.dataset.nyx = 'resolved';
+  }
+
+  private readonly onComposedColor = (selector: string, name: string) => {
+    if (this.composed.size < 400) this.composed.set(`${selector}\u0000${name}`, [selector, name]);
+  };
+
+  private options(baseUrl: string | null): TransformOptions {
+    return { ...this.engine.rewriteOptions(baseUrl), onComposedColor: this.onComposedColor };
+  }
+
+  /**
+   * Defines role copies of composed color variables (`hsl(var(--h), var(--s), var(--l))`) from
+   * their computed values on the page, after every override so they win.
+   */
+  private resolveComposed(): void {
+    let css = '';
+    const roles = ['background', 'text', 'border', 'shadow'] as const;
+    const win = this.engine.win;
+    for (const [selector, name] of this.composed.values()) {
+      const query = selector.replace(/::?(before|after|placeholder|selection|marker|backdrop|first-line|first-letter)\b(\([^)]*\))?/gi, '');
+      let els: Element[];
+      try {
+        els = Array.from(this.root.querySelectorAll(query || '*')).slice(0, 5);
+      } catch {
+        continue;
+      }
+      if (!els.length) continue;
+      const values = new Set(els.map((el) => win.getComputedStyle(el).getPropertyValue(name).trim()));
+      if (values.size !== 1) continue; // differs per element: can't define it once
+      const c = parseColor([...values][0]);
+      if (!c) continue;
+      const decls = roles.map((role) => `${roleVarName(name, role)}: ${formatColor(this.engine.palette.mapRgba(c, role))}`);
+      css += `${selector} { ${decls.join('; ')} }\n`;
+    }
+    const parent = this.root instanceof Document ? this.root.documentElement : this.root;
+    if (!css) {
+      this.resolvedEl.remove();
+      return;
+    }
+    if (this.resolvedEl.textContent !== css) this.resolvedEl.textContent = css;
+    if (parent.lastChild !== this.resolvedEl) parent.appendChild(this.resolvedEl);
   }
 
   private get container(): Node {
@@ -105,6 +152,8 @@ class RootStyler {
   unmount(): void {
     this.baseEl.remove();
     this.attrEl.remove();
+    this.resolvedEl.remove();
+    this.composed.clear();
     for (const o of this.overrides.values()) o.el.remove();
     this.overrides.clear();
     if (this.adoptedOverride) {
@@ -141,6 +190,7 @@ class RootStyler {
       }
     }
     this.syncAdopted();
+    this.resolveComposed();
   }
 
   private signature(sheet: CSSStyleSheet, owner: Element): string {
@@ -160,7 +210,7 @@ class RootStyler {
       if (o.el.previousSibling !== owner && owner.isConnected) owner.after(o.el);
       return;
     }
-    const opts = this.engine.rewriteOptions(sheet.href ?? owner.ownerDocument.baseURI);
+    const opts = this.options(sheet.href ?? owner.ownerDocument.baseURI);
     const imports: string[] = [];
     let css = transformSheet(sheet, { ...opts, onInaccessibleImport: (href) => imports.push(href) });
     if (css === null) {
@@ -198,7 +248,7 @@ class RootStyler {
       .then((text) => {
         const o = this.overrides.get(owner);
         if (!text || !o || o.signature !== sig || !this.engine.running) return;
-        const css = this.engine.transformText(text, href);
+        const css = this.engine.transformText(text, href, this.onComposedColor);
         const media = (owner as HTMLLinkElement).media;
         const wrapped = css && media && media !== 'all' ? `@media ${media} { ${css} }` : css;
         o.el.textContent = append ? `${wrapped}\n${o.el.textContent ?? ''}` : wrapped;
@@ -223,7 +273,7 @@ class RootStyler {
     const sig = sources.map((s) => s.cssRules.length).join(',');
     const last = adopted[adopted.length - 1];
     if (sig === this.adoptedSignature && last === this.adoptedOverride) return;
-    const opts = this.engine.rewriteOptions(this.engine.doc.baseURI);
+    const opts = this.options(this.engine.doc.baseURI);
     const css = sources.map((s) => transformRules(s.cssRules, opts)).join('\n');
     if (!this.adoptedOverride) this.adoptedOverride = new (this.engine.win.CSSStyleSheet)();
     this.adoptedOverride.replaceSync(css);
@@ -313,6 +363,7 @@ class RootStyler {
       if (el.hasAttribute('style')) this.processInline(el);
       if (this.processAttributes(el)) attrsChanged = true;
       if (el.localName === 'img') this.engine.images.observe(el as HTMLImageElement);
+      else if (el.localName === 'video' || el.localName === 'canvas') this.engine.images.observeMedia(el as HTMLVideoElement | HTMLCanvasElement);
       else this.engine.contrast.observe(el);
       const sr = (el as HTMLElement).shadowRoot;
       if (sr) this.engine.attachRoot(sr);
@@ -392,12 +443,12 @@ export class DarkEngine {
   }
 
   /** Transforms raw CSS text (cross-origin sheets) by parsing it in a detached sheet. */
-  transformText(text: string, href: string): string {
+  transformText(text: string, href: string, onComposedColor?: TransformOptions['onComposedColor']): string {
     try {
       const sheet = new this.win.CSSStyleSheet();
       // replaceSync ignores @import; imported sheets are fetched separately when encountered.
       sheet.replaceSync(text.replace(/@import[^;]+;/g, ''));
-      return transformRules(sheet.cssRules, this.rewriteOptions(href));
+      return transformRules(sheet.cssRules, { ...this.rewriteOptions(href), onComposedColor });
     } catch {
       return '';
     }
@@ -438,8 +489,8 @@ export class DarkEngine {
     for (const [token, prop] of INLINE_PROPS) {
       css += `[${ATTR_INLINE}~="${token}"] { ${prop}: var(--nyx-i-${token}) !important; }\n`;
     }
-    css += `[${ATTR_DIM}]:not(img) { background-color: var(${DIM_VAR}) !important; background-blend-mode: multiply !important; }\n`;
-    css += `img[${ATTR_DIM}] { filter: brightness(0.3) !important; }\n`;
+    css += `[${ATTR_DIM}]:not(img, video, canvas) { background-color: var(${DIM_VAR}) !important; background-blend-mode: multiply !important; }\n`;
+    css += `:is(img, video, canvas)[${ATTR_DIM}] { filter: brightness(0.3) !important; }\n`;
     css += `[${ATTR_FIX_FILL}] { fill: var(--nyx-fix-f) !important; }\n[${ATTR_FIX_STROKE}] { stroke: var(--nyx-fix-s) !important; }\n`;
     css += `[${ATTR_FIX}] { color: var(${FIX_VAR}) !important; -webkit-text-fill-color: var(${FIX_VAR}) !important; }\n`;
     return css;
@@ -499,7 +550,7 @@ export class DarkEngine {
       for (const name of ours) style.removeProperty(name);
     }
     for (const el of Array.from(this.doc.querySelectorAll(`[${ATTR_RECOLOR}]`))) unrecolor(el);
-    for (const el of Array.from(this.doc.querySelectorAll(`[${ATTR_INVERT}], img[${ATTR_DIM}]`))) {
+    for (const el of Array.from(this.doc.querySelectorAll(`[${ATTR_INVERT}], :is(img, video, canvas)[${ATTR_DIM}]`))) {
       el.removeAttribute(ATTR_INVERT);
       el.removeAttribute(ATTR_DIM);
     }

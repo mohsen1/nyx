@@ -10,7 +10,7 @@
 export type ImageVerdict = { kind: 'none' } | { kind: 'invert' } | { kind: 'recolor'; url: string };
 export type ImageVerdictHandler = (el: HTMLImageElement, verdict: ImageVerdict) => void;
 /** Called for a large pale image that has text on top of it (a hero backdrop). */
-export type BackdropHandler = (el: HTMLImageElement) => void;
+export type BackdropHandler = (el: HTMLImageElement | HTMLVideoElement | HTMLCanvasElement) => void;
 type Fetcher = (url: string, as: 'text' | 'dataUrl') => Promise<string | null>;
 
 const SAMPLE = 48;
@@ -101,6 +101,7 @@ export class ImageAnalyzer {
   private verdicts = new Map<string, Promise<ImageVerdict>>();
   private backgroundStats = new Map<string, Promise<PixelStats | null>>();
   private tracked = new Set<HTMLImageElement>();
+  private media = new Set<HTMLVideoElement | HTMLCanvasElement>();
 
   constructor(
     private win: Window & typeof globalThis,
@@ -118,6 +119,7 @@ export class ImageAnalyzer {
 
   reset(): void {
     this.tracked.clear();
+    this.media.clear();
   }
 
   reapply(): void {
@@ -127,7 +129,7 @@ export class ImageAnalyzer {
   private analyze(img: HTMLImageElement, retry = true): void {
     const src = img.currentSrc || img.src;
     if (!src) return;
-    if (this.isBackdrop(img)) {
+    if (this.overlayText(img)) {
       void this.statsForUrl(src).then((stats) => {
         if (stats && isPaleSurface(stats) && img.isConnected) this.onBackdrop(img);
       });
@@ -148,16 +150,74 @@ export class ImageAnalyzer {
     });
   }
 
-  /** A large image with text drawn over it, found by hit-testing points across it. */
-  private isBackdrop(img: HTMLImageElement): boolean {
+  /**
+   * A video or canvas used as a backdrop (iCloud's animated hero, a drawn background) with text on
+   * top. Darkened when it's pale, or, when its pixels can't be read, when the text on it is light.
+   */
+  observeMedia(el: HTMLVideoElement | HTMLCanvasElement): void {
+    if (this.media.has(el)) return;
+    this.media.add(el);
+    const check = (retry: boolean) => {
+      if (!el.isConnected || !this.media.has(el)) return;
+      const text = this.overlayText(el);
+      if (text) {
+        const w = el instanceof HTMLVideoElement ? el.videoWidth : el.width;
+        const h = el instanceof HTMLVideoElement ? el.videoHeight : el.height;
+        let pale: boolean | null = null;
+        try {
+          if (w && h) pale = isPaleSurface(this.draw(el, w, h));
+        } catch {
+          /* cross-origin video or tainted canvas */
+        }
+        const light = (() => {
+          const m = this.win.getComputedStyle(text).color.match(/[\d.]+/g);
+          return !!m && (0.2126 * +m[0] + 0.7152 * +m[1] + 0.0722 * +m[2]) / 255 > 0.55;
+        })();
+        if (pale === true || (pale === null && light)) {
+          this.onBackdrop(el);
+          return;
+        }
+      }
+      if (retry) this.win.setTimeout(() => check(false), 1500);
+    };
+    if (el instanceof HTMLVideoElement && el.readyState < 2) el.addEventListener('loadeddata', () => check(true), { once: true });
+    else check(true);
+  }
+
+  private backdropAttempts = new WeakMap<Element, number>();
+
+  /** Re-checks media found under the viewport: text over it often renders late. */
+  reconsiderBackdrop(el: HTMLImageElement | HTMLVideoElement | HTMLCanvasElement): void {
+    const n = this.backdropAttempts.get(el) ?? 0;
+    if (n >= 5) return;
+    this.backdropAttempts.set(el, n + 1);
+    if (el instanceof HTMLImageElement) {
+      const src = el.currentSrc || el.src;
+      if (!src || !el.complete || !this.overlayText(el)) return;
+      void this.statsForUrl(src).then((stats) => {
+        if (stats && isPaleSurface(stats) && el.isConnected) this.onBackdrop(el);
+      });
+    } else {
+      this.media.delete(el);
+      this.observeMedia(el);
+    }
+  }
+
+  /** The text element drawn over a large image/video/canvas, found by hit-testing across it. */
+  private overlayText(img: Element): Element | null {
     const r = img.getBoundingClientRect();
     const vw = this.win.innerWidth;
-    if (r.width < Math.min(320, vw * 0.4) || r.height < 150) return false;
+    if (r.width < Math.min(320, vw * 0.4) || r.height < 150) return null;
     const doc = this.win.document;
-    for (const [fx, fy] of [[0.5, 0.3], [0.5, 0.5], [0.3, 0.4], [0.7, 0.4]]) {
-      const x = r.left + r.width * fx;
-      const y = r.top + r.height * fy;
-      if (x < 0 || y < 0 || x > vw || y > this.win.innerHeight) continue;
+    // Sample the part that's on screen: a tall hero's heading is near its top.
+    const top0 = Math.max(r.top, 0), bottom0 = Math.min(r.bottom, this.win.innerHeight);
+    const left0 = Math.max(r.left, 0), right0 = Math.min(r.right, vw);
+    if (bottom0 - top0 < 60 || right0 - left0 < 60) return null;
+    const points: Array<[number, number]> = [];
+    for (const fx of [0.3, 0.5, 0.7]) for (const fy of [0.2, 0.45, 0.7]) points.push([fx, fy]);
+    for (const [fx, fy] of points) {
+      const x = left0 + (right0 - left0) * fx;
+      const y = top0 + (bottom0 - top0) * fy;
       // Descend into shadow roots: hero text often lives in a component around the image.
       let top = doc.elementFromPoint(x, y);
       for (let depth = 0; top?.shadowRoot && depth < 8; depth++) {
@@ -166,9 +226,9 @@ export class ImageAnalyzer {
         top = inner;
       }
       if (!top || top === img || img.contains(top) || top.contains(img)) continue;
-      if (top.textContent && top.textContent.trim().length > 2) return true;
+      if (top.textContent && top.textContent.trim().length > 2) return top;
     }
-    return false;
+    return null;
   }
 
   /** Pixel statistics of a CSS background image, loaded through the extension when cross-origin. */

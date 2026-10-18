@@ -9,9 +9,9 @@ const ctx = await chromium.launchPersistentContext(mkdtempSync(join(tmpdir(), 'p
 const w = ctx.serviceWorkers()[0] ?? await ctx.waitForEvent('serviceworker');
 await w.evaluate(async () => { const s = (await chrome.storage.local.get('settings')).settings ?? {}; s.global = { ...(s.global ?? {}), mode: 'on', defaultThemeId: 'dark', updatedAt: Date.now() }; await chrome.storage.local.set({ settings: s }); });
 const p = await ctx.newPage();
-p.on('console', (m) => m.type() === 'error' && console.log('console:', m.text().slice(0, 200)));
+p.on('console', (m) => (m.type() === 'error' || m.text().startsWith('NYXDBG')) && console.log('console:', m.text().slice(0, 200)));
 await p.goto(url, { waitUntil: 'domcontentloaded' }); await p.waitForTimeout(4000);
-console.log(JSON.stringify(await p.evaluate(() => {
+if (!process.env.PROBE_JS) console.log(JSON.stringify(await p.evaluate(() => {
   const cs = (el) => el && getComputedStyle(el);
   const sheets = [...document.styleSheets].map((s) => { let n = -1; try { n = s.cssRules.length } catch {} return { href: s.href?.slice(0, 90), n, owner: s.ownerNode?.localName, nyx: s.ownerNode?.dataset?.nyx }; });
   const overrides = [...document.querySelectorAll('style[data-nyx]')].map((e) => ({ k: e.dataset.nyx, len: e.textContent.length }));

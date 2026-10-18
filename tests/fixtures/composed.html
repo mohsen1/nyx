@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Colors composed from variables</title>
+  <style>
+    html body {
+      --bg-h: 0; --bg-s: 0.0%; --bg-l: 100.0%;
+      --bg: hsl(var(--bg-h), var(--bg-s), var(--bg-l));
+      --ink-rgb: 29 29 31;
+      --ink: rgb(var(--ink-rgb) / 0.88);
+      --panel: color-mix(in srgb, var(--bg) 92%, black);
+    }
+    body { background-color: var(--bg); color: var(--ink); font: 16px system-ui, sans-serif; }
+    .panel { background: var(--panel); padding: 16px; }
+  </style>
+</head>
+<body>
+  <p id="text">Background and text built from split variables</p>
+  <div class="panel" id="panel">A panel mixed from the background</div>
+</body>
+</html>
