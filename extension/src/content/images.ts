@@ -26,20 +26,28 @@ export interface PixelStats {
   colorful: number; // share of opaque pixels with noticeable saturation
   darkNeutral: number; // share of opaque pixels that are gray-to-black (not colorful), up to #737373
   deep: number; // share of opaque pixels of any hue with HSL lightness under DEEP_L (navy, #5f6368, black)
+  flat: number; // share of solid pixels in the 8 most common colors: logos are a few flat colors, photos are not
 }
 
 /** Pixels darker than this (HSL lightness) vanish on a dark page; recoloring flips their lightness. */
 const DEEP_L = 0.45;
 const hslLightness = (r: number, g: number, b: number) => (Math.max(r, g, b) + Math.min(r, g, b)) / 510;
 
+/**
+ * Logos measured 0.85 to 1 (Gmail, Google, single-color marks); cut-out portraits 0.36 to 0.59.
+ */
+const FLAT = 0.7;
+
 /** Pure decision on pixel statistics; exported for tests. */
 export function shouldInvert(s: PixelStats): boolean {
-  return s.transparent > 0.12 && s.dark > 0.65 && s.light < 0.15 && s.colorful < 0.2;
+  return s.transparent > 0.12 && s.dark > 0.65 && s.light < 0.15 && s.colorful < 0.2 && s.flat >= FLAT;
 }
 
 /** A logo with dark gray or black parts mixed with color (Gmail's wordmark next to its M). */
 export function shouldRecolor(s: PixelStats): boolean {
-  return !shouldInvert(s) && s.transparent > 0.12 && s.deep >= 0.25 && s.light < 0.2;
+  // A cut-out portrait (the Guardian's columnist photos) is transparent and dark too, but has
+  // hundreds of tones; flipping it turns hair and suits white.
+  return !shouldInvert(s) && s.transparent > 0.12 && s.deep >= 0.25 && s.light < 0.2 && s.flat >= FLAT;
 }
 
 /**
@@ -70,7 +78,8 @@ export function recolorPixels(data: Uint8ClampedArray): void {
 }
 
 export function computeStats(data: Uint8ClampedArray): PixelStats {
-  let transparent = 0, opaque = 0, dark = 0, light = 0, colorful = 0, darkNeutral = 0, deep = 0;
+  let transparent = 0, opaque = 0, dark = 0, light = 0, colorful = 0, darkNeutral = 0, deep = 0, solid = 0;
+  const colors = new Map<number, number>();
   for (let i = 0; i < data.length; i += 4) {
     const a = data[i + 3];
     if (a < 40) {
@@ -86,10 +95,21 @@ export function computeStats(data: Uint8ClampedArray): PixelStats {
     if (max - min > 60) colorful++;
     else if (lum < 115) darkNeutral++;
     if (hslLightness(r, g, b) < DEEP_L) deep++;
+    if (a > 220) {
+      solid++;
+      const key = ((r >> 4) << 8) | ((g >> 4) << 4) | (b >> 4);
+      colors.set(key, (colors.get(key) ?? 0) + 1);
+    }
+  }
+  // Thin icons have few fully opaque pixels at sample size; treat them as flat.
+  let flat = 1;
+  if (solid >= 20) {
+    const top = [...colors.values()].sort((x, y) => y - x).slice(0, 8);
+    flat = top.reduce((sum, n) => sum + n, 0) / solid;
   }
   const total = transparent + opaque || 1;
   const o = opaque || 1;
-  return { transparent: transparent / total, dark: dark / o, light: light / o, colorful: colorful / o, darkNeutral: darkNeutral / o, deep: deep / o };
+  return { transparent: transparent / total, dark: dark / o, light: light / o, colorful: colorful / o, darkNeutral: darkNeutral / o, deep: deep / o, flat };
 }
 
 /** A background image that reads as a pale surface (paper texture, light hero gradient), not a photo. */

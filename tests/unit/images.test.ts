@@ -15,6 +15,16 @@ describe('image decisions', () => {
     expect(shouldRecolor(s)).toBe(false);
   });
 
+  it('leaves cut-out portraits alone: transparent and dark, but hundreds of tones (the Guardian)', () => {
+    // Hair, suit and skin in many shades around a transparent background.
+    const tones: Array<[number, number, number, number, number]> = [[0, 0, 0, 0, 1100]];
+    for (let i = 0; i < 100; i++) tones.push([20 + ((i * 37) % 160), 15 + ((i * 53) % 120), 10 + ((i * 29) % 100), 255, 12]);
+    const s = computeStats(pixels(...tones));
+    expect(s.flat).toBeLessThan(0.5);
+    expect(shouldRecolor(s)).toBe(false);
+    expect(shouldInvert(s)).toBe(false);
+  });
+
   it('recolors a colored mark next to a gray wordmark (Gmail)', () => {
     // Measured on Gmail's lockup: 74% transparent, half of the rest #5f6368 gray, half colored.
     const s = computeStats(pixels([0, 0, 0, 0, 74], [234, 67, 53, 255, 13], [95, 99, 104, 255, 13]));
