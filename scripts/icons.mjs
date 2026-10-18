@@ -21,6 +21,6 @@ async function render(svgFile, size, file) {
 
 for (const s of [48, 96, 128, 256, 512]) await render('icon.svg', s, join(out, `icon-${s}.png`));
 for (const s of [16, 32, 48]) await render('toolbar.svg', s, join(out, `toolbar-${s}.png`));
-await render('icon.svg', 1024, join(root, 'apple/Shared/AppIcon-1024.png'));
+await render('icon.svg', 1024, join(root, 'apple/App/Assets.xcassets/AppIcon.appiconset/AppIcon-1024.png'));
 await browser.close();
 console.log('Icons written to', out);

@@ -13,6 +13,7 @@ const ROOT = resolve(fileURLToPath(import.meta.url), '../../..');
 const EXT = join(ROOT, 'dist/chrome');
 const FIXTURES = join(ROOT, 'tests/fixtures');
 const SCREENSHOTS = process.env.NYX_SCREENSHOTS;
+const LOCAL_CHROMIUM = process.env.CHROMIUM_PATH || (existsSync('/opt/pw-browsers/chromium') ? '/opt/pw-browsers/chromium' : undefined);
 
 let server: Server;
 let port = 0;
@@ -39,7 +40,8 @@ type Fixtures = { context: BrowserContext; worker: Worker };
 const test = base.extend<Fixtures>({
   context: async ({ colorScheme }, use) => {
     const context = await chromium.launchPersistentContext(mkdtempSync(join(tmpdir(), 'nyx-')), {
-      executablePath: process.env.CHROMIUM_PATH ?? (existsSync('/opt/pw-browsers/chromium') ? '/opt/pw-browsers/chromium' : undefined),
+      // Extensions need full Chromium (new headless), not the headless shell.
+      ...(LOCAL_CHROMIUM ? { executablePath: LOCAL_CHROMIUM } : { channel: 'chromium' }),
       headless: true,
       colorScheme: colorScheme ?? 'dark',
       viewport: { width: 900, height: 900 },

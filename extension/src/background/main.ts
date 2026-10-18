@@ -15,7 +15,7 @@ import {
   type GlobalMode,
 } from '../shared/settings';
 import { loadSettings, updateSettings } from '../shared/storage';
-import { startSync, syncNow } from './sync';
+import { startSync, syncNow, syncSoon } from './sync';
 
 const MAX_TEXT = 4 * 1024 * 1024;
 const MAX_IMAGE = 1024 * 1024;
@@ -49,6 +49,10 @@ api.runtime.onMessage.addListener((msg: Message, _sender, sendResponse) => {
   if (msg?.type === 'fetchResource') {
     fetchResource(msg.url, msg.as).then(sendResponse);
     return true;
+  }
+  if (msg?.type === 'syncSoon') {
+    syncSoon();
+    return false;
   }
   if (msg?.type === 'syncNow') {
     syncNow().then(() => sendResponse({ ok: true }), (e) => sendResponse({ ok: false, error: String(e) }));
@@ -113,10 +117,5 @@ async function onCommand(command: string, tabArg?: Tab): Promise<void> {
 }
 
 api.commands?.onCommand.addListener((command, tab) => void onCommand(command, tab));
-
-api.runtime.onInstalled.addListener(async (details) => {
-  // Persist defaults on first install so every context reads the same object.
-  if (details.reason === 'install') await updateSettings((s) => s);
-});
 
 startSync();

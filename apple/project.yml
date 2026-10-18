@@ -1,0 +1,135 @@
+# Generate the Xcode project with XcodeGen (https://github.com/yonaskolb/XcodeGen):
+#   npm run build && cd apple && xcodegen && open Nyx.xcodeproj
+name: Nyx
+options:
+  bundleIdPrefix: app.nyx
+  deploymentTarget:
+    iOS: "17.0"
+    macOS: "14.0"
+  createIntermediateGroups: true
+  generateEmptyDirectories: true
+settings:
+  base:
+    MARKETING_VERSION: "0.1.0"
+    CURRENT_PROJECT_VERSION: "1"
+    SWIFT_VERSION: "5.0"
+    ENABLE_USER_SCRIPT_SANDBOXING: NO
+    DEVELOPMENT_TEAM: ""
+    CODE_SIGN_STYLE: Automatic
+
+targetTemplates:
+  App:
+    type: application
+    sources:
+      - path: App
+      - path: Shared
+      - path: ../extension/src/shared/builtin-themes.json
+        buildPhase: resources
+    info:
+      path: App/Info-${target_name}.plist
+      properties:
+        CFBundleDisplayName: Nyx
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        LSApplicationCategoryType: public.app-category.utilities
+        CFBundleURLTypes:
+          - CFBundleURLName: app.nyx.NyxDarkMode
+            CFBundleURLSchemes: [nyx]
+        UILaunchScreen: {}
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: app.nyx.NyxDarkMode
+        PRODUCT_NAME: Nyx
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        INFOPLIST_KEY_CFBundleDisplayName: Nyx
+
+  SafariExtension:
+    type: app-extension
+    sources:
+      - path: Extension
+      - path: Shared/SettingsStore.swift
+      - path: Shared/Theme.swift
+    info:
+      path: Extension/Info-${target_name}.plist
+      properties:
+        CFBundleDisplayName: Nyx
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.Safari.web-extension
+          NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).SafariWebExtensionHandler
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: app.nyx.NyxDarkMode.Extension
+        PRODUCT_NAME: Nyx Extension
+    postCompileScripts:
+      - name: Copy web extension
+        basedOnDependencyAnalysis: false
+        script: |
+          set -e
+          SRC="${SRCROOT}/../dist/safari"
+          if [ ! -f "$SRC/manifest.json" ]; then
+            echo "error: dist/safari is missing. Run 'npm install && npm run build' in the repository root first." >&2
+            exit 1
+          fi
+          DEST="${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}"
+          mkdir -p "$DEST"
+          rsync -a "$SRC/" "$DEST/"
+
+targets:
+  Nyx-iOS:
+    templates: [App]
+    platform: iOS
+    settings:
+      base:
+        TARGETED_DEVICE_FAMILY: "1,2"
+        CODE_SIGN_ENTITLEMENTS: Entitlements/iOS.entitlements
+    dependencies:
+      - target: NyxExtension-iOS
+      - target: NyxWidgets-iOS
+
+  NyxExtension-iOS:
+    templates: [SafariExtension]
+    platform: iOS
+    settings:
+      base:
+        CODE_SIGN_ENTITLEMENTS: Entitlements/iOS.entitlements
+
+  NyxWidgets-iOS:
+    type: app-extension
+    platform: iOS
+    deploymentTarget: "18.0"
+    sources:
+      - path: Widgets
+      - path: Shared
+      - path: ../extension/src/shared/builtin-themes.json
+        buildPhase: resources
+    info:
+      path: Widgets/Info.plist
+      properties:
+        CFBundleDisplayName: Nyx
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: app.nyx.NyxDarkMode.Widgets
+        PRODUCT_NAME: Nyx Widgets
+        CODE_SIGN_ENTITLEMENTS: Entitlements/iOS.entitlements
+
+  Nyx-macOS:
+    templates: [App]
+    platform: macOS
+    settings:
+      base:
+        CODE_SIGN_ENTITLEMENTS: Entitlements/macOS.entitlements
+    dependencies:
+      - target: NyxExtension-macOS
+
+  NyxExtension-macOS:
+    templates: [SafariExtension]
+    platform: macOS
+    settings:
+      base:
+        CODE_SIGN_ENTITLEMENTS: Entitlements/macOS.entitlements

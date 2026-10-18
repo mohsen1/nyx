@@ -16,8 +16,14 @@ interface Remote {
 
 const native: Remote = {
   async pull() {
+    // `settings` is this device's App Group copy (written by the app, Shortcuts, widgets);
+    // `remote` is the iCloud copy written by any device. Both are merged entry by entry.
     const res = await api.runtime.sendNativeMessage!(NATIVE_APP_ID, { type: 'pull' });
-    return res?.settings ? normalizeSettings(typeof res.settings === 'string' ? JSON.parse(res.settings) : res.settings) : null;
+    const parse = (v: unknown) => (v ? normalizeSettings(typeof v === 'string' ? JSON.parse(v) : v) : null);
+    const local = parse(res?.settings);
+    const cloud = parse(res?.remote);
+    if (local && cloud) return mergeSettings(local, cloud);
+    return local ?? cloud;
   },
   async push(settings) {
     await api.runtime.sendNativeMessage!(NATIVE_APP_ID, { type: 'push', settings: JSON.stringify(settings) });
@@ -63,7 +69,14 @@ async function pickRemote(): Promise<Remote | null> {
   return (remote = api.storage.sync ? storageSync : null);
 }
 
+let lastSync = 0;
+
+export function syncSoon(): void {
+  if (Date.now() - lastSync > 60_000) void syncNow().catch(() => undefined);
+}
+
 export async function syncNow(): Promise<void> {
+  lastSync = Date.now();
   const r = await pickRemote();
   if (!r) return;
   const local = await loadSettings();

@@ -63,6 +63,8 @@ class Controller {
     });
     this.settings = await loadSettings();
     this.apply();
+    // Picks up changes made in the app, Shortcuts or on other devices.
+    if (isTop) void api.runtime.sendMessage({ type: 'syncSoon' } satisfies Message).catch(() => undefined);
     const detectSoon = () => window.setTimeout(() => this.detect(), 0);
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', detectSoon, { once: true });
     else detectSoon();

@@ -16,7 +16,9 @@ export type Message =
   | { type: 'getPageState' }
   | { type: 'fetchResource'; url: string; as: 'text' | 'dataUrl' }
   | { type: 'reportBuiltInDarkMode'; siteKey: string; url: string; detected: boolean }
-  | { type: 'syncNow' };
+  | { type: 'syncNow' }
+  /** Sent by pages as they load; syncs if the last sync is older than a minute. */
+  | { type: 'syncSoon' };
 
 export interface FetchResult {
   ok: boolean;

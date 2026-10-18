@@ -1,0 +1,41 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  web-extension:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run test:e2e
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nyx-web-extension
+          path: dist/
+
+  apple:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci && npm run build
+      - run: brew install xcodegen
+      - run: cd apple && xcodegen
+      - name: Build macOS app
+        run: xcodebuild -project apple/Nyx.xcodeproj -scheme Nyx-macOS -destination 'generic/platform=macOS' CODE_SIGNING_ALLOWED=NO build | xcbeautify
+      - name: Build iOS app
+        run: xcodebuild -project apple/Nyx.xcodeproj -scheme Nyx-iOS -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build | xcbeautify

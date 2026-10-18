@@ -72,14 +72,18 @@ export class Palette {
     switch (role) {
       case 'background': {
         if (!accent) {
-          // Light surfaces become the theme background with subtle elevation steps; dark
-          // surfaces (headers, footers, code blocks) become slightly raised panels.
-          const t = L >= 0.5 ? (1 - L) * 0.42 : 0.07 + L * 0.26;
-          return this.neutral(clamp(t, 0, 0.3), c.a);
+          // Light surfaces become the theme background with elevation steps. The curve is steep
+          // near white so faint distinctions (cards, pills, zebra rows) survive. Dark surfaces
+          // (headers, footers, code blocks) become slightly raised panels.
+          const t = L >= 0.5 ? 0.26 * Math.pow((1 - L) / 0.5, 0.6) : 0.07 + L * 0.26;
+          const out = rgbaToOklab(this.neutral(clamp(t, 0, 0.3), c.a));
+          // Keep a hint of the original tint (bluish pills, pinkish quotes) when dynamic colors are on.
+          const tint = this.dynamicColors ? 0.6 : 0;
+          return oklabToRgba({ ...out, a: out.a + lab.a * tint, b: out.b + lab.b * tint });
         }
         // Pastel surfaces turn into deep tints; saturated ones (buttons, badges) stay vivid but darker.
         const targetL = L > 0.72 ? this.bg.L + (1 - L) * 0.55 + 0.06 : clamp(Math.min(L, 0.62) * 0.9, this.bg.L + 0.12, 0.6);
-        const chroma = L > 0.72 ? Math.min(lch.C * 1.4, 0.09) : lch.C * 0.92;
+        const chroma = L > 0.72 ? Math.min(lch.C * 1.1, 0.07) : lch.C * 0.92;
         return oklchToRgbaInGamut({ L: targetL, C: chroma, h: lch.h, alpha: c.a });
       }
       case 'border': {
