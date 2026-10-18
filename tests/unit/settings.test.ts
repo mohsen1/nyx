@@ -128,6 +128,13 @@ describe('helpers', () => {
     expect(s.sites['a.com']).toMatchObject({ mode: 'on', appearance: {} });
   });
 
+  it('lets a real change beat a later snapshot of never-saved defaults', () => {
+    const changed = updateGlobal(normalizeSettings(undefined), { defaultThemeId: 'sepia' }, 1000);
+    const staleDefaults = normalizeSettings(undefined); // e.g. pushed by a sync that ran later
+    expect(mergeSettings(staleDefaults, changed).global.defaultThemeId).toBe('sepia');
+    expect(mergeSettings(changed, staleDefaults).global.defaultThemeId).toBe('sepia');
+  });
+
   it('merges sync snapshots per website by recency', () => {
     const base = defaultSettings(1);
     const a = updateSite(base, 'a.com', { mode: 'off' }, 10);

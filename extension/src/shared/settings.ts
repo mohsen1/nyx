@@ -110,8 +110,12 @@ export function defaultSiteSettings(now = Date.now()): SiteSettings {
 }
 
 /** Normalizes untrusted/partial data (storage, imports, sync) into a complete Settings object. */
-export function normalizeSettings(input: unknown, now = Date.now()): Settings {
-  const base = defaultSettings(now);
+/**
+ * Missing timestamps become 0 so that never-saved defaults always lose to real changes when
+ * snapshots are merged (see mergeSettings).
+ */
+export function normalizeSettings(input: unknown): Settings {
+  const base = defaultSettings(0);
   if (!input || typeof input !== 'object') return base;
   const src = input as Partial<Settings>;
   const g = (src.global ?? {}) as Partial<GlobalSettings>;
@@ -145,7 +149,7 @@ export function normalizeSettings(input: unknown, now = Date.now()): Settings {
     appearance: appearance(g.appearance, DEFAULT_APPEARANCE),
     darkModeReporting: oneOf(g.darkModeReporting, ['ask', 'never'] as const, 'ask'),
     cycleThemeIds: Array.isArray(g.cycleThemeIds) ? g.cycleThemeIds.filter((x) => typeof x === 'string') : [],
-    updatedAt: num(g.updatedAt) ?? now,
+    updatedAt: num(g.updatedAt) ?? 0,
   };
 
   const sites: Record<string, SiteSettings> = {};
@@ -160,7 +164,7 @@ export function normalizeSettings(input: unknown, now = Date.now()): Settings {
         pausedUntil: num(s.pausedUntil),
         ignoreBuiltInDarkMode: typeof s.ignoreBuiltInDarkMode === 'boolean' ? s.ignoreBuiltInDarkMode : null,
         appearance: {},
-        updatedAt: num(s.updatedAt) ?? now,
+        updatedAt: num(s.updatedAt) ?? 0,
       };
       for (const k of ['dynamicColors', 'backgroundImages', 'imageInversion'] as const) {
         if (typeof ap[k] === 'boolean') site.appearance[k] = ap[k];
