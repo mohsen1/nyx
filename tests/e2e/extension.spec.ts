@@ -237,6 +237,15 @@ test('a large pale background image is darkened so text on it stays readable', a
   expect(luminance(await fg(page, '#title'))).toBeGreaterThan(0.4);
 });
 
+test('an image used only as a mask over a CSS color is not inverted (Notion logo wall)', async ({ context }) => {
+  const page = await context.newPage();
+  await page.goto(url('masked-logo.html'));
+  await page.waitForLoadState('load');
+  await expect.poll(() => page.getAttribute('#plain', 'data-nyx-invert')).toBe('');
+  expect(await page.getAttribute('#masked', 'data-nyx-invert')).toBeNull();
+  expect(luminance(await page.$eval('#masked', (el) => getComputedStyle(el).backgroundColor))).toBeGreaterThan(0.4);
+});
+
 test('a logo mixing color with a gray wordmark is recolored, keeping the color', async ({ context }) => {
   const page = await context.newPage();
   await page.goto(url('logos.html'));

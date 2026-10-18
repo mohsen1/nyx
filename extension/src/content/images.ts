@@ -146,8 +146,22 @@ export class ImageAnalyzer {
       this.verdicts.set(src, verdict);
     }
     verdict.then((v) => {
-      if (img.isConnected && (img.currentSrc || img.src) === src) this.onVerdict(img, v);
+      if (!img.isConnected || (img.currentSrc || img.src) !== src) return;
+      this.onVerdict(img, v.kind !== 'none' && this.paintsThroughMask(img) ? NONE : v);
     });
+  }
+
+  /**
+   * An image used only as a mask shape over a CSS background color (Notion's logo wall paints
+   * `background-color: currentColor` through the logo and moves the image's own pixels out of
+   * view). The color shown is the page's, which is already themed, so the image is left alone.
+   */
+  private paintsThroughMask(img: HTMLImageElement): boolean {
+    const style = this.win.getComputedStyle(img);
+    const mask = style.maskImage || (style as CSSStyleDeclaration & { webkitMaskImage?: string }).webkitMaskImage || 'none';
+    if (mask === 'none') return false;
+    const bg = style.backgroundColor;
+    return bg !== 'transparent' && !/^rgba\(.*,\s*0\)$/.test(bg);
   }
 
   /**

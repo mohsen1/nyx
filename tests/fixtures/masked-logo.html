@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Logo painted through a mask</title>
+<style>
+  body { margin: 0; background: #fff; color: #111; font: 16px system-ui; }
+  /* Notion's logo wall: the image is only a mask; the visible color is the text color. */
+  .mono { color: #333; }
+  .mono img { object-fit: none; object-position: 9999px 9999px; background-color: currentColor;
+    -webkit-mask-image: url(logo.svg); mask-image: url(logo.svg); -webkit-mask-size: contain; mask-size: contain; }
+</style>
+</head>
+<body>
+  <p>Trusted by</p>
+  <span class="mono"><img id="masked" src="logo.svg" width="120" height="40" alt=""></span>
+  <img id="plain" src="logo.svg" width="120" height="40" alt="">
+</body>
+</html>
