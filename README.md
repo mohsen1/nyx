@@ -6,12 +6,12 @@
 A dark mode extension for Safari on iPhone, iPad and Mac. It also runs in Chrome, Edge and Firefox.<br>
 <a href="https://azimi.me/nyx/">Website</a> · <a href="https://azimi.me/nyx/support/">Support</a> · <a href="https://azimi.me/nyx/privacy/">Privacy</a></p>
 
-<p align="center"><img src="docs/images/split-wikipedia.png" alt="A Wikipedia article: light on the left, in dark mode with Nyx on the right"></p>
+<p align="center"><img src="docs/images/split-hackernews.png" alt="Hacker News, which has no dark mode: light on the left, in dark mode with Nyx on the right"></p>
 
 <p align="center">
-  <img src="docs/images/split-hackernews.png" width="32%" alt="Hacker News, light and in dark mode with Nyx">
-  <img src="docs/images/split-github.png" width="32%" alt="A GitHub repository, light and in the Nyx Dracula theme">
+  <img src="docs/images/split-gutenberg.png" width="32%" alt="Project Gutenberg, light and in dark mode with Nyx">
   <img src="docs/images/split-xkcd.png" width="32%" alt="xkcd, light and in the Nyx Sepia theme">
+  <img src="docs/images/split-craigslist.png" width="32%" alt="Craigslist, light and in the Nyx Dracula theme">
 </p>
 
 Nyx doesn't invert pages. It reads each site's stylesheets and writes a dark version of them, so blue links stay blue and a red header stays red. Sites that already have a dark mode are left alone.

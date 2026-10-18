@@ -48,9 +48,9 @@ const devices = {
 
 const shots = [
   { title: 'Dark mode for every website', sub: 'Nyx darkens pages in Safari as they load.', theme: 'dark', url: 'https://news.ycombinator.com/' },
-  { title: 'Keeps each site’s character', sub: 'Links stay blue, images stay natural, text stays readable.', theme: 'dark', compare: true, url: 'https://en.wikipedia.org/wiki/Night_sky' },
+  { title: 'Keeps each site’s character', sub: 'Links stay blue, images stay natural, text stays readable.', theme: 'dark', compare: true, url: 'https://www.gutenberg.org/' },
   { title: '26 themes to choose from', sub: 'Sepia, Black, Dracula, Nord, Solarized and more, or make your own.', theme: 'sepia', url: 'https://xkcd.com/' },
-  { title: 'Your night, your rules', sub: 'Follow Dark Mode or a schedule. Set any site On, Off or Auto.', theme: 'dracula', url: 'https://github.com/torvalds/linux' },
+  { title: 'Your night, your rules', sub: 'Follow Dark Mode or a schedule. Set any site On, Off or Auto.', theme: 'dracula', url: 'https://sfbay.craigslist.org/' },
 ];
 
 async function capture(url, theme, [width, height]) {

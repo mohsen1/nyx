@@ -14,11 +14,12 @@ await mkdir(out, { recursive: true });
 const ext = process.env.NYX_EXT || join(root, 'dist/chrome');
 const [W, H, SCALE] = [1280, 800, 2];
 
+// Sites without a dark mode of their own: what Nyx is for.
 const pages = [
-  { name: 'wikipedia', url: 'https://en.wikipedia.org/wiki/Night_sky', theme: 'dark' },
   { name: 'hackernews', url: 'https://news.ycombinator.com/', theme: 'dark' },
-  { name: 'github', url: 'https://github.com/torvalds/linux', theme: 'dracula' },
+  { name: 'gutenberg', url: 'https://www.gutenberg.org/', theme: 'dark' },
   { name: 'xkcd', url: 'https://xkcd.com/', theme: 'sepia' },
+  { name: 'craigslist', url: 'https://sfbay.craigslist.org/', theme: 'dracula' },
 ];
 
 const context = await chromium.launchPersistentContext(mkdtempSync(join(tmpdir(), 'nyx-split-')), {
