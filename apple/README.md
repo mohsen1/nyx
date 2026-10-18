@@ -37,3 +37,14 @@ To build and sign from the command line instead, run `npm run apple:mac` (writes
 For local development on macOS without a paid developer account, turn on Safari → Settings → Advanced → "Show features for web developers", then Develop → "Allow unsigned extensions".
 
 CI compiles both apps with signing disabled (`.github/workflows/ci.yml`).
+
+## Publish to the App Store
+
+```bash
+npm run apple:publish            # archive and upload macOS and iOS
+npm run apple:publish -- macos   # or one platform
+```
+
+This signs with your team's Apple Distribution certificate through the Xcode account and uploads to App Store Connect, using the current UTC time as the build number. Bump `MARKETING_VERSION` in `project.yml` for a new App Store version. When the build has processed, select it on the version page in App Store Connect and submit it for review.
+
+Store metadata lives in `docs/appstore/listing.md`. Regenerate the screenshots with `npm run build && node scripts/appstore-screenshots.mjs`.

@@ -10,6 +10,7 @@
     "watch": "node scripts/build.mjs --watch",
     "apple:mac": "scripts/apple-build.sh macos",
     "apple:ios": "scripts/apple-build.sh ios",
+    "apple:publish": "scripts/apple-publish.sh",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:e2e": "npm run build && playwright test",
