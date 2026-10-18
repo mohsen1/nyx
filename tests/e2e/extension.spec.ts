@@ -295,6 +295,13 @@ test('text on a button with an icon background is still checked (Gmail Compose)'
   await expect.poll(async () => luminance(await bg(page, '#maskicon'))).toBeGreaterThan(0.15);
 });
 
+test('a WebGL hero whose pixels cannot be read is darkened under light text (Asana)', async ({ context }) => {
+  const page = await context.newPage();
+  await page.goto(url('webgl-hero.html'));
+  await page.waitForLoadState('load');
+  await expect.poll(() => page.getAttribute('#webgl', 'data-nyx-dim-bg'), { timeout: 8000 }).toBe('');
+});
+
 test('backdrops beside the content and canvas heroes are darkened', async ({ context }) => {
   const page = await context.newPage();
   await page.goto(url('backdrops.html'));

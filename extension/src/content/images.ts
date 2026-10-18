@@ -179,7 +179,12 @@ export class ImageAnalyzer {
         const h = el instanceof HTMLVideoElement ? el.videoHeight : el.height;
         let pale: boolean | null = null;
         try {
-          if (w && h) pale = isPaleSurface(this.draw(el, w, h));
+          if (w && h) {
+            const stats = this.draw(el, w, h);
+            // A WebGL canvas reads back as fully transparent once it has been shown (Asana's
+            // three.js hero), which says nothing about what it paints.
+            if (stats.transparent < 0.98) pale = isPaleSurface(stats);
+          }
         } catch {
           /* cross-origin video or tainted canvas */
         }
