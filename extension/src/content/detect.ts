@@ -107,7 +107,10 @@ export function detectDarkPage(doc: Document): DarkModeReport {
     }
   }
   let dark: boolean;
-  if (samples >= 3) dark = darkSamples / samples >= 0.6 && (canvasLum < 0.3 || darkSamples / samples >= 0.8);
+  // Most of the viewport has to be dark. Dark chrome around light content (a charcoal header and
+  // body with a white article list, like wordpress.org) is not a dark mode, and running Nyx on a
+  // page that really is dark costs little: dark colors stay dark.
+  if (samples >= 3) dark = darkSamples / samples >= (canvasLum < 0.3 ? 0.75 : 0.85);
   else dark = canvasLum < 0.18;
   // Dark backgrounds holding dark text are a page that is still loading or broken, not a dark mode.
   if (dark && darkSamples > 0 && darkTextOnDark / darkSamples > 0.5) dark = false;
