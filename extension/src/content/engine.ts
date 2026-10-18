@@ -7,7 +7,7 @@ import type { AppearanceOptions } from '../shared/settings';
 import type { Theme } from '../shared/theme';
 import { stripImports, transformRules, transformSheet, type TransformOptions } from './sheet-transform';
 import { ImageAnalyzer } from './images';
-import { ATTR_DIM, ATTR_FIX, ATTR_FIX_FILL, ATTR_FIX_INK, ATTR_FIX_STROKE, ContrastGuard, DIM_VAR, FIX_VAR } from './contrast';
+import { ATTR_BLIND_BG, ATTR_DIM, ATTR_FIX, BLIND_VAR, ATTR_FIX_FILL, ATTR_FIX_INK, ATTR_FIX_STROKE, ContrastGuard, DIM_VAR, FIX_VAR } from './contrast';
 import { formatColor, parseColor } from '../shared/color';
 
 export const STYLE_CLASS = 'nyx-style';
@@ -491,6 +491,7 @@ class RootStyler {
       .fetchText(href)
       .then((text) => {
         const o = this.overrides.get(owner);
+        if (!text && this.engine.running) this.engine.contrast.setBlind();
         if (!text || !o || o.signature !== sig || !this.engine.running) return;
         const css = this.engine.transformText(text, href, this.onComposedColor, this.onBackgroundImage, this.onComposedProperty);
         const media = (owner as HTMLLinkElement).media;
@@ -693,7 +694,12 @@ export class DarkEngine {
     }, fetcher, (el) => {
       if (this.running) el.setAttribute(ATTR_DIM, '');
     });
-    this.contrast = new ContrastGuard(this.win, this.images, () => parseColor(this.config.theme.background) ?? { r: 28, g: 28, b: 30, a: 1 });
+    this.contrast = new ContrastGuard(
+      this.win,
+      this.images,
+      () => parseColor(this.config.theme.background) ?? { r: 28, g: 28, b: 30, a: 1 },
+      (c) => this.palette.map(formatColor(c), 'background'),
+    );
   }
 
   private makePalette(c: EngineConfig): Palette {
@@ -798,6 +804,7 @@ export class DarkEngine {
     for (const [token, prop] of INLINE_PROPS) {
       css += `[${ATTR_INLINE}~="${token}"] { ${prop}: var(--nyx-i-${token}) !important; }\n`;
     }
+    css += `[${ATTR_BLIND_BG}] { background-color: var(${BLIND_VAR}) !important; }\n`;
     css += `[${ATTR_DIM}]:not(img, video, canvas) { background-color: var(${DIM_VAR}) !important; background-blend-mode: multiply !important; }\n`;
     css += `:is(img, video, canvas)[${ATTR_DIM}] { filter: brightness(0.3) !important; }\n`;
     css += `[${ATTR_FIX_FILL}] { fill: var(--nyx-fix-f) !important; }\n[${ATTR_FIX_STROKE}] { stroke: var(--nyx-fix-s) !important; }\n`;

@@ -38,6 +38,10 @@ apple/               Safari container app (iOS + macOS), native messaging, App I
    preserved.
    - Cross-origin sheets are fetched by the background script and parsed in a
      detached `CSSStyleSheet`.
+   - When a sheet can be neither read nor fetched (Safari without access to
+     the site's CDN, no CORS), its colors never reach the rewriter. The
+     contrast guard then maps light backgrounds from their computed values as
+     text comes on screen, and lifts the text on them.
    - Adopted stylesheets get an adopted override.
 4. **Map colors by role.** Each color is mapped according to what it paints:
    - **Background colors:** light becomes the theme background with elevation

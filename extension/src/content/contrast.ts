@@ -24,6 +24,9 @@ export const ATTR_FIX_STROKE = 'data-nyx-fix-stroke';
 export const ATTR_FIX_INK = 'data-nyx-fix-ink';
 export const ATTR_DIM = 'data-nyx-dim-bg';
 export const DIM_VAR = '--nyx-dim-c';
+/** A light background painted by a stylesheet Nyx could neither read nor fetch, mapped from its computed value. */
+export const ATTR_BLIND_BG = 'data-nyx-blind-bg';
+export const BLIND_VAR = '--nyx-blind-c';
 
 /** Below this the text is unreadable, so it gets fixed. */
 const MIN_RATIO = 3;
@@ -104,6 +107,14 @@ export class ContrastGuard {
   private dimmed = new Map<HTMLElement, RGBA>();
   private dimPending = new WeakSet<Element>();
   private lastBackdropScan = 0;
+  /**
+   * Set when a cross-origin stylesheet could not be read or fetched (Safari without access to the
+   * site's CDN). Its colors never reached the rewriter, so light backgrounds are mapped from what
+   * the page computes, and the text on them is then lifted as usual.
+   */
+  private blind = false;
+  private blindDone = new WeakSet<Element>();
+  private blindMapped = new Set<HTMLElement>();
   private canvasCache: { at: number; color: RGBA } | null = null;
 
   /** The root background, re-read at most every 2 s (reading it forces a style recalc). */
@@ -117,6 +128,7 @@ export class ContrastGuard {
     private readonly win: Window & typeof globalThis,
     private readonly images: ImageAnalyzer,
     private readonly themeBackground: () => RGBA,
+    private readonly mapBackground: (c: RGBA) => string | null = () => null,
   ) {
     this.io = new win.IntersectionObserver(
       (entries) => {
@@ -165,11 +177,39 @@ export class ContrastGuard {
     else this.observe(el);
   }
 
+  /** A stylesheet's colors are unknown: map light backgrounds from computed styles from now on. */
+  setBlind(): void {
+    if (this.blind) return;
+    this.blind = true;
+    this.recheckVisible(0);
+  }
+
+  /** Maps the light computed backgrounds behind `el`, up to and including <body>. */
+  private mapBlindBackgrounds(el: Element): void {
+    for (let node: Element | null = el; node && node.localName !== 'html'; node = node.parentElement) {
+      if (this.blindDone.has(node)) break;
+      this.blindDone.add(node);
+      const cs = this.win.getComputedStyle(node);
+      // Photos and gradients are left to the image rules; a blurred glow (Stripe's hero) would
+      // turn into a gray blob.
+      if (cs.backgroundImage !== 'none' || cs.filter !== 'none') continue;
+      const bg = parseColor(cs.backgroundColor);
+      if (!bg || bg.a < 0.5 || relativeLuminance(bg) < 0.4) continue;
+      const mapped = this.mapBackground(bg);
+      if (!mapped) continue;
+      (node as HTMLElement).style.setProperty(BLIND_VAR, mapped);
+      node.setAttribute(ATTR_BLIND_BG, '');
+      this.blindMapped.add(node as HTMLElement);
+    }
+  }
+
   /** Styles changed somewhere: re-check everything on screen, soon. */
   recheckVisible(delay = 600): void {
     if (this.recheckTimer !== null) this.win.clearTimeout(this.recheckTimer);
     this.recheckTimer = this.win.setTimeout(() => {
       this.recheckTimer = null;
+      // Backgrounds change while the page loads (our own loading rule paints <body> dark at first).
+      if (this.blind) this.blindDone = new WeakSet();
       this.scanBackdrops();
       for (const el of this.visible) this.enqueue(el);
     }, delay);
@@ -196,6 +236,13 @@ export class ContrastGuard {
     }
     this.dimmed.clear();
     this.dimPending = new WeakSet();
+    for (const el of this.blindMapped) {
+      el.removeAttribute(ATTR_BLIND_BG);
+      el.style.removeProperty(BLIND_VAR);
+    }
+    this.blindMapped.clear();
+    this.blindDone = new WeakSet();
+    this.blind = false;
   }
 
   private enqueue(el: Element): void {
@@ -240,6 +287,7 @@ export class ContrastGuard {
       shape.setAttribute(prop === 'fill' ? ATTR_FIX_FILL : ATTR_FIX_STROKE, '');
       this.fixedShapes.add(shape);
     }
+    if (this.blind) for (const el of batch) if (el.isConnected) this.mapBlindBackgrounds(el.localName === 'svg' ? el.parentElement ?? el : el);
     const decisions: Array<[HTMLElement, string | null]> = [];
     for (const el of batch) {
       if (!el.isConnected || el.localName === 'svg') continue;

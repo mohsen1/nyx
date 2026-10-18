@@ -193,6 +193,18 @@ test('falls back to fetching cross-origin sheets from the page when the backgrou
   await expect.poll(async () => luminance(await bg(page, '#cross'))).toBeLessThan(0.1);
 });
 
+test('a stylesheet that can be neither read nor fetched is darkened from computed colors (Apple Support in Safari)', async ({ context, worker }) => {
+  await worker.evaluate(() => {
+    (globalThis as any).fetch = () => Promise.reject(new TypeError('blocked'));
+  });
+  const page = await context.newPage();
+  await page.goto(url('blind.html'));
+  await page.waitForLoadState('load');
+  await expect.poll(async () => luminance(await bg(page, 'body'))).toBeLessThan(0.08);
+  await expect.poll(async () => luminance(await bg(page, '#card'))).toBeLessThan(0.1);
+  await expect.poll(async () => luminance(await fg(page, '#text'))).toBeGreaterThan(0.3);
+});
+
 test('legacy pages: body background tiles, bgcolor and text attributes', async ({ context }) => {
   const page = await context.newPage();
   await page.goto(url('legacy.html'));
