@@ -31,6 +31,8 @@ export function transformDeclarations(style: CSSStyleDeclaration, opts: Transfor
     out += `${prop}: ${value}${important ? ' !important' : ''}; `;
   };
 
+  // Gradient text (background-clip: text): the background *is* the text, so map it as text.
+  const clipText = /\btext\b/.test(style.getPropertyValue('background-clip') + ' ' + style.getPropertyValue('-webkit-background-clip'));
   for (let i = 0; i < style.length; i++) {
     const prop = style[i];
     if (seen.has(prop)) continue;
@@ -43,8 +45,9 @@ export function transformDeclarations(style: CSSStyleDeclaration, opts: Transfor
       if (selector && !selector.includes('&') && COMPOSED_COLOR.test(value)) opts.onComposedColor?.(selector, prop);
       continue;
     }
-    const role = PROPERTY_ROLES[prop];
+    let role = PROPERTY_ROLES[prop];
     if (!role) continue;
+    if (clipText && role === 'background') role = 'text';
     if (selector && BG_IMAGE_PROPS.has(prop) && value.includes('url(') && !selector.includes('&')) opts.onBackgroundImage?.(selector);
     const hide = !!opts.hideImages && BG_IMAGE_PROPS.has(prop);
     const v = rewriteValue(value, role, { ...opts, hideImages: hide });
@@ -56,7 +59,7 @@ export function transformDeclarations(style: CSSStyleDeclaration, opts: Transfor
     if (seen.has(sh)) continue;
     const value = style.getPropertyValue(sh);
     if (!value || !value.includes('var(')) continue;
-    const role = PROPERTY_ROLES[sh];
+    const role = clipText && PROPERTY_ROLES[sh] === 'background' ? 'text' : PROPERTY_ROLES[sh];
     const v = rewriteValue(value, role, { ...opts, hideImages: !!opts.hideImages && sh === 'background' });
     if (v !== null) emit(sh, v, style.getPropertyPriority(sh) === 'important');
   }

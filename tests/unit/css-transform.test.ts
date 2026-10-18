@@ -108,4 +108,11 @@ describe('transformRules', () => {
     expect(css).not.toContain('--gap');
     expect(css).toMatch(/\.card \{ background[^:]*: var\(--nyx-b--bg, var\(--bg\)\)/);
   });
+
+  it('maps gradient text (background-clip: text) as text, not as a background', () => {
+    const css = transformRules(sheetFrom('.g { background: linear-gradient(90deg, #333, #555); -webkit-background-clip: text; background-clip: text; color: transparent; }').cssRules, ctx);
+    const stops = [...css.matchAll(/#([0-9a-f]{6})/g)].map((m) => parseInt(m[1].slice(0, 2), 16));
+    expect(stops.length).toBeGreaterThan(0);
+    for (const r of stops) expect(r).toBeGreaterThan(150); // lightened like text, not darkened
+  });
 });
