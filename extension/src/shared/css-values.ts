@@ -174,7 +174,7 @@ export function rewriteValue(value: string, role: ColorRole, ctx: RewriteContext
         } else if (lower === 'var') {
           out += rewriteVar(inner, role, ctx);
           changed = true;
-        } else if (COLOR_FUNCS.has(lower) && CHANNEL_VAR.test(inner)) {
+        } else if (COLOR_FUNCS.has(lower) && isChannelVarCall(inner)) {
           // rgb(var(--grey-50)) / rgba(var(--brand-rgb), .5) / hsl(var(--background) / 50%):
           // the variable holds bare channels, so point it at a channel copy.
           const m = CHANNEL_VAR.exec(inner)!;
@@ -261,6 +261,30 @@ function rewriteVar(inner: string, role: ColorRole, ctx: RewriteContext): string
 
 export function roleVarName(name: string, role: ColorRole): string {
   return `${ROLE_PREFIX[role]}${name}`;
+}
+
+/** Commas outside any parentheses. */
+function topLevelCommas(s: string): number {
+  let depth = 0, n = 0;
+  for (const ch of s) {
+    if (ch === '(') depth++;
+    else if (ch === ')') depth--;
+    else if (ch === ',' && depth === 0) n++;
+  }
+  return n;
+}
+
+/**
+ * `var(--x)` optionally followed by one alpha (`, a` or `/ a`): the variable holds all channels.
+ * `var(--h), var(--s), var(--l)` (three separate channels) is not this.
+ */
+function isChannelVarCall(inner: string): boolean {
+  const m = CHANNEL_VAR.exec(inner);
+  if (!m) return false;
+  const rest = m[2].trim();
+  if (!rest) return true;
+  if (rest.startsWith('/')) return topLevelCommas(rest) === 0;
+  return topLevelCommas(rest) === 1; // just ", alpha"
 }
 
 /** Names that conventionally hold channel lists: --bs-primary-rgb, --accent-hsl, --gray-channel. */

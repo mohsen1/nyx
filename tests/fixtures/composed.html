@@ -13,10 +13,13 @@
     }
     body { background-color: var(--bg); color: var(--ink); font: 16px system-ui, sans-serif; }
     .panel { background: var(--panel); padding: 16px; }
+    /* Bulma 1.0 composes colors right in the property. */
+    .menu { --menu-l: 98%; background-color: hsl(var(--bg-h), var(--bg-s), var(--menu-l)); color: hsl(var(--bg-h), var(--bg-s), 20%); padding: 16px; }
   </style>
 </head>
 <body>
   <p id="text">Background and text built from split variables</p>
   <div class="panel" id="panel">A panel mixed from the background</div>
+  <nav class="menu" id="menu">A menu composed in place</nav>
 </body>
 </html>

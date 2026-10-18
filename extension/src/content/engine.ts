@@ -12,6 +12,35 @@ import { formatColor, parseColor } from '../shared/color';
 
 export const STYLE_CLASS = 'nyx-style';
 const ATTR_INLINE = 'data-nyx-inline';
+type ComposedProp = [selector: string, prop: string, important: boolean, value: string];
+
+/** Replaces var(--x, fallback) with the values `style` gives them (recursively, as CSS would). */
+function substituteVars(value: string, style: CSSStyleDeclaration, depth = 0): string {
+  if (depth > 8 || !value.includes('var(')) return value;
+  let out = '';
+  let i = 0;
+  while (i < value.length) {
+    const at = value.indexOf('var(', i);
+    if (at < 0) {
+      out += value.slice(i);
+      break;
+    }
+    out += value.slice(i, at);
+    let d = 1, j = at + 4;
+    for (; j < value.length && d; j++) {
+      if (value[j] === '(') d++;
+      else if (value[j] === ')') d--;
+    }
+    const inner = value.slice(at + 4, j - 1);
+    const comma = inner.indexOf(',');
+    const name = (comma < 0 ? inner : inner.slice(0, comma)).trim();
+    const own = style.getPropertyValue(name).trim();
+    out += own || (comma >= 0 ? substituteVars(inner.slice(comma + 1), style, depth + 1) : '');
+    i = j;
+  }
+  return substituteVars(out, style, depth + 1);
+}
+
 const ATTR_INVERT = 'data-nyx-invert';
 const ATTR_RECOLOR = 'data-nyx-recolor';
 
@@ -68,8 +97,17 @@ class RootStyler {
   private attrEl: HTMLStyleElement;
   /** Role copies of composed color variables, resolved from computed values; kept last. */
   private resolvedEl: HTMLStyleElement;
-  private composed = new Map<string, [selector: string, name: string]>();
+  /** Composed color variables, grouped by the selector that defines them. */
+  private composed = new Map<string, Set<string>>();
+  private composedCount = 0;
+  private composedDirty = false;
+  private lastComposedResolve = 0;
   /** Selectors of rules that paint url() backgrounds: candidates for dark logos and sprites. */
+  /** Color properties composed in place from variables: [selector, property, important]. */
+  private composedProps = new Map<string, ComposedProp>();
+  private composedPropsDirty = false;
+  private lastPropResolve = 0;
+  private propsEl: HTMLStyleElement;
   private bgSelectors = new Set<string>();
   private bgSelectorsChanged = false;
   private lastBgScan = 0;
@@ -94,10 +132,111 @@ class RootStyler {
     this.resolvedEl = doc.createElement('style');
     this.resolvedEl.className = STYLE_CLASS;
     this.resolvedEl.dataset.nyx = 'resolved';
+    this.propsEl = doc.createElement('style');
+    this.propsEl.className = STYLE_CLASS;
+    this.propsEl.dataset.nyx = 'resolved-props';
+  }
+
+  /** Composed properties whose selector matches nothing yet; re-checked now and then. */
+  private dormantProps = new Map<string, ComposedProp>();
+  private lastDormantCheck = 0;
+
+  /** Reported but not yet checked against the page. */
+  private pendingProps: Array<[string, ComposedProp]> = [];
+  private dormantCursor: Array<[string, ComposedProp]> = [];
+
+  private readonly onComposedProperty = (selector: string, prop: string, important: boolean, value: string) => {
+    const key = `${selector}\u0000${prop}`;
+    if (this.composedProps.has(key) || this.dormantProps.has(key)) return;
+    if (this.pendingProps.length < 30000) this.pendingProps.push([key, [selector, prop, important, value]]);
+  };
+
+  /**
+   * Design systems compose thousands of colors in place; only those whose selectors match
+   * something are worth resolving. Sorted in small time slices so a page never stalls.
+   */
+  private sortComposedProperties(budgetMs: number): void {
+    const end = performance.now() + budgetMs;
+    while (this.pendingProps.length && performance.now() < end) {
+      const [key, entry] = this.pendingProps.pop()!;
+      if (this.composedProps.has(key) || this.dormantProps.has(key)) continue;
+      if (this.matchesAny(entry[0])) {
+        this.composedProps.set(key, entry);
+        this.composedPropsDirty = true;
+      } else if (this.dormantProps.size < 30000) this.dormantProps.set(key, entry);
+    }
+    if (this.pendingProps.length) return;
+    // Then walk the dormant ones, a slice at a time, for content that appeared since.
+    if (!this.dormantCursor.length && Date.now() - this.lastDormantCheck > 10000) {
+      this.lastDormantCheck = Date.now();
+      this.dormantCursor = Array.from(this.dormantProps);
+    }
+    while (this.dormantCursor.length && performance.now() < end) {
+      const [key, entry] = this.dormantCursor.pop()!;
+      if (!this.dormantProps.has(key) || !this.matchesAny(entry[0])) continue;
+      this.dormantProps.delete(key);
+      this.composedProps.set(key, entry);
+      this.composedPropsDirty = true;
+    }
+  }
+
+  private matchesAny(selector: string): boolean {
+    const query = selector.replace(/::?(before|after|placeholder|selection|marker|backdrop|first-line|first-letter)\b(\([^)]*\))?/gi, '');
+    try {
+      return !!this.root.querySelector(query || '*');
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Maps colors composed in place (`hsl(var(--h), var(--s), var(--l))`) by reading what they
+   * compute to with our own resolved rules switched off. That forces a style recalculation, so
+   * it runs when sheets change and otherwise every few seconds.
+   */
+  private resolveComposedProperties(force = false): void {
+    this.sortComposedProperties(6);
+    const now = Date.now();
+    if (!this.composedProps.size) return;
+    if (!force && !this.composedPropsDirty && now - this.lastPropResolve < 5000) return;
+    this.composedPropsDirty = false;
+    this.lastPropResolve = now;
+    const win = this.engine.win;
+    let css = '';
+    for (const [selector, prop, important, value] of this.composedProps.values()) {
+      const query = selector.replace(/::?(before|after|placeholder|selection|marker|backdrop|first-line|first-letter)\b(\([^)]*\))?/gi, '');
+      let els: Element[];
+      try {
+        els = Array.from(this.root.querySelectorAll(query || '*')).slice(0, 3);
+      } catch {
+        continue;
+      }
+      if (!els.length) continue;
+      // Substitute the variables as each element sees them; they must agree to write one rule.
+      const exprs = new Set(els.map((el) => substituteVars(value, win.getComputedStyle(el))));
+      if (exprs.size !== 1) continue;
+      const c = this.engine.evaluateColor([...exprs][0]);
+      if (!c || c.a === 0) continue;
+      const role = prop === 'color' || prop === 'fill' || prop === 'stroke' ? 'text' : prop.startsWith('border') || prop === 'outline-color' ? 'border' : 'background';
+      const target = prop === 'border' ? 'border-color' : prop === 'background' ? 'background-color' : prop;
+      css += `${selector} { ${target}: ${formatColor(this.engine.palette.mapRgba(c, role))}${important ? ' !important' : ''}; }\n`;
+    }
+    const parent = this.root instanceof Document ? this.root.documentElement : this.root;
+    if (!css) {
+      this.propsEl.remove();
+      return;
+    }
+    if (this.propsEl.textContent !== css) this.propsEl.textContent = css;
+    if (parent.lastChild !== this.propsEl) parent.appendChild(this.propsEl);
   }
 
   private readonly onComposedColor = (selector: string, name: string) => {
-    if (this.composed.size < 400) this.composed.set(`${selector}\u0000${name}`, [selector, name]);
+    let names = this.composed.get(selector);
+    if (names?.has(name) || this.composedCount >= 6000) return;
+    if (!names) this.composed.set(selector, (names = new Set()));
+    names.add(name);
+    this.composedCount++;
+    this.composedDirty = true;
   };
 
   private readonly onBackgroundImage = (selector: string) => {
@@ -108,7 +247,12 @@ class RootStyler {
   };
 
   private options(baseUrl: string | null): TransformOptions {
-    return { ...this.engine.rewriteOptions(baseUrl), onComposedColor: this.onComposedColor, onBackgroundImage: this.onBackgroundImage };
+    return {
+      ...this.engine.rewriteOptions(baseUrl),
+      onComposedColor: this.onComposedColor,
+      onBackgroundImage: this.onBackgroundImage,
+      onComposedProperty: this.onComposedProperty,
+    };
   }
 
   /** Finds elements painted by url() backgrounds and lets the analyzer recolor dark artwork. */
@@ -135,10 +279,14 @@ class RootStyler {
    * their computed values on the page, after every override so they win.
    */
   private resolveComposed(): void {
+    const now = Date.now();
+    if (!this.composed.size || (!this.composedDirty && now - this.lastComposedResolve < 5000)) return;
+    this.composedDirty = false;
+    this.lastComposedResolve = now;
     let css = '';
     const roles = ['background', 'text', 'border', 'shadow'] as const;
     const win = this.engine.win;
-    for (const [selector, name] of this.composed.values()) {
+    for (const [selector, names] of this.composed) {
       const query = selector.replace(/::?(before|after|placeholder|selection|marker|backdrop|first-line|first-letter)\b(\([^)]*\))?/gi, '');
       let els: Element[];
       try {
@@ -147,12 +295,16 @@ class RootStyler {
         continue;
       }
       if (!els.length) continue;
-      const values = new Set(els.map((el) => win.getComputedStyle(el).getPropertyValue(name).trim()));
-      if (values.size !== 1) continue; // differs per element: can't define it once
-      const c = parseColor([...values][0]);
-      if (!c) continue;
-      const decls = roles.map((role) => `${roleVarName(name, role)}: ${formatColor(this.engine.palette.mapRgba(c, role))}`);
-      css += `${selector} { ${decls.join('; ')} }\n`;
+      const styles = els.map((el) => win.getComputedStyle(el));
+      const decls: string[] = [];
+      for (const name of names) {
+        const values = new Set(styles.map((cs) => cs.getPropertyValue(name).trim()));
+        if (values.size !== 1) continue; // differs per element: can't define it once
+        const c = this.engine.evaluateColor([...values][0]);
+        if (!c) continue;
+        for (const role of roles) decls.push(`${roleVarName(name, role)}: ${formatColor(this.engine.palette.mapRgba(c, role))}`);
+      }
+      if (decls.length) css += `${selector} { ${decls.join('; ')} }\n`;
     }
     const parent = this.root instanceof Document ? this.root.documentElement : this.root;
     if (!css) {
@@ -184,6 +336,12 @@ class RootStyler {
     this.attrEl.remove();
     this.resolvedEl.remove();
     this.composed.clear();
+    this.composedCount = 0;
+    this.propsEl.remove();
+    this.composedProps.clear();
+    this.dormantProps.clear();
+    this.pendingProps = [];
+    this.dormantCursor = [];
     for (const o of this.overrides.values()) o.el.remove();
     this.overrides.clear();
     if (this.adoptedOverride) {
@@ -199,6 +357,8 @@ class RootStyler {
   refresh(): void {
     for (const o of this.overrides.values()) o.signature = '';
     this.adoptedSignature = '';
+    this.composedPropsDirty = true;
+    this.composedDirty = true;
     this.mount();
     this.syncSheets();
   }
@@ -221,6 +381,7 @@ class RootStyler {
     }
     this.syncAdopted();
     this.resolveComposed();
+    this.resolveComposedProperties();
     this.scanBackgrounds();
   }
 
@@ -279,7 +440,7 @@ class RootStyler {
       .then((text) => {
         const o = this.overrides.get(owner);
         if (!text || !o || o.signature !== sig || !this.engine.running) return;
-        const css = this.engine.transformText(text, href, this.onComposedColor, this.onBackgroundImage);
+        const css = this.engine.transformText(text, href, this.onComposedColor, this.onBackgroundImage, this.onComposedProperty);
         const media = (owner as HTMLLinkElement).media;
         const wrapped = css && media && media !== 'all' ? `@media ${media} { ${css} }` : css;
         o.el.textContent = append ? `${wrapped}\n${o.el.textContent ?? ''}` : wrapped;
@@ -459,6 +620,29 @@ export class DarkEngine {
   }
 
   private channelVars = new Set<string>();
+  private probe: HTMLElement | null = null;
+  private evaluated = new Map<string, ReturnType<typeof parseColor>>();
+
+  /** Lets the browser evaluate a color expression (calc(), relative colors) on a hidden element. */
+  evaluateColor(expr: string): ReturnType<typeof parseColor> {
+    const cached = this.evaluated.get(expr);
+    if (cached !== undefined) return cached;
+    let result = parseColor(expr);
+    if (!result) {
+      if (!this.probe || !this.probe.isConnected) {
+        this.probe = this.doc.createElement('nyx-probe');
+        this.probe.className = STYLE_CLASS;
+        this.probe.style.display = 'none';
+        this.doc.documentElement.appendChild(this.probe);
+      }
+      this.probe.style.color = '';
+      this.probe.style.color = expr;
+      result = this.probe.style.color ? parseColor(this.win.getComputedStyle(this.probe).color) : null;
+    }
+    if (this.evaluated.size > 5000) this.evaluated.clear();
+    this.evaluated.set(expr, result);
+    return result;
+  }
 
   rewriteOptions(baseUrl: string | null): RewriteContext {
     return { palette: this.palette, baseUrl, hideImages: !this.config.appearance.backgroundImages, channelVars: this.channelVars };
@@ -484,12 +668,13 @@ export class DarkEngine {
     href: string,
     onComposedColor?: TransformOptions['onComposedColor'],
     onBackgroundImage?: TransformOptions['onBackgroundImage'],
+    onComposedProperty?: TransformOptions['onComposedProperty'],
   ): string {
     try {
       const sheet = new this.win.CSSStyleSheet();
       // replaceSync ignores @import; imported sheets are fetched separately when encountered.
       sheet.replaceSync(text.replace(/@import[^;]+;/g, ''));
-      return transformRules(sheet.cssRules, { ...this.rewriteOptions(href), onComposedColor, onBackgroundImage });
+      return transformRules(sheet.cssRules, { ...this.rewriteOptions(href), onComposedColor, onBackgroundImage, onComposedProperty });
     } catch {
       return '';
     }
@@ -595,6 +780,8 @@ export class DarkEngine {
       el.removeAttribute(ATTR_INVERT);
       el.removeAttribute(ATTR_DIM);
     }
+    this.probe?.remove();
+    this.probe = null;
     this.images.restoreBackgrounds();
     this.images.reset();
     this.contrast.reset();
