@@ -82,7 +82,8 @@ export class Palette {
           return oklabToRgba({ ...out, a: out.a + lab.a * tint, b: out.b + lab.b * tint });
         }
         // Pastel surfaces turn into deep tints; saturated ones (buttons, badges) stay vivid but darker.
-        const targetL = L > 0.72 ? this.bg.L + (1 - L) * 0.55 + 0.06 : clamp(Math.min(L, 0.62) * 0.9, this.bg.L + 0.12, 0.6);
+        // Capped near L 0.5 so white labels on brand-colored headers and buttons stay readable.
+        const targetL = L > 0.72 ? this.bg.L + (1 - L) * 0.55 + 0.06 : clamp(Math.min(L, 0.58) * 0.86, this.bg.L + 0.1, 0.5);
         const chroma = L > 0.72 ? Math.min(lch.C * 1.1, 0.07) : lch.C * 0.92;
         return oklchToRgbaInGamut({ L: targetL, C: chroma, h: lch.h, alpha: c.a });
       }
