@@ -328,6 +328,15 @@ test('a fetched stylesheet starting with a Google Fonts @import is still darkene
   await expect.poll(async () => luminance(await bg(page, 'body'))).toBeLessThan(0.08);
 });
 
+test('color functions over a channel variable with a channel fallback are darkened (IKEA)', async ({ context }) => {
+  const page = await context.newPage();
+  await page.goto(url('channel-fallback.html'));
+  await page.waitForLoadState('load');
+  await expect.poll(async () => luminance(await bg(page, 'body'))).toBeLessThan(0.08);
+  const color = await page.evaluate(() => getComputedStyle(document.getElementById('text')!).color);
+  expect(luminance(color)).toBeGreaterThan(0.4);
+});
+
 test('re-detects when a site switches its own theme', async ({ context }) => {
   const page = await context.newPage();
   await page.goto(url('toggle.html'));

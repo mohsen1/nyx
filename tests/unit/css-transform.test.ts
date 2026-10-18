@@ -121,6 +121,20 @@ describe('transformRules', () => {
   });
 });
 
+describe('channel variables with a channel-list fallback (IKEA)', () => {
+  it('points at the channel copy and maps the literal fallback channels', () => {
+    const out = rewriteValue('rgb(var(--colour-neutral-1, 255, 255, 255))', 'background', ctx)!;
+    expect(out).toMatch(/^rgb\(var\(--nyx-bc--colour-neutral-1, var\(--colour-neutral-1, (\d+), (\d+), (\d+)\)\)\)$/);
+    const [r] = out.match(/\d+(?=, \d+, \d+\)\)\)$)/)!.map(Number);
+    expect(r).toBeLessThan(60);
+    expect(rewriteValue('rgba(var(--ink, 17, 17, 17), 0.5)', 'text', ctx)).toMatch(/^rgba\(var\(--nyx-tc--ink, var\(--ink, 2\d\d, 2\d\d, 2\d\d\)\), 0\.5\)$/);
+  });
+
+  it('leaves non-channel fallbacks to the ordinary var() rewrite', () => {
+    expect(rewriteValue('rgb(var(--x, var(--y)))', 'background', ctx)).not.toContain('--nyx-bc--x');
+  });
+});
+
 describe('stripImports', () => {
   it('keeps the rest of the sheet when an @import URL contains semicolons (Google Fonts)', () => {
     const css = '@import "https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;700&display=swap" layer(fonts);@layer base{.a{color:red}}.bg{background-color:#f5f5ee}';

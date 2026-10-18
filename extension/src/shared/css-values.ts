@@ -174,6 +174,11 @@ export function rewriteValue(value: string, role: ColorRole, ctx: RewriteContext
         } else if (lower === 'var') {
           out += rewriteVar(inner, role, ctx);
           changed = true;
+        } else if (COLOR_FUNCS.has(lower) && channelVarWithFallback(inner, role, ctx) !== null) {
+          // IKEA: rgb(var(--colour-neutral-1, 255, 255, 255)). The variable is often undefined and
+          // the literal channels are the real color, so map both.
+          out += `${ident}(${channelVarWithFallback(inner, role, ctx)})`;
+          changed = true;
         } else if (COLOR_FUNCS.has(lower) && isChannelVarCall(inner)) {
           // rgb(var(--grey-50)) / rgba(var(--brand-rgb), .5) / hsl(var(--background) / 50%):
           // the variable holds bare channels, so point it at a channel copy.
@@ -272,6 +277,23 @@ function topLevelCommas(s: string): number {
     else if (ch === ',' && depth === 0) n++;
   }
   return n;
+}
+
+const CHANNEL_VAR_FALLBACK = /^\s*var\(\s*(--[a-zA-Z0-9_-]+)\s*,\s*([^()]*?)\s*\)(\s*(?:[,/].*)?)$/s;
+
+/**
+ * `var(--x, 255, 255, 255)` with an optional alpha after it: a channel variable whose fallback is
+ * itself a channel list. Returns the rewritten function arguments, or null for anything else.
+ */
+function channelVarWithFallback(inner: string, role: ColorRole, ctx: RewriteContext): string | null {
+  const m = CHANNEL_VAR_FALLBACK.exec(inner);
+  if (!m) return null;
+  const fallback = rewriteChannels(m[2], role, ctx.palette);
+  if (fallback === null) return null;
+  const rest = m[3].trim();
+  if (rest && (rest.startsWith('/') ? topLevelCommas(rest) !== 0 : topLevelCommas(rest) !== 1)) return null;
+  const alpha = m[3] ? rewriteValue(m[3], role, ctx) ?? m[3] : '';
+  return `var(${channelVarName(m[1], role)}, var(${m[1]}, ${fallback}))${alpha}`;
 }
 
 /**
