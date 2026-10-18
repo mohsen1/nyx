@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Light fixture</title>
+  <link rel="stylesheet" href="site.css">
+  <link rel="stylesheet" href="CROSS_ORIGIN/cross.css">
+  <style>
+    :root { --accent: #0d6efd; --surface: #f6f7f9; }
+    .card { background: var(--surface); border: 1px solid #dde1e6; border-radius: 8px; padding: 12px; }
+    .cta { background: var(--accent); color: #fff; padding: 8px 14px; border-radius: 6px; border: 0; }
+    .muted { color: #6b7280; }
+  </style>
+</head>
+<body>
+  <header id="header">Site header</header>
+  <main>
+    <h1 id="title">An ordinary light page</h1>
+    <p id="text">Body text in near-black with a <a id="link" href="#x">blue link</a>.</p>
+    <div class="card" id="card"><p class="muted" id="muted">Secondary text on a light card.</p><button class="cta" id="cta">Call to action</button></div>
+    <div id="inline" style="background-color: #fff8dc; color: #333; padding: 8px">Inline-styled note</div>
+    <table><tr><td id="cell" bgcolor="#eeeeee">bgcolor cell</td></tr></table>
+    <div id="cross" class="cross-styled">Styled by a cross-origin stylesheet</div>
+    <svg id="icon" width="24" height="24" viewBox="0 0 24 24"><path id="iconpath" fill="#000000" d="M2 2h20v20H2z"/></svg>
+    <img id="logo" src="logo.svg" width="120" height="40" alt="logo">
+    <img id="photo" src="photo.svg" width="120" height="80" alt="photo">
+    <x-widget id="widget"></x-widget>
+    <div id="cssinjs">CSS-in-JS styled</div>
+  </main>
+  <script>
+    customElements.define('x-widget', class extends HTMLElement {
+      constructor() {
+        super();
+        this.attachShadow({ mode: 'open' }).innerHTML =
+          '<style>.inner { background: #ffffff; color: #111111; padding: 6px }</style><div class="inner" id="inner">Shadow DOM content</div>';
+      }
+    });
+    window.addEventListener('load', () => {
+      const s = document.createElement('style');
+      document.head.appendChild(s);
+      s.sheet.insertRule('#cssinjs { background-color: #fafafa; color: #222 }', 0);
+    });
+  </script>
+</body>
+</html>

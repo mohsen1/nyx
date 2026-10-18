@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <mask id="c">
+    <rect width="64" height="64" fill="#000"/>
+    <circle cx="29" cy="34" r="20" fill="#fff"/>
+    <circle cx="38" cy="26" r="17" fill="#000"/>
+  </mask>
+  <rect width="64" height="64" fill="#8e8e93" mask="url(#c)"/>
+  <path d="M47 8 l2.4 6.6 6.6 2.4 -6.6 2.4 -2.4 6.6 -2.4 -6.6 -6.6 -2.4 6.6 -2.4z" fill="#8e8e93"/>
+</svg>
