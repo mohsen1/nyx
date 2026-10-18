@@ -23,7 +23,7 @@ export interface TransformOptions extends RewriteContext {
   onComposedProperty?: (selector: string, prop: string, important: boolean, value: string) => void;
 }
 
-const PENDING_LONGHANDS = new Set(['background-color', 'color', 'border-top-color', 'border-right-color', 'border-bottom-color', 'border-left-color', 'outline-color', 'fill', 'stroke']);
+const PENDING_LONGHANDS = new Set(['background-color', 'background-image', 'color', 'border-top-color', 'border-right-color', 'border-bottom-color', 'border-left-color', 'outline-color', 'fill', 'stroke']);
 
 /** Properties whose composed colors are resolved at runtime. */
 const COMPOSED_LONGHAND: Record<string, string> = {

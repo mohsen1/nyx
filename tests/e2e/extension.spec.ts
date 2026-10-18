@@ -363,6 +363,10 @@ test('channel lists assembled from one variable per channel are mapped (XenForo)
   await expect
     .poll(() => page.$eval('#header', (el) => getComputedStyle(el).backgroundImage), { timeout: 8000 })
     .not.toMatch(/rgb\((2[3-5]\d), \1, \1\)/);
+  // A gradient lost to the CSSOM behind a var() shorthand is read back and darkened.
+  await expect
+    .poll(() => page.$eval('#card', (el) => getComputedStyle(el).backgroundImage), { timeout: 8000 })
+    .not.toContain('rgb(232, 240, 254)');
 });
 
 test('colors composed from several variables are resolved and darkened (iCloud)', async ({ context }) => {
