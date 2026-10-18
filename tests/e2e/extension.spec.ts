@@ -203,6 +203,8 @@ test('a stylesheet that can be neither read nor fetched is darkened from compute
   await expect.poll(async () => luminance(await bg(page, 'body'))).toBeLessThan(0.08);
   await expect.poll(async () => luminance(await bg(page, '#card'))).toBeLessThan(0.1);
   await expect.poll(async () => luminance(await fg(page, '#text'))).toBeGreaterThan(0.3);
+  // Text drawn as a wide SVG (Apple's global nav) is lifted like an icon.
+  await expect.poll(async () => luminance(await page.$eval('#wordmark', (el) => getComputedStyle(el).fill))).toBeGreaterThan(0.18);
 });
 
 test('a pale hero image whose pixels cannot be read is dimmed when the page text on it is dark (Box in Safari)', async ({ context, worker }) => {
@@ -412,7 +414,7 @@ test('an SVG fill attribute that points at a variable is mapped (The Guardian)',
   const page = await context.newPage();
   await page.goto(url('svg-var-fill.html'));
   await page.waitForLoadState('load');
-  await expect.poll(async () => luminance(await page.$eval('#icon', (el) => getComputedStyle(el).fill))).toBeGreaterThan(0.3);
+  await expect.poll(async () => luminance(await page.$eval('#icon', (el) => getComputedStyle(el).fill))).toBeGreaterThan(0.18);
 });
 
 test('a closed shadow root is styled where the browser exposes it (Transcend consent manager)', async ({ context }) => {

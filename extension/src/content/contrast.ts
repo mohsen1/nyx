@@ -333,7 +333,8 @@ export class ContrastGuard {
    */
   private fixIcon(svg: SVGSVGElement, canvas: RGBA): Array<[SVGElement, 'fill' | 'stroke', string]> {
     const r = svg.getBoundingClientRect();
-    if (r.width < 8 || r.height < 8 || r.width > 64 || r.height > 64) return [];
+    // Icons, and short wide ones: text drawn as SVG (Apple's global nav labels are 77×44 wordmarks).
+    if (r.width < 8 || r.height < 8 || r.height > 64 || (r.width > 64 && (r.width > 240 || r.height > 48))) return [];
     const behind = this.backgroundBehind(svg, canvas);
     if (!behind || behind.opacity < 0.5) return [];
     const { bg, opacity } = behind;
