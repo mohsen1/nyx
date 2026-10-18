@@ -139,35 +139,31 @@ h3 { font-size: 18px; letter-spacing: -0.01em; }
 .frame {
   border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow);
   border: 1px solid var(--line); background: #1c1b1f;
-  aspect-ratio: 1100 / 720;
+  aspect-ratio: 1280 / 800;
 }
 .frame img { display: none; width: 100%; height: 100%; object-fit: cover; }
 .caption { color: var(--muted); font-size: 15px; margin: 14px 0 0; }
 .caption span { display: none; }
 
-#v-dark:checked ~ .frame .i-dark,
-#v-original:checked ~ .frame .i-original,
-#v-sepia:checked ~ .frame .i-sepia,
-#v-dracula:checked ~ .frame .i-dracula,
-#v-blue:checked ~ .frame .i-blue { display: block; }
+#v-wikipedia:checked ~ .frame .i-wikipedia,
+#v-hackernews:checked ~ .frame .i-hackernews,
+#v-github:checked ~ .frame .i-github,
+#v-xkcd:checked ~ .frame .i-xkcd { display: block; }
 
-#v-dark:checked ~ .caption .c-dark,
-#v-original:checked ~ .caption .c-original,
-#v-sepia:checked ~ .caption .c-sepia,
-#v-dracula:checked ~ .caption .c-dracula,
-#v-blue:checked ~ .caption .c-blue { display: inline; }
+#v-wikipedia:checked ~ .caption .c-wikipedia,
+#v-hackernews:checked ~ .caption .c-hackernews,
+#v-github:checked ~ .caption .c-github,
+#v-xkcd:checked ~ .caption .c-xkcd { display: inline; }
 
-#v-dark:checked ~ .tabs [for="v-dark"],
-#v-original:checked ~ .tabs [for="v-original"],
-#v-sepia:checked ~ .tabs [for="v-sepia"],
-#v-dracula:checked ~ .tabs [for="v-dracula"],
-#v-blue:checked ~ .tabs [for="v-blue"] { background: var(--surface); color: var(--text); box-shadow: 0 1px 3px rgb(0 0 0 / 0.12); }
+#v-wikipedia:checked ~ .tabs [for="v-wikipedia"],
+#v-hackernews:checked ~ .tabs [for="v-hackernews"],
+#v-github:checked ~ .tabs [for="v-github"],
+#v-xkcd:checked ~ .tabs [for="v-xkcd"] { background: var(--surface); color: var(--text); box-shadow: 0 1px 3px rgb(0 0 0 / 0.12); }
 
-#v-dark:focus-visible ~ .tabs [for="v-dark"],
-#v-original:focus-visible ~ .tabs [for="v-original"],
-#v-sepia:focus-visible ~ .tabs [for="v-sepia"],
-#v-dracula:focus-visible ~ .tabs [for="v-dracula"],
-#v-blue:focus-visible ~ .tabs [for="v-blue"] { outline: 2px solid var(--accent); outline-offset: 2px; }
+#v-wikipedia:focus-visible ~ .tabs [for="v-wikipedia"],
+#v-hackernews:focus-visible ~ .tabs [for="v-hackernews"],
+#v-github:focus-visible ~ .tabs [for="v-github"],
+#v-xkcd:focus-visible ~ .tabs [for="v-xkcd"] { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 /* Principle row */
 .principles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }

@@ -10,7 +10,7 @@
   <meta name="description" content="Nyx is a free, open-source Safari extension for iPhone, iPad and Mac. It gives websites a dark mode based on their own colors instead of inverting them.">
   <meta property="og:title" content="Nyx: dark mode for websites that don’t have one">
   <meta property="og:description" content="A free, open-source Safari extension for iPhone, iPad and Mac that darkens websites using their own colors.">
-  <meta property="og:image" content="https://azimi.me/nyx/images/demo-dark.png">
+  <meta property="og:image" content="https://azimi.me/nyx/images/split-wikipedia.webp">
   <meta name="twitter:card" content="summary_large_image">
   <link rel="icon" href="icon.png">
   <link rel="apple-touch-icon" href="icon.png">
@@ -48,31 +48,27 @@
         <p class="platforms">Safari on iOS, iPadOS and macOS. Also runs in Chrome, Edge and Firefox.</p>
 
         <div class="compare">
-          <input type="radio" name="view" id="v-original">
-          <input type="radio" name="view" id="v-dark" checked>
-          <input type="radio" name="view" id="v-sepia">
-          <input type="radio" name="view" id="v-dracula">
-          <input type="radio" name="view" id="v-blue">
-          <div class="tabs" aria-label="Choose a preview">
-            <label for="v-original">Original</label>
-            <label for="v-dark">Dark</label>
-            <label for="v-sepia">Sepia</label>
-            <label for="v-dracula">Dracula</label>
-            <label for="v-blue">Blue</label>
+          <input type="radio" name="view" id="v-wikipedia" checked>
+          <input type="radio" name="view" id="v-hackernews">
+          <input type="radio" name="view" id="v-github">
+          <input type="radio" name="view" id="v-xkcd">
+          <div class="tabs" aria-label="Choose a website">
+            <label for="v-wikipedia">Wikipedia</label>
+            <label for="v-hackernews">Hacker News</label>
+            <label for="v-github">GitHub</label>
+            <label for="v-xkcd">xkcd</label>
           </div>
           <div class="frame">
-            <img class="i-original" src="images/demo-original.png" width="1100" height="720" loading="lazy" decoding="async" alt="A sample news page in its original light design.">
-            <img class="i-dark" src="images/demo-dark.png" width="1100" height="720" decoding="async" fetchpriority="high" alt="The same page with the Nyx Dark theme. Links stay blue and the red brand color is kept.">
-            <img class="i-sepia" src="images/demo-sepia.png" width="1100" height="720" loading="lazy" decoding="async" alt="The same page with the Nyx Sepia theme.">
-            <img class="i-dracula" src="images/demo-dracula.png" width="1100" height="720" loading="lazy" decoding="async" alt="The same page with the Nyx Dracula theme.">
-            <img class="i-blue" src="images/demo-blue.png" width="1100" height="720" loading="lazy" decoding="async" alt="The same page with a Nyx blue theme.">
+            <img class="i-wikipedia" src="images/split-wikipedia.webp" width="2560" height="1600" decoding="async" fetchpriority="high" alt="A Wikipedia article, light on the left and darkened by Nyx on the right.">
+            <img class="i-hackernews" src="images/split-hackernews.webp" width="2560" height="1600" loading="lazy" decoding="async" alt="Hacker News, light on the left and darkened by Nyx on the right.">
+            <img class="i-github" src="images/split-github.webp" width="2560" height="1600" loading="lazy" decoding="async" alt="A GitHub repository, light on the left and in the Dracula theme on the right.">
+            <img class="i-xkcd" src="images/split-xkcd.webp" width="2560" height="1600" loading="lazy" decoding="async" alt="xkcd, light on the left and in the Sepia theme on the right.">
           </div>
           <p class="caption">
-            <span class="c-original">The page as its designer made it.</span>
-            <span class="c-dark">Dark. The links are still blue and the red brand color is still red.</span>
-            <span class="c-sepia">Sepia. Cream text on dark brown, a little warmer than Dark.</span>
-            <span class="c-dracula">Dracula, one of seven themes taken from code editors.</span>
-            <span class="c-blue">Blue, one of six single-color themes.</span>
+            <span class="c-wikipedia">Left of the line is the page as it ships; right is Nyx’s Dark theme. Links are still blue.</span>
+            <span class="c-hackernews">The orange header stays orange, just darker.</span>
+            <span class="c-github">The Dracula theme, one of seven taken from code editors.</span>
+            <span class="c-xkcd">Sepia. The comic is dimmed a little, not inverted.</span>
           </p>
         </div>
       </div>
