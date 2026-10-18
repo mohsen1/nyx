@@ -518,8 +518,11 @@ class RootStyler {
     const opts = this.engine.rewriteOptions(this.engine.doc.baseURI);
     if (style.length > 0) {
       for (const [token, prop] of INLINE_PROPS) {
-        const value = style.getPropertyValue(prop);
+        let value = style.getPropertyValue(prop);
         if (!value) continue;
+        // Our own earlier write over an inline !important value: map from the page's original.
+        const written = this.engine.inlineImportant.get(el)?.get(prop);
+        if (written && value === written.written) value = written.original;
         const role = PROPERTY_ROLES[prop];
         const hide = this.engine.config.appearance.backgroundImages === false && (token === 'bgi' || token === 'b');
         if ((token === 'bgi' || token === 'b') && value.includes('url(') && !value.includes('data:image/png;base64') && this.engine.config.appearance.imageInversion) {
@@ -530,6 +533,16 @@ class RootStyler {
         tokens.push(token);
         const name = `--nyx-i-${token}`;
         if (style.getPropertyValue(name) !== mapped) style.setProperty(name, mapped);
+        // Inline !important beats any stylesheet rule, ours included: write the mapped value in
+        // place (cookie banners and widgets set colors this way). The original comes back on stop.
+        if (style.getPropertyPriority(prop) === 'important' && !(prop === 'color' && el.hasAttribute(ATTR_FIX))) {
+          if (!written || written.original !== value || style.getPropertyValue(prop) !== written.written) {
+            style.setProperty(prop, mapped, 'important');
+            let map = this.engine.inlineImportant.get(el);
+            if (!map) this.engine.inlineImportant.set(el, (map = new Map()));
+            map.set(prop, { original: value, written: style.getPropertyValue(prop) });
+          }
+        }
       }
     }
     // Custom properties set inline (often from script): give them role copies like sheet ones.
@@ -670,6 +683,8 @@ export class DarkEngine {
   }
 
   private channelVars = new Set<string>();
+  /** Inline !important colors we overwrote, with the page's originals, to restore on stop. */
+  readonly inlineImportant = new Map<Element, Map<string, { original: string; written: string }>>();
   private probe: HTMLElement | null = null;
   private evaluated = new Map<string, ReturnType<typeof parseColor>>();
 
@@ -832,6 +847,13 @@ export class DarkEngine {
     }
     this.probe?.remove();
     this.probe = null;
+    for (const [el, props] of this.inlineImportant) {
+      for (const [prop, { original, written }] of props) {
+        const style = (el as HTMLElement).style;
+        if (style.getPropertyValue(prop) === written) style.setProperty(prop, original, 'important');
+      }
+    }
+    this.inlineImportant.clear();
     this.images.restoreBackgrounds();
     this.images.reset();
     this.contrast.reset();

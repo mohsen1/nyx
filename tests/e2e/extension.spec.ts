@@ -221,6 +221,9 @@ test('text whose color Nyx could not map is lifted to a readable contrast', asyn
   // Custom properties set inline get role copies, so this is mapped rather than rescued.
   await expect.poll(async () => luminance(await bg(page, '#inlinevar'))).toBeLessThan(0.08);
   expect(await page.getAttribute('#name', 'data-nyx-fix')).toBeNull();
+  // Inline !important colors (cookie banners, widgets) beat any stylesheet rule.
+  await expect.poll(async () => luminance(await bg(page, '#inlineimp'))).toBeLessThan(0.08);
+  expect(luminance(await fg(page, '#inlineimp'))).toBeGreaterThan(0.5);
   await page.waitForSelector('#scripted');
   await expect.poll(() => ratio('#scripted')).toBeGreaterThan(4.4);
 });
