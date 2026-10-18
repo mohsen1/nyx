@@ -172,7 +172,20 @@ class Controller {
   }
 }
 
-if (!window.__nyxLoaded && document.documentElement instanceof HTMLElement) {
+function boot(): void {
+  // Only HTML documents (not SVG or XML files opened directly).
+  if (window.__nyxLoaded || !(document.documentElement instanceof HTMLElement)) return;
   window.__nyxLoaded = true;
   void new Controller().init();
+}
+
+if (document.documentElement) boot();
+else {
+  // Some engines run document_start scripts before <html> exists; wait for it.
+  const observer = new MutationObserver(() => {
+    if (!document.documentElement) return;
+    observer.disconnect();
+    boot();
+  });
+  observer.observe(document, { childList: true });
 }

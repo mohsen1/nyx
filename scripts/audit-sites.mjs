@@ -1,8 +1,8 @@
 // Loads real websites with the built extension in Chromium and flags pages that
 // Nyx leaves light or renders unreadable. Needs network access.
 //   npm run build && node scripts/audit-sites.mjs [url ...]  → audit-results/
-import { chromium } from '@playwright/test';
-import { existsSync, mkdtempSync, writeFileSync } from 'node:fs';
+import { chromium, webkit } from '@playwright/test';
+import { existsSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { mkdir } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
@@ -31,26 +31,58 @@ const urls = process.argv.slice(2).length ? process.argv.slice(2) : defaults;
 const ext = process.env.NYX_EXT || join(root, 'dist/chrome');
 const local = process.env.CHROMIUM_PATH || (existsSync('/opt/pw-browsers/chromium') ? '/opt/pw-browsers/chromium' : undefined);
 
-const context = await chromium.launchPersistentContext(mkdtempSync(join(tmpdir(), 'nyx-audit-')), {
-  ...(local ? { executablePath: local } : { channel: 'chromium' }),
-  headless: true,
-  colorScheme: 'light',
-  viewport: { width: 1280, height: 860 },
-  locale: 'en-US',
-  // Some sites (Reddit) block the headless user agent outright.
-  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36',
-  args: [`--disable-extensions-except=${ext}`, `--load-extension=${ext}`],
-});
-const worker = context.serviceWorkers()[0] ?? (await context.waitForEvent('serviceworker'));
-await worker.evaluate(async () => {
-  const s = (await chrome.storage.local.get('settings')).settings ?? {};
-  s.global = { ...(s.global ?? {}), mode: 'on', defaultThemeId: 'dark', updatedAt: Date.now() };
-  await chrome.storage.local.set({ settings: s });
-});
-
-// NYX_NO_FETCH=1 simulates Safari without host access to CDNs: the background
-// script cannot fetch cross-origin stylesheets or images.
-if (process.env.NYX_NO_FETCH) await worker.evaluate(() => { self.fetch = () => Promise.reject(new TypeError('blocked')); });
+// NYX_ENGINE=webkit runs Safari's engine. Playwright's WebKit can't load extensions, so the
+// Safari build's content script is injected into each page with a small shim for the extension
+// APIs; resource fetches go through Node, as Safari's background page would make them.
+const WEBKIT = process.env.NYX_ENGINE === 'webkit';
+let context;
+if (WEBKIT) {
+  const browser = await webkit.launch();
+  context = await browser.newContext({ colorScheme: 'light', viewport: { width: 1280, height: 860 }, locale: 'en-US' });
+  await context.exposeBinding('__nyxFetch', async (_source, url, as) => {
+    try {
+      const res = await fetch(url, { redirect: 'follow' });
+      if (!res.ok) return null;
+      if (as === 'text') return await res.text();
+      const type = res.headers.get('content-type') || 'application/octet-stream';
+      return `data:${type};base64,${Buffer.from(await res.arrayBuffer()).toString('base64')}`;
+    } catch {
+      return null;
+    }
+  });
+  await context.addInitScript(`(() => {
+    const settings = { global: { mode: 'on', defaultThemeId: 'dark', updatedAt: Date.now() } };
+    window.browser = {
+      runtime: {
+        id: 'nyx-audit',
+        sendMessage: async (m) => (m && m.type === 'fetchResource' ? { ok: true, body: await window.__nyxFetch(m.url, m.as) } : undefined),
+        onMessage: { addListener() {} },
+      },
+      storage: { local: { get: async () => ({ settings }), set: async () => {} }, onChanged: { addListener() {} } },
+    };
+  })();`);
+  await context.addInitScript({ content: readFileSync(join(root, 'dist/safari/content.js'), 'utf8') });
+} else {
+  context = await chromium.launchPersistentContext(mkdtempSync(join(tmpdir(), 'nyx-audit-')), {
+    ...(local ? { executablePath: local } : { channel: 'chromium' }),
+    headless: true,
+    colorScheme: 'light',
+    viewport: { width: 1280, height: 860 },
+    locale: 'en-US',
+    // Some sites (Reddit) block the headless user agent outright.
+    userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36',
+    args: [`--disable-extensions-except=${ext}`, `--load-extension=${ext}`],
+  });
+  const worker = context.serviceWorkers()[0] ?? (await context.waitForEvent('serviceworker'));
+  await worker.evaluate(async () => {
+    const s = (await chrome.storage.local.get('settings')).settings ?? {};
+    s.global = { ...(s.global ?? {}), mode: 'on', defaultThemeId: 'dark', updatedAt: Date.now() };
+    await chrome.storage.local.set({ settings: s });
+  });
+  // NYX_NO_FETCH=1 simulates Safari without host access to CDNs: the background
+  // script cannot fetch cross-origin stylesheets or images.
+  if (process.env.NYX_NO_FETCH) await worker.evaluate(() => { self.fetch = () => Promise.reject(new TypeError('blocked')); });
+}
 
 // Pixel stats of a screenshot, computed in a blank page.
 const stats = await context.newPage();
