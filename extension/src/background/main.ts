@@ -6,8 +6,9 @@ import { api, type Tab } from '../shared/browser';
 import type { FetchResult, Message, PageState } from '../shared/messages';
 import {
   decide,
+  matchSiteKey,
+  nextSiteMode,
   nextThemeId,
-  siteKeyForUrl,
   tomorrowMorning,
   updateGlobal,
   updateSite,
@@ -83,17 +84,24 @@ async function onCommand(command: string, tabArg?: Tab): Promise<void> {
     return;
   }
   const tab = tabArg ?? (await activeTab());
-  const siteKey = tab?.url ? siteKeyForUrl(tab.url) : null;
   if (command === 'cycle-theme') {
     await updateSettings((s) => updateGlobal(s, { defaultThemeId: nextThemeId(s, s.global.defaultThemeId) }));
     return;
   }
+  const siteKey = tab?.url ? matchSiteKey(await loadSettings(), tab.url) : null;
   if (!siteKey) return;
   if (command === 'toggle-site') {
     const state = await pageState(tab);
     const settings = await loadSettings();
     const enabled = state?.active ?? decide(settings, siteKey, { systemDark: true, now: new Date() }).enabled;
     await updateSettings((s) => updateSite(s, siteKey, { mode: enabled ? 'off' : 'on', pausedUntil: null }));
+  } else if (command === 'cycle-site-status') {
+    await updateSettings((s) => updateSite(s, siteKey, { mode: nextSiteMode(s.sites[siteKey]?.mode ?? 'default'), pausedUntil: null }));
+  } else if (command === 'toggle-ignore-dark-mode') {
+    await updateSettings((s) => {
+      const current = s.sites[siteKey]?.ignoreBuiltInDarkMode ?? s.global.ignoreBuiltInDarkMode;
+      return updateSite(s, siteKey, { ignoreBuiltInDarkMode: !current });
+    });
   } else if (command === 'pause-site') {
     await updateSettings((s) => updateSite(s, siteKey, { pausedUntil: tomorrowMorning(new Date()) }));
   } else if (command === 'cycle-site-theme') {

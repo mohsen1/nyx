@@ -8,7 +8,8 @@ import {
   isDefaultSite,
   resetSite,
   setSiteAppearance,
-  siteKeyForUrl,
+  matchSiteKey,
+  siteScopes,
   tomorrowMorning,
   updateGlobal,
   updateSite,
@@ -25,7 +26,9 @@ const REPO = 'https://github.com/mohsen1/nyx';
 const root = document.getElementById('app')!;
 
 let tab: Tab | undefined;
+/** The settings scope being edited: a page, host or parent domain (see siteScopes). */
 let siteKey: string | null = null;
+let scopePinned = false;
 let page: PageState | null = null;
 let settings: Settings;
 
@@ -70,7 +73,7 @@ function render(): void {
   const header = h(
     'header',
     {},
-    h('div', { class: 'title' }, h('strong', {}, siteKey ?? 'Nyx'), statusLine()),
+    h('div', { class: 'title' }, scopePicker(), statusLine()),
     h('button', { class: 'icon', type: 'button', title: 'Settings', 'aria-label': 'Open settings', onclick: () => api.runtime.openOptionsPage() }, '⚙︎'),
   );
   root.append(header);
@@ -130,13 +133,19 @@ function render(): void {
     const effective = findTheme(themes, site?.themeId ?? settings.global.defaultThemeId);
     root.append(h('label', { class: 'row' }, themeSwatch(effective.background, effective.text), h('span', {}, 'Theme'), select));
 
-    if (page?.builtInDarkMode || site?.ignoreBuiltInDarkMode) {
+    if (page?.builtInDarkMode || (site && site.ignoreBuiltInDarkMode !== null)) {
+      const current = site?.ignoreBuiltInDarkMode;
       root.append(
-        toggle(
-          'Ignore the website’s dark mode',
-          !!site?.ignoreBuiltInDarkMode,
-          (v) => update((s) => updateSite(s, key, { ignoreBuiltInDarkMode: v })),
-          'Use Nyx even though this website has its own dark mode.',
+        h('section', {}, h('h2', {}, 'Ignore Built-in Dark Mode')),
+        segmented<'default' | 'on' | 'off'>(
+          'Ignore built-in dark mode',
+          [
+            { value: 'default', label: `Default (${settings.global.ignoreBuiltInDarkMode ? 'On' : 'Off'})` },
+            { value: 'on', label: 'On', title: 'Darken even though the website has its own dark mode' },
+            { value: 'off', label: 'Off' },
+          ],
+          current === null || current === undefined ? 'default' : current ? 'on' : 'off',
+          (v) => update((s) => updateSite(s, key, { ignoreBuiltInDarkMode: v === 'default' ? null : v === 'on' })),
         ),
       );
       if (settings.global.darkModeReporting !== 'never') {
@@ -203,6 +212,29 @@ function render(): void {
   );
 }
 
+function scopePicker(): HTMLElement {
+  const scopes = tab?.url ? siteScopes(tab.url) : [];
+  if (!siteKey || scopes.length < 2) return h('strong', {}, siteKey ?? 'Nyx');
+  const host = scopes.find((k) => !k.includes('/'));
+  const select = h(
+    'select',
+    {
+      class: 'scope',
+      'aria-label': 'Settings apply to',
+      onchange: (e: Event) => {
+        siteKey = (e.target as HTMLSelectElement).value;
+        scopePinned = true;
+        render();
+      },
+    },
+    ...scopes.map((k) =>
+      h('option', { value: k }, k.includes('/') ? `This page (${k.slice(k.indexOf('/'))})` : k === host ? k : `All of ${k}`),
+    ),
+  );
+  select.value = siteKey;
+  return select;
+}
+
 function openIssue(title: string, body: string): void {
   const url = `${REPO}/issues/new?${new URLSearchParams({ title, body, labels: 'website' })}`;
   void api.tabs.create({ url });
@@ -222,12 +254,13 @@ function reportDetection(key: string): void {
 
 async function main(): Promise<void> {
   [tab] = await api.tabs.query({ active: true, currentWindow: true });
-  siteKey = tab?.url ? siteKeyForUrl(tab.url) : null;
   settings = await loadSettings();
+  siteKey = tab?.url ? matchSiteKey(settings, tab.url) : null;
   await refreshPage();
   render();
   onSettingsChanged(async (s) => {
     settings = s;
+    if (!scopePinned && tab?.url) siteKey = matchSiteKey(settings, tab.url);
     // Give the content script a moment to apply the change before asking for its state.
     setTimeout(async () => {
       await refreshPage();

@@ -1,0 +1,236 @@
+[
+  {
+    "id": "dark",
+    "name": "Dark",
+    "background": "#1c1c1e",
+    "text": "#e3e3e6",
+    "imageBrightness": 0.9,
+    "grayscale": 0,
+    "collection": "Essentials"
+  },
+  {
+    "id": "black",
+    "name": "Black",
+    "background": "#000000",
+    "text": "#d6d6d6",
+    "imageBrightness": 0.85,
+    "grayscale": 0,
+    "collection": "Essentials"
+  },
+  {
+    "id": "gray",
+    "name": "Gray",
+    "background": "#36373b",
+    "text": "#e4e5e8",
+    "imageBrightness": 0.95,
+    "grayscale": 0,
+    "collection": "Essentials"
+  },
+  {
+    "id": "sepia",
+    "name": "Sepia",
+    "background": "#3a3026",
+    "text": "#eadcc4",
+    "imageBrightness": 0.9,
+    "grayscale": 0,
+    "collection": "Essentials"
+  },
+  {
+    "id": "dimmed",
+    "name": "Dimmed",
+    "background": "#2b2d31",
+    "text": "#c9cbd0",
+    "imageBrightness": 0.85,
+    "grayscale": 0,
+    "collection": "Essentials"
+  },
+  {
+    "id": "high-contrast",
+    "name": "High Contrast",
+    "background": "#000000",
+    "text": "#ffffff",
+    "imageBrightness": 1,
+    "grayscale": 0,
+    "collection": "Essentials"
+  },
+  {
+    "id": "grayscale",
+    "name": "Grayscale",
+    "background": "#1e1e1e",
+    "text": "#dddddd",
+    "imageBrightness": 0.85,
+    "grayscale": 1,
+    "collection": "Essentials"
+  },
+  {
+    "id": "green",
+    "name": "Green",
+    "background": "#13201a",
+    "text": "#cfe8d8",
+    "imageBrightness": 0.9,
+    "grayscale": 0,
+    "collection": "Colors"
+  },
+  {
+    "id": "yellow",
+    "name": "Yellow",
+    "background": "#221f10",
+    "text": "#f0e3a6",
+    "imageBrightness": 0.9,
+    "grayscale": 0,
+    "collection": "Colors"
+  },
+  {
+    "id": "orange",
+    "name": "Orange",
+    "background": "#24170e",
+    "text": "#f3cfae",
+    "imageBrightness": 0.9,
+    "grayscale": 0,
+    "collection": "Colors"
+  },
+  {
+    "id": "red",
+    "name": "Red",
+    "background": "#251314",
+    "text": "#f2c9cb",
+    "imageBrightness": 0.9,
+    "grayscale": 0,
+    "collection": "Colors"
+  },
+  {
+    "id": "purple",
+    "name": "Purple",
+    "background": "#1d1628",
+    "text": "#e2d4f5",
+    "imageBrightness": 0.9,
+    "grayscale": 0,
+    "collection": "Colors"
+  },
+  {
+    "id": "blue",
+    "name": "Blue",
+    "background": "#111a2a",
+    "text": "#cfdcf3",
+    "imageBrightness": 0.9,
+    "grayscale": 0,
+    "collection": "Colors"
+  },
+  {
+    "id": "dracula",
+    "name": "Dracula",
+    "background": "#282a36",
+    "text": "#f8f8f2",
+    "imageBrightness": 0.9,
+    "grayscale": 0,
+    "collection": "Editor Themes"
+  },
+  {
+    "id": "nord",
+    "name": "Nord",
+    "background": "#2e3440",
+    "text": "#d8dee9",
+    "imageBrightness": 0.9,
+    "grayscale": 0,
+    "collection": "Editor Themes"
+  },
+  {
+    "id": "one-dark",
+    "name": "One Dark",
+    "background": "#282c34",
+    "text": "#abb2bf",
+    "imageBrightness": 0.9,
+    "grayscale": 0,
+    "collection": "Editor Themes"
+  },
+  {
+    "id": "solarized",
+    "name": "Solarized",
+    "background": "#002b36",
+    "text": "#93a1a1",
+    "imageBrightness": 0.9,
+    "grayscale": 0,
+    "collection": "Editor Themes"
+  },
+  {
+    "id": "gruvbox",
+    "name": "Gruvbox",
+    "background": "#282828",
+    "text": "#ebdbb2",
+    "imageBrightness": 0.9,
+    "grayscale": 0,
+    "collection": "Editor Themes"
+  },
+  {
+    "id": "catppuccin",
+    "name": "Catppuccin Mocha",
+    "background": "#1e1e2e",
+    "text": "#cdd6f4",
+    "imageBrightness": 0.9,
+    "grayscale": 0,
+    "collection": "Editor Themes"
+  },
+  {
+    "id": "tokyo-night",
+    "name": "Tokyo Night",
+    "background": "#1a1b26",
+    "text": "#a9b1d6",
+    "imageBrightness": 0.9,
+    "grayscale": 0,
+    "collection": "Editor Themes"
+  },
+  {
+    "id": "deep-sea",
+    "name": "Deep Sea",
+    "background": "#0b1d26",
+    "text": "#bfe0ea",
+    "imageBrightness": 0.85,
+    "grayscale": 0,
+    "collection": "Moody"
+  },
+  {
+    "id": "forest",
+    "name": "Forest",
+    "background": "#142018",
+    "text": "#cfe0c8",
+    "imageBrightness": 0.85,
+    "grayscale": 0,
+    "collection": "Moody"
+  },
+  {
+    "id": "ember",
+    "name": "Ember",
+    "background": "#21140f",
+    "text": "#f0c9a8",
+    "imageBrightness": 0.8,
+    "grayscale": 0,
+    "collection": "Moody"
+  },
+  {
+    "id": "candlelight",
+    "name": "Candlelight",
+    "background": "#1a1510",
+    "text": "#e8c27a",
+    "imageBrightness": 0.75,
+    "grayscale": 0,
+    "collection": "Moody"
+  },
+  {
+    "id": "midnight",
+    "name": "Midnight",
+    "background": "#0f1424",
+    "text": "#d0d8ee",
+    "imageBrightness": 0.85,
+    "grayscale": 0,
+    "collection": "Moody"
+  },
+  {
+    "id": "terminal",
+    "name": "Terminal",
+    "background": "#050d06",
+    "text": "#33ff66",
+    "imageBrightness": 0.8,
+    "grayscale": 0.6,
+    "collection": "Moody"
+  }
+]

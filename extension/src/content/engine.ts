@@ -286,6 +286,7 @@ class RootStyler {
       if (el.localName === 'img') this.engine.images.observe(el as HTMLImageElement);
       const sr = (el as HTMLElement).shadowRoot;
       if (sr) this.engine.attachRoot(sr);
+      else if (el.localName.includes('-')) this.engine.pendingHosts.add(el);
     };
     if (isElement(node as Node)) visit(node as Element);
     const all = node.querySelectorAll('*');
@@ -302,6 +303,8 @@ export class DarkEngine {
   running = false;
   readonly images: ImageAnalyzer;
   private roots = new Map<Document | ShadowRoot, RootStyler>();
+  /** Custom elements that may attach a shadow root after they are upgraded (no DOM mutation signals it). */
+  readonly pendingHosts = new Set<Element>();
   private observers = new Map<Document | ShadowRoot, MutationObserver>();
   private pollTimer: number | null = null;
   private loadingEl: HTMLStyleElement | null = null;
@@ -433,6 +436,7 @@ export class DarkEngine {
     }
     for (const el of Array.from(this.doc.querySelectorAll(`[${ATTR_INVERT}]`))) el.removeAttribute(ATTR_INVERT);
     this.images.reset();
+    this.pendingHosts.clear();
   }
 
   update(config: EngineConfig): void {
@@ -542,7 +546,15 @@ export class DarkEngine {
 
   /** Catches CSSOM changes (insertRule from CSS-in-JS libraries) that do not cause DOM mutations. */
   private pollSheets(): void {
-    if (this.running) this.syncAll();
+    if (!this.running) return;
+    for (const el of this.pendingHosts) {
+      const sr = (el as HTMLElement).shadowRoot;
+      if (sr) {
+        this.pendingHosts.delete(el);
+        this.attachRoot(sr);
+      } else if (!el.isConnected) this.pendingHosts.delete(el);
+    }
+    this.syncAll();
   }
 }
 

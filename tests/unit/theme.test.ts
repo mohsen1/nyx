@@ -15,6 +15,23 @@ describe('Noir-compatible theme links', () => {
     });
   });
 
+  it('imports a Noir link with grayscale and alphabetical parameters', () => {
+    // Indexed share link (evidence E5): "+" for spaces, trailing slash, imageGrayscale.
+    expect(parseThemeLink('https://getnoir.app/theme/?bg=161A1F&imageBrightness=0.88&imageGrayscale=0.11&name=Things+Dark&text=DFE3E8')).toEqual({
+      name: 'Things Dark',
+      background: '#161a1f',
+      text: '#dfe3e8',
+      imageBrightness: 0.88,
+      grayscale: 0.11,
+    });
+  });
+
+  it('writes grayscale as imageGrayscale and omits it when zero', () => {
+    const base = { id: 'x', name: 'G', background: '#000000', text: '#ffffff', imageBrightness: 1, grayscale: 0.5 };
+    expect(themeQuery(base)).toBe('name=G&bg=000000&text=FFFFFF&imageBrightness=1&imageGrayscale=0.5');
+    expect(themeQuery({ ...base, grayscale: 0 })).not.toContain('Grayscale');
+  });
+
   it('accepts the noir:// form the getnoir.app/theme page opens', () => {
     const t = parseThemeLink('noir://theme?name=Dusk&bg=101010&text=EEEEEE&imageBrightness=0.8');
     expect(t).toMatchObject({ name: 'Dusk', background: '#101010', text: '#eeeeee', imageBrightness: 0.8 });
@@ -23,7 +40,7 @@ describe('Noir-compatible theme links', () => {
   it('accepts nyx links, bare queries and trailing slashes', () => {
     expect(parseThemeLink('https://mohsen1.github.io/nyx/theme/?name=A&bg=000&text=fff').background).toBe('#000000');
     expect(parseThemeLink('nyx://theme?name=A&bg=000&text=fff').text).toBe('#ffffff');
-    expect(parseThemeLink('name=A&bg=111111&text=eeeeee&grayscale=1').grayscale).toBe(1);
+    expect(parseThemeLink('name=A&bg=111111&text=eeeeee&imageGrayscale=1').grayscale).toBe(1);
   });
 
   it('defaults optional values and clamps out-of-range ones', () => {

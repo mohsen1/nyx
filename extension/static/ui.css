@@ -75,6 +75,8 @@ body.popup { width: 320px; padding: 12px; }
 .popup #app { display: grid; gap: 10px; }
 .popup header { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
 .popup header strong { font-size: 15px; word-break: break-all; }
+.popup header .title { min-width: 0; flex: 1; }
+select.scope { font-weight: 600; font-size: 14px; max-width: 100%; border: 0; padding: 2px 0; background: transparent; }
 .status { margin: 2px 0 0; color: var(--muted); display: flex; align-items: center; gap: 6px; }
 .status .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--line); flex: none; }
 .status.on .dot { background: #34c759; }

@@ -34,15 +34,14 @@ function serve(): Promise<void> {
 
 const url = (name: string) => `http://localhost:${port}/${name}`;
 
-type Fixtures = { context: BrowserContext; worker: Worker; colorScheme: 'dark' | 'light' };
+type Fixtures = { context: BrowserContext; worker: Worker };
 
 const test = base.extend<Fixtures>({
-  colorScheme: ['dark', { option: true }],
   context: async ({ colorScheme }, use) => {
     const context = await chromium.launchPersistentContext(mkdtempSync(join(tmpdir(), 'nyx-')), {
       executablePath: process.env.CHROMIUM_PATH ?? (existsSync('/opt/pw-browsers/chromium') ? '/opt/pw-browsers/chromium' : undefined),
       headless: true,
-      colorScheme,
+      colorScheme: colorScheme ?? 'dark',
       viewport: { width: 900, height: 900 },
       args: [`--disable-extensions-except=${EXT}`, `--load-extension=${EXT}`],
     });
@@ -56,6 +55,7 @@ const test = base.extend<Fixtures>({
   },
 });
 
+test.use({ colorScheme: 'dark' });
 test.beforeAll(serve);
 test.afterAll(() => server.close());
 
@@ -128,7 +128,7 @@ test.describe('light system appearance', () => {
     await expect.poll(() => bg(page, 'body')).toBe('rgb(28, 28, 30)');
 
     await setSettings(worker, (s) => {
-      s.sites = { localhost: { mode: 'off', themeId: null, pausedUntil: null, ignoreBuiltInDarkMode: false, appearance: {}, updatedAt: Date.now() } };
+      s.sites = { localhost: { mode: 'off', themeId: null, pausedUntil: null, ignoreBuiltInDarkMode: null, appearance: {}, updatedAt: Date.now() } };
     });
     await expect.poll(() => bg(page, 'body')).toBe('rgb(255, 255, 255)');
     expect(await page.$$eval('style.nyx-style', (els) => els.length)).toBe(0);
@@ -140,8 +140,8 @@ test('switches themes live and applies image brightness and grayscale', async ({
   await setSettings(worker, (s) => {
     s.global = { ...(s.global ?? {}), defaultThemeId: 'sepia', updatedAt: Date.now() };
   });
-  await expect.poll(() => bg(page, 'body')).toBe('rgb(42, 34, 25)');
-  expect(await page.$eval('#photo', (el) => getComputedStyle(el).filter)).toContain('brightness(0.85)');
+  await expect.poll(() => bg(page, 'body')).toBe('rgb(58, 48, 38)');
+  expect(await page.$eval('#photo', (el) => getComputedStyle(el).filter)).toContain('brightness(0.9)');
   await setSettings(worker, (s) => {
     s.global.defaultThemeId = 'grayscale';
   });
@@ -151,7 +151,7 @@ test('switches themes live and applies image brightness and grayscale', async ({
 test('pause until tomorrow stops darkening on that site only', async ({ context, worker }) => {
   const page = await openLight(context);
   await setSettings(worker, (s) => {
-    s.sites = { localhost: { mode: 'default', themeId: null, pausedUntil: Date.now() + 3_600_000, ignoreBuiltInDarkMode: false, appearance: {}, updatedAt: Date.now() } };
+    s.sites = { localhost: { mode: 'default', themeId: null, pausedUntil: Date.now() + 3_600_000, ignoreBuiltInDarkMode: null, appearance: {}, updatedAt: Date.now() } };
   });
   await expect.poll(() => bg(page, 'body')).toBe('rgb(255, 255, 255)');
 });
@@ -184,7 +184,7 @@ test('advanced appearance: dynamic colors off, background images hidden, inversi
   const page = await openLight(context);
   await setSettings(worker, (s) => {
     s.global = { ...(s.global ?? {}), advancedAppearanceEnabled: true, updatedAt: Date.now() };
-    s.sites = { localhost: { mode: 'default', themeId: null, pausedUntil: null, ignoreBuiltInDarkMode: false, appearance: { dynamicColors: false, imageInversion: false }, updatedAt: Date.now() } };
+    s.sites = { localhost: { mode: 'default', themeId: null, pausedUntil: null, ignoreBuiltInDarkMode: null, appearance: { dynamicColors: false, imageInversion: false }, updatedAt: Date.now() } };
   });
   await expect.poll(async () => {
     const [r, , b] = (await bg(page, '#cta')).match(/\d+/g)!.map(Number);

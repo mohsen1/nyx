@@ -3,6 +3,9 @@ import {
   decide,
   defaultSettings,
   isWithinSchedule,
+  matchSiteKey,
+  nextSiteMode,
+  siteScopes,
   mergeSettings,
   nextThemeId,
   normalizeSettings,
@@ -50,12 +53,12 @@ describe('decide', () => {
   });
 
   it('uses the website theme, then the default theme', () => {
-    let s = updateGlobal(defaultSettings(), { defaultThemeId: 'oled' });
-    expect(decide(s, 'a.com', env(true)).theme.id).toBe('oled');
+    let s = updateGlobal(defaultSettings(), { defaultThemeId: 'black' });
+    expect(decide(s, 'a.com', env(true)).theme.id).toBe('black');
     s = updateSite(s, 'a.com', { themeId: 'sepia' });
     expect(decide(s, 'a.com', env(true)).theme.id).toBe('sepia');
     s = updateSite(s, 'a.com', { themeId: 'deleted-theme' });
-    expect(decide(s, 'a.com', env(true)).theme.id).toBe('nyx');
+    expect(decide(s, 'a.com', env(true)).theme.id).toBe('dark');
   });
 
   it('applies advanced appearance options only when enabled', () => {
@@ -66,10 +69,40 @@ describe('decide', () => {
   });
 });
 
+describe('website scopes', () => {
+  it('lists page, host and parent-domain scopes', () => {
+    expect(siteScopes('https://docs.www.example.com/Guide/intro?x#y')).toEqual(['docs.www.example.com/guide/intro', 'docs.www.example.com', 'www.example.com', 'example.com']);
+    expect(siteScopes('https://www.bbc.co.uk/news')).toEqual(['bbc.co.uk/news', 'bbc.co.uk']);
+    expect(siteScopes('http://192.168.1.2:8080/')).toEqual(['192.168.1.2:8080', '192.168.1.2']);
+    expect(siteScopes('http://localhost:3000/app')).toEqual(['localhost:3000/app', 'localhost:3000', 'localhost']);
+    expect(siteScopes('https://app.example.com:8443/')).toEqual(['app.example.com:8443', 'app.example.com', 'example.com']);
+  });
+
+  it('uses the most specific scope that has settings', () => {
+    let s = updateSite(defaultSettings(), 'example.com', { mode: 'off' });
+    expect(matchSiteKey(s, 'https://news.example.com/a')).toBe('example.com');
+    s = updateSite(s, 'news.example.com/a', { mode: 'on' });
+    expect(matchSiteKey(s, 'https://news.example.com/a')).toBe('news.example.com/a');
+    expect(matchSiteKey(s, 'https://news.example.com/b')).toBe('example.com');
+    expect(matchSiteKey(defaultSettings(), 'https://other.org/')).toBe('other.org');
+  });
+
+  it('cycles the status like the "Set Status" shortcut', () => {
+    expect(['default', 'auto', 'on', 'off'].map((m) => nextSiteMode(m as never))).toEqual(['auto', 'on', 'off', 'default']);
+  });
+
+  it('applies the global "ignore built-in dark mode" default unless the site overrides it', () => {
+    let s = updateGlobal(defaultSettings(), { ignoreBuiltInDarkMode: true });
+    expect(decide(s, 'a.com', env(true)).ignoreBuiltInDarkMode).toBe(true);
+    s = updateSite(s, 'a.com', { ignoreBuiltInDarkMode: false });
+    expect(decide(s, 'a.com', env(true)).ignoreBuiltInDarkMode).toBe(false);
+  });
+});
+
 describe('helpers', () => {
   it('derives site keys', () => {
     expect(siteKeyForUrl('https://www.Example.com/path?q')).toBe('example.com');
-    expect(siteKeyForUrl('http://sub.example.com:8080/')).toBe('sub.example.com');
+    expect(siteKeyForUrl('http://sub.example.com:8080/')).toBe('sub.example.com:8080');
     expect(siteKeyForUrl('about:blank')).toBeNull();
     expect(siteKeyForUrl('safari-web-extension://abc/popup.html')).toBeNull();
   });
@@ -82,16 +115,16 @@ describe('helpers', () => {
 
   it('cycles themes', () => {
     const s = defaultSettings();
-    expect(nextThemeId(s, 'nyx')).toBe('dimmed');
-    const custom = updateGlobal(s, { cycleThemeIds: ['oled', 'sepia'] });
-    expect(nextThemeId(custom, 'oled')).toBe('sepia');
-    expect(nextThemeId(custom, 'sepia')).toBe('oled');
+    expect(nextThemeId(s, 'dark')).toBe('black');
+    const custom = updateGlobal(s, { cycleThemeIds: ['black', 'sepia'] });
+    expect(nextThemeId(custom, 'black')).toBe('sepia');
+    expect(nextThemeId(custom, 'sepia')).toBe('black');
   });
 
   it('normalizes untrusted input', () => {
     const s = normalizeSettings({ global: { mode: 'bogus', schedule: { start: '25:00' } }, sites: { 'WWW.A.com': { mode: 'on', appearance: { dynamicColors: 'x' } } } });
     expect(s.global.mode).toBe('auto');
-    expect(s.global.schedule.start).toBe('19:00');
+    expect(s.global.schedule.start).toBe('20:00');
     expect(s.sites['a.com']).toMatchObject({ mode: 'on', appearance: {} });
   });
 

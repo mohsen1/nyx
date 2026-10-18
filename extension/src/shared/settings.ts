@@ -32,8 +32,8 @@ export interface SiteSettings {
   themeId: string | null;
   /** Epoch ms. Darkening is paused on this site until then. */
   pausedUntil: number | null;
-  /** Apply our dark style even when the site appears to have its own dark mode. */
-  ignoreBuiltInDarkMode: boolean;
+  /** Apply our dark style even when the site appears to have its own dark mode; null uses the global default. */
+  ignoreBuiltInDarkMode: boolean | null;
   /** Advanced appearance overrides; undefined values use the global defaults. */
   appearance: Partial<AppearanceOptions>;
   updatedAt: number;
@@ -46,6 +46,8 @@ export interface GlobalSettings {
   defaultThemeId: string;
   /** Epoch ms. Darkening is paused everywhere until then. */
   pausedUntil: number | null;
+  /** Default for websites: darken even when a built-in dark mode is detected. */
+  ignoreBuiltInDarkMode: boolean;
   /** Shows the advanced appearance options in the toolbar menu. */
   advancedAppearanceEnabled: boolean;
   appearance: AppearanceOptions;
@@ -79,9 +81,10 @@ export function defaultSettings(now = Date.now()): Settings {
     global: {
       mode: 'auto',
       autoTrigger: 'system',
-      schedule: { start: '19:00', end: '07:00' },
+      schedule: { start: '20:00', end: '07:00' },
       defaultThemeId: DEFAULT_THEME_ID,
       pausedUntil: null,
+      ignoreBuiltInDarkMode: false,
       advancedAppearanceEnabled: false,
       appearance: { ...DEFAULT_APPEARANCE },
       darkModeReporting: 'ask',
@@ -100,7 +103,7 @@ export function defaultSiteSettings(now = Date.now()): SiteSettings {
     mode: 'default',
     themeId: null,
     pausedUntil: null,
-    ignoreBuiltInDarkMode: false,
+    ignoreBuiltInDarkMode: null,
     appearance: {},
     updatedAt: now,
   };
@@ -137,6 +140,7 @@ export function normalizeSettings(input: unknown, now = Date.now()): Settings {
     },
     defaultThemeId: typeof g.defaultThemeId === 'string' ? g.defaultThemeId : base.global.defaultThemeId,
     pausedUntil: num(g.pausedUntil),
+    ignoreBuiltInDarkMode: bool(g.ignoreBuiltInDarkMode, false),
     advancedAppearanceEnabled: bool(g.advancedAppearanceEnabled, false),
     appearance: appearance(g.appearance, DEFAULT_APPEARANCE),
     darkModeReporting: oneOf(g.darkModeReporting, ['ask', 'never'] as const, 'ask'),
@@ -154,14 +158,14 @@ export function normalizeSettings(input: unknown, now = Date.now()): Settings {
         mode: oneOf(s.mode, ['default', 'auto', 'on', 'off'] as const, 'default'),
         themeId: typeof s.themeId === 'string' ? s.themeId : null,
         pausedUntil: num(s.pausedUntil),
-        ignoreBuiltInDarkMode: bool(s.ignoreBuiltInDarkMode, false),
+        ignoreBuiltInDarkMode: typeof s.ignoreBuiltInDarkMode === 'boolean' ? s.ignoreBuiltInDarkMode : null,
         appearance: {},
         updatedAt: num(s.updatedAt) ?? now,
       };
       for (const k of ['dynamicColors', 'backgroundImages', 'imageInversion'] as const) {
         if (typeof ap[k] === 'boolean') site.appearance[k] = ap[k];
       }
-      sites[normalizeHost(host)] = site;
+      sites[normalizeSiteKey(host)] = site;
     }
   }
 
@@ -197,20 +201,65 @@ export function normalizeSettings(input: unknown, now = Date.now()): Settings {
   };
 }
 
-/** Site key used for per-website settings: lower-cased hostname without a leading "www.". */
-export function normalizeHost(host: string): string {
-  return host.trim().toLowerCase().replace(/^www\./, '').replace(/\.$/, '');
+/**
+ * Website settings can be scoped to a page ("example.com/docs/intro"), a host with an optional
+ * port ("app.example.com", "192.168.1.2:8080"), or a parent domain ("example.com").
+ * Keys are lower-cased and drop a leading "www.".
+ */
+export function normalizeSiteKey(key: string): string {
+  return key.trim().toLowerCase().replace(/^[a-z]+:\/\//, '').replace(/^www\./, '').replace(/\.(?=$|[:/])/, '').replace(/\/+$/, '');
 }
 
+/** Host-level site key for a URL: hostname plus a non-default port. */
 export function siteKeyForUrl(url: string): string | null {
   try {
     const u = new URL(url);
     if (u.protocol === 'file:') return 'file://';
     if (!/^https?:$/.test(u.protocol)) return null;
-    return normalizeHost(u.hostname);
+    return normalizeSiteKey(u.port ? `${u.hostname}:${u.port}` : u.hostname);
   } catch {
     return null;
   }
+}
+
+// Second-level labels that act as public suffixes under country codes (example.co.uk).
+const SECOND_LEVEL = new Set(['co', 'com', 'org', 'net', 'ac', 'gov', 'edu', 'ne', 'or', 'go', 'gob', 'nic']);
+
+/** Scopes that can hold settings for a URL, most specific first: page, host[:port], parent domains. */
+export function siteScopes(url: string): string[] {
+  let u: URL;
+  try {
+    u = new URL(url);
+  } catch {
+    return [];
+  }
+  const host = siteKeyForUrl(url);
+  if (!host) return [];
+  if (host === 'file://') return [host];
+  const scopes: string[] = [];
+  const path = u.pathname.replace(/\/+$/, '');
+  if (path) scopes.push(`${host}${path.toLowerCase()}`);
+  scopes.push(host);
+  const hostname = normalizeSiteKey(u.hostname);
+  if (/^[\d.]+$/.test(hostname) || hostname.includes(':') || !hostname.includes('.')) {
+    if (u.port) scopes.push(hostname); // settings for an IP or localhost without a port
+    return scopes;
+  }
+  const labels = hostname.split('.');
+  const tld = labels[labels.length - 1];
+  const minLabels = labels.length >= 3 && tld.length === 2 && SECOND_LEVEL.has(labels[labels.length - 2]) ? 3 : 2;
+  for (let i = 1; labels.length - i >= minLabels; i++) {
+    const parent = labels.slice(i).join('.');
+    if (!scopes.includes(parent)) scopes.push(parent);
+  }
+  if (u.port && !scopes.includes(hostname)) scopes.splice(scopes.indexOf(host) + 1, 0, hostname);
+  return scopes;
+}
+
+/** The most specific scope that has settings for `url`, or the host key when none has. */
+export function matchSiteKey(settings: Settings, url: string): string | null {
+  const scopes = siteScopes(url);
+  return scopes.find((k) => settings.sites[k] && !isDefaultSite(settings.sites[k])) ?? siteKeyForUrl(url);
 }
 
 /** All themes in display order: built-ins (with user edits applied), then custom themes. */
@@ -284,7 +333,8 @@ export function decide(settings: Settings, siteKey: string | null, env: Environm
   const appearance: AppearanceOptions = g.advancedAppearanceEnabled
     ? { ...g.appearance, ...site.appearance }
     : { ...DEFAULT_APPEARANCE };
-  const base = { effectiveMode, theme, appearance, ignoreBuiltInDarkMode: site.ignoreBuiltInDarkMode, siteKey };
+  const ignoreBuiltInDarkMode = site.ignoreBuiltInDarkMode ?? g.ignoreBuiltInDarkMode;
+  const base = { effectiveMode, theme, appearance, ignoreBuiltInDarkMode, siteKey };
   const now = env.now.getTime();
 
   if (site.pausedUntil && site.pausedUntil > now) return { ...base, enabled: false, reason: 'site-paused' };
@@ -330,13 +380,20 @@ export function isDefaultSite(s: SiteSettings): boolean {
     s.mode === 'default' &&
     s.themeId === null &&
     (!s.pausedUntil || s.pausedUntil < Date.now()) &&
-    !s.ignoreBuiltInDarkMode &&
+    s.ignoreBuiltInDarkMode === null &&
     Object.keys(s.appearance).length === 0
   );
 }
 
 export function updateGlobal(settings: Settings, patch: Partial<GlobalSettings>, now = Date.now()): Settings {
   return { ...settings, global: { ...settings.global, ...patch, updatedAt: now } };
+}
+
+/** Order used by the "Set Status" shortcut, which steps through these states. */
+export const SITE_MODE_CYCLE: SiteMode[] = ['auto', 'on', 'off', 'default'];
+
+export function nextSiteMode(mode: SiteMode): SiteMode {
+  return SITE_MODE_CYCLE[(SITE_MODE_CYCLE.indexOf(mode) + 1) % SITE_MODE_CYCLE.length];
 }
 
 /** Next theme id in the cycle order after `currentId`. */

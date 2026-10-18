@@ -2,7 +2,7 @@
 
 import { api } from '../shared/browser';
 import type { FetchResult, Message, PageState } from '../shared/messages';
-import { decide, siteKeyForUrl, type Decision, type Settings } from '../shared/settings';
+import { decide, matchSiteKey, type Decision, type Settings } from '../shared/settings';
 import { loadSettings, onSettingsChanged } from '../shared/storage';
 import { detectDarkPage } from './detect';
 import { DarkEngine, type EngineConfig } from './engine';
@@ -15,14 +15,15 @@ declare global {
 
 const isTop = window.top === window;
 
-function topSiteKey(): string | null {
-  if (isTop) return siteKeyForUrl(location.href);
-  const ancestors = location.ancestorOrigins;
-  if (ancestors && ancestors.length) return siteKeyForUrl(ancestors[ancestors.length - 1]);
+/** URL of the top-level page; frames are styled according to the website they are shown on. */
+function topUrl(): string {
+  if (isTop) return location.href;
   try {
-    return siteKeyForUrl(window.top!.location.href);
+    return window.top!.location.href;
   } catch {
-    return siteKeyForUrl(document.referrer || location.href);
+    const ancestors = location.ancestorOrigins;
+    if (ancestors && ancestors.length) return ancestors[ancestors.length - 1];
+    return document.referrer || location.href;
   }
 }
 
@@ -44,7 +45,8 @@ class Controller {
   private timer: number | null = null;
   private redetectTimer: number | null = null;
   private readonly media = window.matchMedia('(prefers-color-scheme: dark)');
-  private readonly siteKey = topSiteKey();
+  private url = topUrl();
+  private siteKey: string | null = null;
 
   async init(): Promise<void> {
     onSettingsChanged((s) => {
@@ -66,13 +68,15 @@ class Controller {
     else detectSoon();
     window.addEventListener('load', () => this.detect(), { once: true });
     this.watchThemeSwitches();
+    // Page-scoped settings must follow single-page-app navigations.
+    if (isTop) window.setInterval(() => location.href !== this.url && this.apply(), 1000);
   }
 
   private state(): PageState {
     const d = this.decision;
     return {
       siteKey: this.siteKey,
-      url: location.href,
+      url: this.url,
       decision: {
         enabled: d?.enabled ?? false,
         reason: d?.reason ?? 'global-off',
@@ -91,6 +95,8 @@ class Controller {
 
   apply(): void {
     if (!this.settings) return;
+    if (isTop && location.href !== this.url) this.url = location.href; // SPA navigation
+    this.siteKey = matchSiteKey(this.settings, this.url);
     const d = decide(this.settings, this.siteKey, { systemDark: this.media.matches, now: new Date() });
     this.decision = d;
     const want = d.enabled && !(this.builtInDarkMode && !d.ignoreBuiltInDarkMode);

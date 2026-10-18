@@ -5,6 +5,7 @@ import {
   allThemes,
   isDefaultSite,
   normalizeSettings,
+  normalizeSiteKey,
   resetSite,
   tomorrowMorning,
   updateGlobal,
@@ -331,7 +332,7 @@ function websites(): Node[] {
   return [
     card(
       'Websites',
-      h('p', { class: 'hint' }, 'Websites with their own settings. Change these quickly from the Nyx menu in the toolbar.'),
+      h('p', { class: 'hint' }, 'Websites, subdomains and pages with their own settings. Add example.com, app.example.com, 192.168.1.2:8080 or example.com/some/page.'),
       h(
         'div',
         { class: 'row' },
@@ -341,8 +342,8 @@ function websites(): Node[] {
           {
             type: 'button',
             onclick: () => {
-              const host = add.value.trim().replace(/^https?:\/\//, '').split('/')[0];
-              if (host) void update((s) => updateSite(s, host.toLowerCase().replace(/^www\./, ''), { mode: 'off' }));
+              const host = add.value.trim();
+              if (host) void update((s) => updateSite(s, normalizeSiteKey(host), { mode: 'off' }));
             },
           },
           'Add (Off)',
@@ -378,7 +379,7 @@ function websites(): Node[] {
               (mode) => update((x) => updateSite(x, host, { mode })),
             ),
             select,
-            s.ignoreBuiltInDarkMode ? h('span', { class: 'badge' }, 'Ignores site dark mode') : null,
+            s.ignoreBuiltInDarkMode === true ? h('span', { class: 'badge' }, 'Ignores built-in dark mode') : null,
             s.pausedUntil && s.pausedUntil > Date.now() ? h('span', { class: 'badge' }, `Paused until ${formatTime(s.pausedUntil)}`) : null,
             h('button', { type: 'button', class: 'danger', onclick: () => update((x) => resetSite(x, host)) }, 'Remove'),
           );
@@ -423,6 +424,15 @@ function advanced(): Node[] {
             toggle('Image inversion', g.appearance.imageInversion, (v) => update((s) => updateGlobal(s, { appearance: { ...s.global.appearance, imageInversion: v } })), 'Inverts dark logos and icons on transparent backgrounds.'),
           )
         : null,
+    ),
+    card(
+      'Built-in Dark Mode',
+      toggle(
+        'Ignore built-in dark modes',
+        g.ignoreBuiltInDarkMode,
+        (v) => update((s) => updateGlobal(s, { ignoreBuiltInDarkMode: v })),
+        'Nyx normally leaves websites that have their own dark mode alone. Detection is not perfect, so it is best to leave this off and turn it on per website from the toolbar menu.',
+      ),
     ),
     card(
       'Built-in Dark Mode Reports',
