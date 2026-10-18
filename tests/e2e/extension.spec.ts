@@ -191,6 +191,15 @@ test('falls back to fetching cross-origin sheets from the page when the backgrou
   await expect.poll(async () => luminance(await bg(page, '#cross'))).toBeLessThan(0.1);
 });
 
+test('legacy pages: body background tiles, bgcolor and text attributes', async ({ context }) => {
+  const page = await context.newPage();
+  await page.goto(url('legacy.html'));
+  await page.waitForLoadState('load');
+  await expect.poll(() => page.$eval('body', (el) => getComputedStyle(el).backgroundImage)).toBe('none');
+  expect(luminance(await bg(page, 'body'))).toBeLessThan(0.05);
+  expect(luminance(await fg(page, '#essay'))).toBeGreaterThan(0.5);
+});
+
 test('re-detects when a site switches its own theme', async ({ context }) => {
   const page = await context.newPage();
   await page.goto(url('toggle.html'));

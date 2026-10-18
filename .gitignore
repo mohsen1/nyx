@@ -11,3 +11,4 @@ apple/build/
 apple/App/Info-*.plist
 apple/Extension/Info-*.plist
 apple/Widgets/Info.plist
+audit-results/

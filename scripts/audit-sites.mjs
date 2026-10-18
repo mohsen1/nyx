@@ -1,6 +1,6 @@
 // Loads real websites with the built extension in Chromium and flags pages that
 // Nyx leaves light or renders unreadable. Needs network access.
-//   npm run build && node scripts/audit-sites.mjs [url ...]  → test-results/audit/
+//   npm run build && node scripts/audit-sites.mjs [url ...]  → audit-results/
 import { chromium } from '@playwright/test';
 import { existsSync, mkdtempSync, writeFileSync } from 'node:fs';
 import { mkdir } from 'node:fs/promises';
@@ -9,7 +9,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
-const out = join(root, 'test-results/audit');
+const out = join(root, 'audit-results');
 await mkdir(out, { recursive: true });
 
 const defaults = [
@@ -28,7 +28,7 @@ const defaults = [
   'https://www.wolframalpha.com/', 'https://www.w3.org/', 'https://www.craigslist.org/about/', 'https://www.economist.com/',
 ];
 const urls = process.argv.slice(2).length ? process.argv.slice(2) : defaults;
-const ext = join(root, 'dist/chrome');
+const ext = process.env.NYX_EXT || join(root, 'dist/chrome');
 const local = process.env.CHROMIUM_PATH || (existsSync('/opt/pw-browsers/chromium') ? '/opt/pw-browsers/chromium' : undefined);
 
 const context = await chromium.launchPersistentContext(mkdtempSync(join(tmpdir(), 'nyx-audit-')), {

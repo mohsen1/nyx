@@ -376,6 +376,9 @@ export class DarkEngine {
     css += `:where(a:any-link) { color: ${link}; }\n:where(a:visited) { color: ${visited}; }\n`;
     css += `:where(input, textarea, select, button, fieldset, hr, table, td, th) { border-color: ${border}; }\n`;
     css += `:where(mark) { background-color: ${p.map('#ffff00', 'background')}; color: ${text}; }\n`;
+    // Legacy background="tile.gif" attributes are almost always light paper textures that would
+    // cover the darkened bgcolor (e.g. paulgraham.com).
+    css += `:is(body, table, tr, td, th)[background] { background-image: none !important; }\n`;
     if (imageFilter) {
       css += `:where(img, picture, svg image, input[type="image"]) { filter: ${imageFilter}; }\n`;
     }
