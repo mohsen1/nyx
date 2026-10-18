@@ -7,7 +7,7 @@ import type { AppearanceOptions } from '../shared/settings';
 import type { Theme } from '../shared/theme';
 import { transformRules, transformSheet } from './sheet-transform';
 import { ImageAnalyzer } from './images';
-import { ATTR_DIM, ATTR_FIX, ContrastGuard, DIM_VAR, FIX_VAR } from './contrast';
+import { ATTR_DIM, ATTR_FIX, ATTR_FIX_FILL, ATTR_FIX_STROKE, ContrastGuard, DIM_VAR, FIX_VAR } from './contrast';
 import { parseColor } from '../shared/color';
 
 export const STYLE_CLASS = 'nyx-style';
@@ -440,6 +440,7 @@ export class DarkEngine {
     }
     css += `[${ATTR_DIM}]:not(img) { background-color: var(${DIM_VAR}) !important; background-blend-mode: multiply !important; }\n`;
     css += `img[${ATTR_DIM}] { filter: brightness(0.3) !important; }\n`;
+    css += `[${ATTR_FIX_FILL}] { fill: var(--nyx-fix-f) !important; }\n[${ATTR_FIX_STROKE}] { stroke: var(--nyx-fix-s) !important; }\n`;
     css += `[${ATTR_FIX}] { color: var(${FIX_VAR}) !important; -webkit-text-fill-color: var(${FIX_VAR}) !important; }\n`;
     return css;
   }

@@ -266,6 +266,10 @@ test('text on a button with an icon background is still checked (Gmail Compose)'
     return (Math.max(tl, bl) + 0.05) / (Math.min(tl, bl) + 0.05);
   };
   await expect.poll(seen).toBeGreaterThan(4.4);
+  // A gray icon is lifted; a red one keeps its color.
+  const fill = (sel: string) => page.$eval(sel, (el) => getComputedStyle(el).fill);
+  await expect.poll(async () => luminance(await fill('#icon'))).toBeGreaterThan(0.15); // ≥ 3:1 on the dark page
+  expect(await fill('#icon-red')).toBe('rgb(197, 34, 31)');
 });
 
 test('re-detects when a site switches its own theme', async ({ context }) => {
