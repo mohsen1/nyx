@@ -194,13 +194,18 @@ export function parseColor(input: string): RGBA | null {
     return { ...linearToSrgb(mul(D65_TO_SRGB, mul(D50_TO_D65, labToXyzD50(L, A, B)))), a };
   }
   if (fn === 'color') {
-    if (channels.length < 4) return null;
-    const space = channels[0];
-    const v = channels.slice(1, 4).map((c) => parseNumberOrPercent(c, 1));
+    // color(<space> c1 c2 c3 [/ alpha]); the generic splitter would take c3 for the alpha.
+    const [body, slashAlpha] = inner.split('/');
+    const parts = body.trim().split(/\s+/);
+    if (parts.length < 4) return null;
+    const space = parts[0];
+    const ca = slashAlpha === undefined ? 1 : parseAlpha(slashAlpha.trim());
+    const v = parts.slice(1, 4).map((c) => parseNumberOrPercent(c, 1));
+    const a2 = ca;
     if (!v.every(Number.isFinite)) return null;
-    if (space === 'srgb') return { r: clamp(Math.round(v[0] * 255), 0, 255), g: clamp(Math.round(v[1] * 255), 0, 255), b: clamp(Math.round(v[2] * 255), 0, 255), a };
-    if (space === 'srgb-linear') return { ...linearToSrgb(v), a };
-    if (space === 'display-p3') return { ...linearToSrgb(mul(D65_TO_SRGB, mul(P3_TO_D65, v.map(srgbToLinear)))), a };
+    if (space === 'srgb') return { r: clamp(Math.round(v[0] * 255), 0, 255), g: clamp(Math.round(v[1] * 255), 0, 255), b: clamp(Math.round(v[2] * 255), 0, 255), a: a2 };
+    if (space === 'srgb-linear') return { ...linearToSrgb(v), a: a2 };
+    if (space === 'display-p3') return { ...linearToSrgb(mul(D65_TO_SRGB, mul(P3_TO_D65, v.map(srgbToLinear)))), a: a2 };
     return null;
   }
   return null; // lab()/lch(): uncommon in the wild, leave as-is
