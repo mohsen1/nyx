@@ -129,6 +129,7 @@ export class ContrastGuard {
     private readonly images: ImageAnalyzer,
     private readonly themeBackground: () => RGBA,
     private readonly mapBackground: (c: RGBA) => string | null = () => null,
+    private readonly pageInkIsDark: (el: Element) => boolean = () => false,
   ) {
     this.io = new win.IntersectionObserver(
       (entries) => {
@@ -453,7 +454,10 @@ export class ContrastGuard {
     if (textOnTop ? r.width < 16 || r.height < 12 : !banner && (r.width < Math.min(320, this.win.innerWidth * 0.4) || r.height < 120)) return;
     this.dimPending.add(el);
     void this.images.statsForUrl(url).then((stats) => {
-      if (!stats || !isPaleSurface(stats) || !el.isConnected) return;
+      if (!el.isConnected) return;
+      // Pixels out of reach (Safari without access to the CDN, Box's hero pattern): the page's own
+      // dark text on it says the image is light.
+      if (stats ? !isPaleSurface(stats) : !this.pageInkIsDark(el)) return;
       const bg = this.themeBackground();
       const k = Math.min(0.45, (relativeLuminance(bg) + 0.05) * 2.2);
       const gray = Math.round(255 * k);

@@ -205,6 +205,16 @@ test('a stylesheet that can be neither read nor fetched is darkened from compute
   await expect.poll(async () => luminance(await fg(page, '#text'))).toBeGreaterThan(0.3);
 });
 
+test('a pale hero image whose pixels cannot be read is dimmed when the page text on it is dark (Box in Safari)', async ({ context, worker }) => {
+  await worker.evaluate(() => {
+    (globalThis as any).fetch = () => Promise.reject(new TypeError('blocked'));
+  });
+  const page = await context.newPage();
+  await page.goto(url('pale-hero-blind.html'));
+  await page.waitForLoadState('load');
+  await expect.poll(() => page.getAttribute('#hero', 'data-nyx-dim-bg'), { timeout: 8000 }).toBe('');
+});
+
 test('legacy pages: body background tiles, bgcolor and text attributes', async ({ context }) => {
   const page = await context.newPage();
   await page.goto(url('legacy.html'));

@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>A pale hero image whose pixels can't be read</title>
+  <style>
+    body { margin: 0; background: #fff; color: #222; font: 17px system-ui, sans-serif; }
+    /* Box's hero: a pale pattern on a CDN without CORS, under the page's own dark text. */
+    .hero { height: 480px; background: url(CROSS_ORIGIN/pale-pattern.svg?nocors) center / cover; text-align: center; padding-top: 160px; box-sizing: border-box; }
+    .hero h1 { margin: 0; font-size: 56px; background: linear-gradient(90deg, #5a3, #82a); -webkit-background-clip: text; background-clip: text; color: transparent; }
+    .hero p { color: #333; }
+  </style>
+</head>
+<body>
+  <section class="hero" id="hero"><h1>Contracts + AI</h1><p>Intelligent content management</p></section>
+</body>
+</html>

@@ -88,7 +88,9 @@ apple/               Safari container app (iOS + macOS), native messaging, App I
      and shown through `content: url()`. CSS background logos and sprites get
      the same treatment at natural size.
    - Large pale backdrops with text on them (hero images, `<video>`,
-     `<canvas>`, full-page background images) are darkened.
+     `<canvas>`, full-page background images) are darkened. When a backdrop's
+     pixels can't be read (no host access, no CORS), it is darkened if the
+     page's own text on it is dark.
 9. **Contrast guard.** Whatever produced the final colors, text that is on screen is
    checked against the solid background actually behind it. Text below 3:1 (a color
    the rewriter could not see: an unreadable stylesheet, a variable set from script,

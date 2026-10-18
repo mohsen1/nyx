@@ -8,7 +8,7 @@ import type { Theme } from '../shared/theme';
 import { stripImports, transformRules, transformSheet, type TransformOptions } from './sheet-transform';
 import { ImageAnalyzer } from './images';
 import { ATTR_BLIND_BG, ATTR_DIM, ATTR_FIX, BLIND_VAR, ATTR_FIX_FILL, ATTR_FIX_INK, ATTR_FIX_STROKE, ContrastGuard, DIM_VAR, FIX_VAR } from './contrast';
-import { formatColor, parseColor } from '../shared/color';
+import { formatColor, parseColor, relativeLuminance } from '../shared/color';
 
 export const STYLE_CLASS = 'nyx-style';
 const ATTR_INLINE = 'data-nyx-inline';
@@ -707,7 +707,25 @@ export class DarkEngine {
       this.images,
       () => parseColor(this.config.theme.background) ?? { r: 28, g: 28, b: 30, a: 1 },
       (c) => this.palette.map(formatColor(c), 'background'),
+      (el) => this.pageInkIsDark(el),
     );
+  }
+
+  /** Whether the first visible, opaque text inside `el` is dark in the page's own styles (ours off). */
+  private pageInkIsDark(el: Element): boolean {
+    const candidates = Array.from(el.querySelectorAll('h1, h2, h3, p, a, span, li'))
+      .filter((c) => Array.from(c.childNodes).some((n) => n.nodeType === 3 && n.textContent!.trim().length > 2))
+      .slice(0, 20);
+    if (!candidates.length) return false;
+    return this.withoutStyles(() => {
+      for (const t of candidates) {
+        if (t.getBoundingClientRect().width === 0) continue;
+        const c = parseColor(this.win.getComputedStyle(t).color);
+        // Gradient text is transparent; the next text says more.
+        if (c && c.a > 0.5) return relativeLuminance(c) < 0.2;
+      }
+      return false;
+    }, true);
   }
 
   private makePalette(c: EngineConfig): Palette {
