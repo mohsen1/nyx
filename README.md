@@ -1,17 +1,17 @@
-<p align="center"><img src="extension/static/icons/icon-256.png" width="96" alt="Nyx icon"></p>
+<p align="center"><img src="extension/static/icons/icon-256.png" width="96" alt="Nyx dark mode extension icon"></p>
 
 <h1 align="center">Nyx</h1>
 
 <p align="center"><strong>Dark mode for websites that don't have one.</strong><br>
-A Safari extension for iPhone, iPad and Mac. It also runs in Chrome, Edge and Firefox.<br>
+A dark mode extension for Safari on iPhone, iPad and Mac. It also runs in Chrome, Edge and Firefox.<br>
 <a href="https://azimi.me/nyx/">Website</a> · <a href="https://azimi.me/nyx/support/">Support</a> · <a href="https://azimi.me/nyx/privacy/">Privacy</a></p>
 
-<p align="center"><img src="docs/images/split-wikipedia.png" alt="A Wikipedia article: light on the left, darkened by Nyx on the right"></p>
+<p align="center"><img src="docs/images/split-wikipedia.png" alt="A Wikipedia article: light on the left, in dark mode with Nyx on the right"></p>
 
 <p align="center">
-  <img src="docs/images/split-hackernews.png" width="32%" alt="Hacker News, light and with Nyx">
-  <img src="docs/images/split-github.png" width="32%" alt="GitHub, light and in the Dracula theme">
-  <img src="docs/images/split-xkcd.png" width="32%" alt="xkcd, light and in the Sepia theme">
+  <img src="docs/images/split-hackernews.png" width="32%" alt="Hacker News, light and in dark mode with Nyx">
+  <img src="docs/images/split-github.png" width="32%" alt="A GitHub repository, light and in the Nyx Dracula theme">
+  <img src="docs/images/split-xkcd.png" width="32%" alt="xkcd, light and in the Nyx Sepia theme">
 </p>
 
 Nyx doesn't invert pages. It reads each site's stylesheets and writes a dark version of them, so blue links stay blue and a red header stays red. Sites that already have a dark mode are left alone.
@@ -23,7 +23,7 @@ Nyx collects no data. The only network requests it makes are for stylesheets and
 ## Install
 
 - **Safari:** the App Store version isn't out yet. For now, [build it with Xcode](DEVELOPMENT.md#safari).
-- **Chrome, Edge, Firefox:** [load the built extension](DEVELOPMENT.md#chrome-edge-firefox).
+- **Chrome, Edge, Firefox:** download the zip from the [latest release](https://github.com/mohsen1/nyx/releases/latest), or [build and load it yourself](DEVELOPMENT.md#chrome-edge-firefox). It isn't on the Chrome Web Store yet.
 
 ## Contributing
 

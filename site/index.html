@@ -6,15 +6,99 @@
   <meta name="color-scheme" content="light dark">
   <meta name="theme-color" content="#f6f5fb" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#0e0d13" media="(prefers-color-scheme: dark)">
-  <title>Nyx: dark mode for websites that don’t have one</title>
-  <meta name="description" content="Nyx is a free, open-source Safari extension for iPhone, iPad and Mac. It gives websites a dark mode based on their own colors instead of inverting them.">
+  <title>Nyx: Safari dark mode extension for iPhone, iPad and Mac</title>
+  <meta name="description" content="Free, open-source dark mode extension for Safari on iPhone, iPad and Mac, also for Chrome, Edge and Firefox. It darkens websites using their own colors.">
+  <link rel="canonical" href="https://azimi.me/nyx/">
+  <meta name="author" content="Mohsen Azimi">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Nyx">
+  <meta property="og:url" content="https://azimi.me/nyx/">
   <meta property="og:title" content="Nyx: dark mode for websites that don’t have one">
-  <meta property="og:description" content="A free, open-source Safari extension for iPhone, iPad and Mac that darkens websites using their own colors.">
-  <meta property="og:image" content="https://azimi.me/nyx/images/split-wikipedia.webp">
+  <meta property="og:description" content="A free, open-source dark mode extension for Safari on iPhone, iPad and Mac that darkens websites using their own colors instead of inverting them.">
+  <meta property="og:image" content="https://azimi.me/nyx/images/og-image.png">
+  <meta property="og:image:type" content="image/png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="A Wikipedia article, light on the left and darkened by Nyx on the right.">
   <meta name="twitter:card" content="summary_large_image">
-  <link rel="icon" href="icon.png">
-  <link rel="apple-touch-icon" href="icon.png">
+  <meta name="twitter:title" content="Nyx: dark mode for websites that don’t have one">
+  <meta name="twitter:description" content="A free, open-source dark mode extension for Safari on iPhone, iPad and Mac that darkens websites using their own colors instead of inverting them.">
+  <meta name="twitter:image" content="https://azimi.me/nyx/images/og-image.png">
+  <meta name="twitter:image:alt" content="A Wikipedia article, light on the left and darkened by Nyx on the right.">
+  <link rel="icon" href="icon-32.png" sizes="32x32" type="image/png">
+  <link rel="icon" href="icon.png" sizes="256x256" type="image/png">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <link rel="sitemap" type="application/xml" href="sitemap.xml">
+  <link rel="preload" as="image" href="images/split-wikipedia.webp" imagesrcset="images/split-wikipedia-1280.webp 1280w, images/split-wikipedia.webp 2560w" imagesizes="(max-width: 1080px) calc(100vw - 32px), 1040px" fetchpriority="high">
   <link rel="stylesheet" href="style.css">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebSite",
+        "@id": "https://azimi.me/nyx/#website",
+        "url": "https://azimi.me/nyx/",
+        "name": "Nyx",
+        "description": "Open-source dark mode extension for Safari, Chrome, Edge and Firefox.",
+        "inLanguage": "en",
+        "publisher": { "@id": "https://azimi.me/#person" }
+      },
+      {
+        "@type": "Person",
+        "@id": "https://azimi.me/#person",
+        "name": "Mohsen Azimi",
+        "url": "https://azimi.me/",
+        "sameAs": ["https://github.com/mohsen1"]
+      },
+      {
+        "@type": "SoftwareApplication",
+        "@id": "https://azimi.me/nyx/#app",
+        "name": "Nyx",
+        "alternateName": "Nyx dark mode",
+        "description": "A dark mode browser extension for Safari on iPhone, iPad and Mac that also runs in Chrome, Edge and Firefox. It reads each page’s stylesheets and picks a darker color for each one instead of inverting the page.",
+        "url": "https://azimi.me/nyx/",
+        "applicationCategory": "BrowserApplication",
+        "applicationSubCategory": "Browser extension",
+        "operatingSystem": "iOS, iPadOS, macOS, Windows, Linux, ChromeOS",
+        "browserRequirements": "Safari, Chrome, Edge or Firefox",
+        "image": "https://azimi.me/nyx/icon.png",
+        "screenshot": [
+          "https://azimi.me/nyx/images/split-wikipedia.webp",
+          "https://azimi.me/nyx/images/split-hackernews.webp",
+          "https://azimi.me/nyx/images/split-github.webp",
+          "https://azimi.me/nyx/images/split-xkcd.webp"
+        ],
+        "downloadUrl": "https://github.com/mohsen1/nyx/releases/latest",
+        "installUrl": "https://azimi.me/nyx/#install",
+        "isAccessibleForFree": true,
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+        "license": "https://opensource.org/license/mit",
+        "author": { "@id": "https://azimi.me/#person" },
+        "sameAs": ["https://github.com/mohsen1/nyx"],
+        "featureList": [
+          "Auto, On and Off modes, following system Dark Mode or a schedule (20:00 to 07:00 by default)",
+          "Per-website status and theme for a domain, subdomain, host with port or single page",
+          "Leaves websites that already have a dark mode alone",
+          "26 built-in themes, including Dark, Black, Gray, Sepia, Dracula, Nord, One Dark, Solarized, Gruvbox, Catppuccin and Tokyo Night",
+          "Custom themes that can be shared as links",
+          "Image dimming and grayscale",
+          "Keyboard shortcuts",
+          "iCloud sync, Shortcuts, Focus Filters and Control Center on Apple devices"
+        ]
+      },
+      {
+        "@type": "SoftwareSourceCode",
+        "name": "Nyx source code",
+        "codeRepository": "https://github.com/mohsen1/nyx",
+        "programmingLanguage": ["TypeScript", "Swift"],
+        "license": "https://opensource.org/license/mit",
+        "author": { "@id": "https://azimi.me/#person" },
+        "targetProduct": { "@id": "https://azimi.me/nyx/#app" }
+      }
+    ]
+  }
+  </script>
 </head>
 <body>
   <a class="skip" href="#main">Skip to content</a>
@@ -37,7 +121,7 @@
       <div class="wrap">
         <p class="eyebrow">Free and open source</p>
         <h1>Dark mode for websites that don’t have one.</h1>
-        <p class="lede">Nyx is a Safari extension for iPhone, iPad and Mac. It reads the colors in each page’s stylesheets and swaps in darker ones, so you can still tell which site you’re on.</p>
+        <p class="lede">Nyx is a dark mode extension for Safari on iPhone, iPad and Mac. It reads the colors in each page’s stylesheets and swaps in darker ones, so you can still tell which site you’re on.</p>
         <div class="buttons">
           <a class="button primary" href="#install">Get Nyx</a>
           <a class="button" href="https://github.com/mohsen1/nyx">
@@ -52,17 +136,17 @@
           <input type="radio" name="view" id="v-hackernews">
           <input type="radio" name="view" id="v-github">
           <input type="radio" name="view" id="v-xkcd">
-          <div class="tabs" aria-label="Choose a website">
+          <div class="tabs" role="group" aria-label="Choose a website">
             <label for="v-wikipedia">Wikipedia</label>
             <label for="v-hackernews">Hacker News</label>
             <label for="v-github">GitHub</label>
             <label for="v-xkcd">xkcd</label>
           </div>
           <div class="frame">
-            <img class="i-wikipedia" src="images/split-wikipedia.webp" width="2560" height="1600" decoding="async" fetchpriority="high" alt="A Wikipedia article, light on the left and darkened by Nyx on the right.">
-            <img class="i-hackernews" src="images/split-hackernews.webp" width="2560" height="1600" loading="lazy" decoding="async" alt="Hacker News, light on the left and darkened by Nyx on the right.">
-            <img class="i-github" src="images/split-github.webp" width="2560" height="1600" loading="lazy" decoding="async" alt="A GitHub repository, light on the left and in the Dracula theme on the right.">
-            <img class="i-xkcd" src="images/split-xkcd.webp" width="2560" height="1600" loading="lazy" decoding="async" alt="xkcd, light on the left and in the Sepia theme on the right.">
+            <img class="i-wikipedia" src="images/split-wikipedia.webp" srcset="images/split-wikipedia-1280.webp 1280w, images/split-wikipedia.webp 2560w" sizes="(max-width: 1080px) calc(100vw - 32px), 1040px" width="2560" height="1600" decoding="async" fetchpriority="high" alt="A Wikipedia article, light on the left and darkened by Nyx on the right.">
+            <img class="i-hackernews" src="images/split-hackernews.webp" srcset="images/split-hackernews-1280.webp 1280w, images/split-hackernews.webp 2560w" sizes="(max-width: 1080px) calc(100vw - 32px), 1040px" width="2560" height="1600" loading="lazy" decoding="async" alt="Hacker News, light on the left and darkened by Nyx on the right.">
+            <img class="i-github" src="images/split-github.webp" srcset="images/split-github-1280.webp 1280w, images/split-github.webp 2560w" sizes="(max-width: 1080px) calc(100vw - 32px), 1040px" width="2560" height="1600" loading="lazy" decoding="async" alt="A GitHub repository, light on the left and in the Dracula theme on the right.">
+            <img class="i-xkcd" src="images/split-xkcd.webp" srcset="images/split-xkcd-1280.webp 1280w, images/split-xkcd.webp 2560w" sizes="(max-width: 1080px) calc(100vw - 32px), 1040px" width="2560" height="1600" loading="lazy" decoding="async" alt="xkcd, light on the left and in the Sepia theme on the right.">
           </div>
           <p class="caption">
             <span class="c-wikipedia">Left of the line is the page as it ships; right is Nyx’s Dark theme. Links are still blue.</span>
@@ -149,8 +233,8 @@
       <div class="wrap">
         <div class="section-head">
           <p class="eyebrow">Install</p>
-          <h2 id="install-title">Build it yourself for now</h2>
-          <p class="lede">Nyx isn’t on the App Store yet. Until it is, you can build it from source: Xcode for Safari, Node.js for Chrome, Edge and Firefox.</p>
+          <h2 id="install-title">Install from GitHub for now</h2>
+          <p class="lede">Nyx isn’t on the App Store or the Chrome Web Store yet. For Safari, build it from source with Xcode. For Chrome, Edge and Firefox, download a zip from the latest GitHub release or build it with Node.js.</p>
         </div>
         <div class="install">
           <article class="card">
@@ -162,20 +246,21 @@
               <li>Turn on Nyx in Safari’s extension settings. The <a href="support/">support page</a> shows where.</li>
             </ol>
             <div class="buttons">
-              <a class="button primary" href="https://github.com/mohsen1/nyx/blob/main/apple/README.md">Build instructions</a>
+              <a class="button primary" href="https://github.com/mohsen1/nyx/blob/main/apple/README.md">Safari build instructions</a>
             </div>
           </article>
           <article class="card">
             <h3>Chrome, Edge and Firefox</h3>
-            <p>Build the extension with Node.js and load it unpacked.</p>
+            <p>Download <code>nyx-chrome</code> or <code>nyx-firefox</code> from the <a href="https://github.com/mohsen1/nyx/releases/latest">latest release</a>, or build the extension with Node.js:</p>
             <pre><code>npm install
 npm run build</code></pre>
             <ol>
-              <li><strong>Chrome or Edge:</strong> open <code>chrome://extensions</code>, turn on Developer mode, choose “Load unpacked” and pick <code>dist/chrome</code>.</li>
-              <li><strong>Firefox:</strong> open <code>about:debugging</code>, choose “Load Temporary Add-on” and pick <code>dist/firefox/manifest.json</code>.</li>
+              <li><strong>Chrome or Edge:</strong> unzip the download, open <code>chrome://extensions</code>, turn on Developer mode, choose “Load unpacked” and pick the unzipped folder (or <code>dist/chrome</code> if you built it).</li>
+              <li><strong>Firefox:</strong> open <code>about:debugging</code>, choose “Load Temporary Add-on” and pick the zip (or <code>dist/firefox/manifest.json</code>).</li>
             </ol>
             <div class="buttons">
-              <a class="button" href="https://github.com/mohsen1/nyx#install">Read more on GitHub</a>
+              <a class="button primary" href="https://github.com/mohsen1/nyx/releases/latest">Download the latest release</a>
+              <a class="button" href="https://github.com/mohsen1/nyx/blob/main/DEVELOPMENT.md#chrome-edge-firefox">Build instructions</a>
             </div>
           </article>
         </div>
@@ -209,6 +294,7 @@ npm run build</code></pre>
         <a href="https://github.com/mohsen1/nyx">GitHub</a>
         <a href="privacy/">Privacy Policy</a>
         <a href="support/">Support</a>
+        <a href="https://github.com/mohsen1/nyx/releases">Releases</a>
         <a href="https://github.com/mohsen1/nyx/issues">Report an issue</a>
       </nav>
     </div>
