@@ -5,7 +5,7 @@ Source of truth for the App Store Connect metadata. Screenshots in this folder a
 | Field | Value |
 | --- | --- |
 | Name | Nyx: Dark Mode for Safari |
-| Subtitle | Dark mode for every website |
+| Subtitle | Night themes for any website |
 | Bundle ID | app.nyx.NyxDarkMode (iOS and macOS, universal purchase) |
 | SKU | nyx-dark-mode |
 | Primary category | Utilities |
@@ -20,52 +20,56 @@ Source of truth for the App Store Connect metadata. Screenshots in this folder a
 
 ## Promotional text
 
-Read comfortably at night. Nyx gives every website a dark mode that keeps its character, with 26 themes and per-site control.
+Nyx darkens websites in Safari using each site's own colors, so links stay blue and pages still look like themselves. 26 themes, per-site settings, iCloud sync.
 
 ## Keywords
 
-dark,night,theme,reader,eye strain,sepia,extension,contrast,black,dim,oled,midnight,blue light
+sepia,oled,black,dim,low light,eye strain,contrast,midnight,bedtime,extension,browser,web,eyes
 
 ## Description
 
-Nyx gives every website a dark mode in Safari.
+Nyx adds a dark mode to websites in Safari on iPhone, iPad and Mac.
 
-Instead of inverting pages, Nyx builds a dark style for each site. Links stay blue, brand colors stay recognizable, photos look natural, and text stays easy to read.
+The quick way to darken a page is to invert it, which turns photos into negatives and orange buttons blue. Nyx reads each page's stylesheets instead and picks a new color for every background, text color and border. A blue link becomes a lighter blue. A red brand color stays red, just darker. Colored text is lightened until it's easy to read against the new background. Photos are dimmed a little to match the theme, and small dark icons on transparent backgrounds are inverted so they don't disappear.
 
-AUTOMATIC
-• Follow your system’s Dark Mode, or set a schedule
-• Sites that already have a dark mode are left alone
-• Pause everywhere until tomorrow with one tap
+WHEN IT RUNS
 
-PER-WEBSITE CONTROL
-• Set any website to Auto, On or Off
-• Choose a different theme for each site
-• Apply settings to a whole domain, a subdomain or a single page
+Auto follows your device's Dark Mode, or a schedule you choose (8 PM to 7 AM by default). On and Off do what they say. If a site already has its own dark mode, Nyx leaves it alone, unless you tell it not to. And if a page looks off, you can pause Nyx on that site until tomorrow.
 
-26 THEMES
-• Dark, Black, Gray and Sepia
-• Dracula, Nord, One Dark, Solarized, Gruvbox, Catppuccin, Tokyo Night and more
-• Make your own: background, text color, image brightness and grayscale
-• Share themes with a link
+PER-SITE SETTINGS
 
-WORKS EVERYWHERE YOU DO
-• iPhone, iPad and Mac
-• Settings sync through iCloud
-• Shortcuts actions, Focus Filter and a Control Center control
-• Keyboard shortcuts on Mac
+Use the Nyx button in Safari to give the current site its own status and theme. A setting can cover a whole domain, one subdomain, or a single page.
 
-PRIVATE
-Nyx collects no data. No accounts, no analytics, no ads.
+THEMES
 
-Nyx is open source: github.com/mohsen1/nyx
+There are 26 built in:
+• Dark, Black, Gray, Sepia, Dimmed, High Contrast and Grayscale
+• Green, Yellow, Orange, Red, Purple and Blue
+• Deep Sea, Forest, Ember, Candlelight, Midnight and Terminal
+• Dracula, Nord, One Dark, Solarized, Gruvbox, Catppuccin Mocha and Tokyo Night
 
-## What’s new (1.0)
+You can also make your own by picking a background color, text color, image brightness and grayscale, and share it with a link.
 
-First release.
+ON YOUR DEVICES
+
+Settings sync through your iCloud account. Nyx has Shortcuts actions, a Focus Filter and a Control Center control. On Mac you also get keyboard shortcuts for turning the current site on or off, pausing it and switching themes.
+
+PRIVACY
+
+Nyx collects no data. There's no account to create and no analytics or ads. The only network requests it makes are for stylesheets and images the page already loads, so it can read their colors.
+
+Nyx is free and open source: github.com/mohsen1/nyx
+
+## What's new (1.0)
+
+First release. If a site looks wrong, choose "Report a problem with this website" in the Nyx menu and it will open an issue on GitHub.
 
 ## Review notes
 
-Nyx is a Safari Web Extension. To try it:
-Mac: open Nyx, click “Open Safari Extension Settings”, turn on Nyx, and allow it on all websites. Then visit any website, such as https://news.ycombinator.com.
-iPhone/iPad: Settings → Apps → Safari → Extensions → Nyx → turn on, and set All Websites to Allow. Then open any website in Safari.
-The Nyx toolbar button sets the status and theme for the current website. No account or sign-in is needed.
+Nyx is a Safari Web Extension, so most of what it does happens inside Safari.
+
+Mac: open Nyx and click "Open Safari Extension Settings". Turn on Nyx and allow it on all websites. Then visit any website, for example https://news.ycombinator.com.
+
+iPhone and iPad: go to Settings > Apps > Safari > Extensions > Nyx, turn it on, and set All Websites to Allow. Then open any website in Safari.
+
+The Nyx button in Safari's toolbar changes the status and theme for the current website. No account or sign-in is needed.

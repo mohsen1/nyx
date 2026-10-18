@@ -2,8 +2,8 @@
 
 <h1 align="center">Nyx</h1>
 
-<p align="center"><strong>Dark mode for every website.</strong><br>
-A Safari extension for iPhone, iPad and Mac. Also runs in Chrome and Firefox.<br>
+<p align="center"><strong>Dark mode for websites that don't have one.</strong><br>
+A Safari extension for iPhone, iPad and Mac. It also runs in Chrome, Edge and Firefox.<br>
 <a href="https://azimi.me/nyx/">Website</a> · <a href="https://azimi.me/nyx/support/">Support</a> · <a href="https://azimi.me/nyx/privacy/">Privacy</a></p>
 
 <p align="center"><img src="docs/appstore/mac-2.png" alt="Wikipedia before and with Nyx"></p>
@@ -15,17 +15,15 @@ A Safari extension for iPhone, iPad and Mac. Also runs in Chrome and Firefox.<br
   <img src="docs/appstore/iphone-4.png" width="24%" alt="GitHub in the Dracula theme">
 </p>
 
-Nyx doesn't invert pages. It builds a dark style from each site's own colors, so links stay blue, brands stay recognizable and text stays readable.
+Nyx doesn't invert pages. It reads each site's stylesheets and writes a dark version of them, so blue links stay blue and a red header stays red. Sites that already have a dark mode are left alone.
 
-- **Auto, On or Off.** Follow system Dark Mode or a schedule, or set each website on its own.
-- **26 themes.** Dark, Black, Sepia, Dracula, Nord, Solarized and more, or make your own.
-- **Respects built-in dark modes.** Sites that already have one are left alone.
-- **Works across your devices.** iCloud sync, Shortcuts, Focus Filter and a Control Center control.
-- **Private.** No data collection, no network requests of its own.
+You can have Nyx follow the system's Dark Mode or a schedule, keep it on or off, and set any website differently. It comes with 26 themes, from plain Dark and Sepia to Dracula, Nord and Solarized, and you can make your own and share them as links. On Apple devices, settings sync through iCloud, and Nyx works with Shortcuts, Focus Filters and Control Center.
+
+Nyx collects no data. The only network requests it makes are for stylesheets and images the page already loads, so it can read their colors.
 
 ## Install
 
-- **Safari:** coming soon to the App Store. Until then, [build it with Xcode](DEVELOPMENT.md#safari).
+- **Safari:** the App Store version isn't out yet. For now, [build it with Xcode](DEVELOPMENT.md#safari).
 - **Chrome, Edge, Firefox:** [load the built extension](DEVELOPMENT.md#chrome-edge-firefox).
 
 ## Contributing
