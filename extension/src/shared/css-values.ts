@@ -178,6 +178,10 @@ export function rewriteValue(value: string, role: ColorRole, ctx: RewriteContext
           const m = CHANNEL_VAR.exec(inner)!;
           out += `${ident}(var(${channelVarName(m[1], role)}, var(${m[1]}))${m[2]})`;
           changed = true;
+        } else if (COLOR_FUNCS.has(lower) && mapWithVarAlpha(lower, inner, role, ctx) !== null) {
+          // Tailwind: rgb(255 255 255 / var(--tw-bg-opacity)). The color is literal; only alpha varies.
+          out += mapWithVarAlpha(lower, inner, role, ctx);
+          changed = true;
         } else if (COLOR_FUNCS.has(lower) && !inner.includes('var(')) {
           const mapped = ctx.palette.map(s.slice(i, end + 1), role);
           if (mapped) {
@@ -210,6 +214,32 @@ export function rewriteValue(value: string, role: ColorRole, ctx: RewriteContext
     i++;
   }
   return changed ? out : null;
+}
+
+/**
+ * A color function with literal channels and a var()/calc() alpha, e.g. `rgb(255 255 255 /
+ * var(--tw-bg-opacity))` or `rgba(0, 0, 0, var(--a))`: maps the channels, keeps the alpha.
+ */
+function mapWithVarAlpha(fn: string, inner: string, role: ColorRole, ctx: RewriteContext): string | null {
+  let channels: string;
+  let alpha: string;
+  const slash = inner.lastIndexOf('/');
+  if (slash >= 0) {
+    channels = inner.slice(0, slash);
+    alpha = inner.slice(slash + 1);
+  } else {
+    const parts = inner.split(',');
+    if (parts.length !== 4) return null;
+    channels = parts.slice(0, 3).join(',');
+    alpha = parts[3];
+  }
+  if (channels.includes('(') || !alpha.includes('(')) return null;
+  const base = fn.replace(/a$/, '');
+  const mapped = ctx.palette.map(`${base}(${channels})`, role);
+  const c = mapped ? parseColor(mapped) : null;
+  if (!c) return null;
+  const a = rewriteValue(alpha, role, ctx) ?? alpha;
+  return `rgb(${c.r} ${c.g} ${c.b} / ${a.trim()})`;
 }
 
 /** `var(--x, fallback)` → `var(--nyx-t--x, var(--x, <fallback rewritten>))`. */

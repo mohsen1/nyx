@@ -40,6 +40,12 @@ describe('rewriteValue', () => {
     expect(rewriteValue('hsl(var(--background) / 50%)', 'background', ctx)).toBe('hsl(var(--nyx-bc--background, var(--background)) / 50%)');
   });
 
+  it('maps literal channels whose alpha is a variable (Tailwind)', () => {
+    expect(rewriteValue('rgb(255 255 255 / var(--tw-bg-opacity))', 'background', ctx)).toBe('rgb(28 28 30 / var(--nyx-b--tw-bg-opacity, var(--tw-bg-opacity)))');
+    expect(rewriteValue('rgba(0, 0, 0, var(--a))', 'text', ctx)).toMatch(/^rgb\(2\d\d 2\d\d 2\d\d \/ var\(--nyx-t--a, var\(--a\)\)\)$/);
+    expect(rewriteValue('rgb(var(--r) 0 0 / var(--a))', 'text', ctx)).not.toMatch(/^rgb\(\d/);
+  });
+
   it('maps rgb and hsl channel lists, keeping their format', () => {
     expect(rewriteChannels('249, 249, 248', 'background', palette)).toMatch(/^\d+, \d+, \d+$/);
     const [r] = rewriteChannels('249, 249, 248', 'background', palette)!.split(', ').map(Number);
