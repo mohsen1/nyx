@@ -289,6 +289,8 @@ test('text on a button with an icon background is still checked (Gmail Compose)'
   expect(await fill('#icon-red')).toBe('rgb(197, 34, 31)');
   // An icon-font glyph drawn by ::before.
   await expect.poll(async () => luminance(await page.$eval('#star', (el) => getComputedStyle(el, '::before').color))).toBeGreaterThan(0.15);
+  // Text in a form field (not a text node).
+  await expect.poll(async () => luminance(await fg(page, '#search'))).toBeGreaterThan(0.15); // ≥ 3:1
 });
 
 test('backdrops beside the content and canvas heroes are darkened', async ({ context }) => {

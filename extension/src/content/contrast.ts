@@ -56,6 +56,14 @@ function unfixShape(shape: SVGElement): void {
   shape.style.removeProperty('--nyx-fix-s');
 }
 
+const TEXT_INPUTS = new Set(['', 'text', 'search', 'email', 'url', 'tel', 'password', 'number']);
+
+/** Fields whose text is not a text node (the guard otherwise only sees text nodes). */
+function isTextField(el: Element): boolean {
+  if (el.localName === 'textarea' || el.localName === 'select') return true;
+  return el.localName === 'input' && TEXT_INPUTS.has((el.getAttribute('type') ?? '').toLowerCase());
+}
+
 function hasOwnText(el: Element): boolean {
   for (let n = el.firstChild; n; n = n.nextSibling) {
     if (n.nodeType === 3 && n.nodeValue && n.nodeValue.trim()) return true;
@@ -128,7 +136,7 @@ export class ContrastGuard {
       return;
     }
     if (SKIP.has(el.localName)) return;
-    if (hasOwnText(el) || this.isGlyphIcon(el)) this.io.observe(el);
+    if (hasOwnText(el) || this.isGlyphIcon(el) || isTextField(el)) this.io.observe(el);
   }
 
   /**
@@ -288,7 +296,7 @@ export class ContrastGuard {
     const fill = cs.getPropertyValue('-webkit-text-fill-color');
     // Icon-font glyphs draw in their ::before; read its color.
     let color = cs.color;
-    if (!el.firstChild) {
+    if (!el.firstChild && !isTextField(el)) {
       const before = this.win.getComputedStyle(el, '::before');
       const content = before.content;
       if (!content || content === 'none' || content === 'normal' || content === '""') {
