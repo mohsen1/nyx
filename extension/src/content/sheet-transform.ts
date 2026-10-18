@@ -23,6 +23,8 @@ export interface TransformOptions extends RewriteContext {
   onComposedProperty?: (selector: string, prop: string, important: boolean, value: string) => void;
 }
 
+const PENDING_LONGHANDS = new Set(['background-color', 'color', 'border-top-color', 'border-right-color', 'border-bottom-color', 'border-left-color', 'outline-color', 'fill', 'stroke']);
+
 /** Properties whose composed colors are resolved at runtime. */
 const COMPOSED_LONGHAND: Record<string, string> = {
   'background': 'background-color',
@@ -55,7 +57,15 @@ export function transformDeclarations(style: CSSStyleDeclaration, opts: Transfor
     if (seen.has(prop)) continue;
     seen.add(prop);
     const value = style.getPropertyValue(prop);
-    if (!value) continue;
+    if (!value) {
+      // A longhand left "pending substitution" by a var() shorthand that can no longer be
+      // serialized (a later longhand overrode part of it): its value is lost to the CSSOM, so
+      // the computed color is read at runtime instead.
+      if (selector && !selector.includes('&') && PENDING_LONGHANDS.has(prop)) {
+        opts.onComposedProperty?.(selector, prop, style.getPropertyPriority(prop) === 'important', '');
+      }
+      continue;
+    }
     const important = style.getPropertyPriority(prop) === 'important';
     if (prop.startsWith('--')) {
       for (const [name, v] of rewriteCustomProperty(prop, value, opts)) emit(name, v, important);

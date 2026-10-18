@@ -139,6 +139,8 @@ class RootStyler {
 
   /** Composed properties whose selector matches nothing yet; re-checked now and then. */
   private dormantProps = new Map<string, ComposedProp>();
+  /** Computed colors for declarations whose value the CSSOM lost, read once per sheet version. */
+  private lostValues = new Map<string, string>();
   private lastDormantCheck = 0;
 
   /** Reported but not yet checked against the page. */
@@ -202,8 +204,30 @@ class RootStyler {
     this.composedPropsDirty = false;
     this.lastPropResolve = now;
     const win = this.engine.win;
+    // Values lost to the CSSOM are read from the computed style, once, with our rules off.
+    const lost = Array.from(this.composedProps.entries()).filter(([key, [, , , v]]) => v === '' && !this.lostValues.has(key));
+    if (lost.length) {
+      const sheet = this.propsEl.sheet;
+      if (sheet) sheet.disabled = true;
+      try {
+        for (const [key, [selector, prop]] of lost) {
+          const query = selector.replace(/::?(before|after|placeholder|selection|marker|backdrop|first-line|first-letter)\b(\([^)]*\))?/gi, '');
+          let el: Element | null = null;
+          try {
+            el = this.root.querySelector(query || '*');
+          } catch {
+            /* invalid */
+          }
+          this.lostValues.set(key, el ? win.getComputedStyle(el).getPropertyValue(prop).trim() : '');
+        }
+      } finally {
+        if (sheet) sheet.disabled = false;
+      }
+    }
     let css = '';
-    for (const [selector, prop, important, value] of this.composedProps.values()) {
+    for (const [key, [selector, prop, important, raw]] of this.composedProps) {
+      const value = raw === '' ? this.lostValues.get(key) ?? '' : raw;
+      if (!value) continue;
       const query = selector.replace(/::?(before|after|placeholder|selection|marker|backdrop|first-line|first-letter)\b(\([^)]*\))?/gi, '');
       let els: Element[];
       try {
@@ -342,6 +366,7 @@ class RootStyler {
     this.dormantProps.clear();
     this.pendingProps = [];
     this.dormantCursor = [];
+    this.lostValues.clear();
     for (const o of this.overrides.values()) o.el.remove();
     this.overrides.clear();
     if (this.adoptedOverride) {
@@ -424,6 +449,8 @@ class RootStyler {
     o.signature = sig;
     if (o.el.textContent !== css) {
       o.el.textContent = css;
+      this.lostValues.clear();
+      this.composedPropsDirty = true;
       this.engine.contrast.recheckVisible();
     }
     if (o.el.previousSibling !== owner) owner.after(o.el);
