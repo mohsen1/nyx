@@ -1,0 +1,7 @@
+// Code signing for local builds. Your team ID goes in Local.xcconfig, which is
+// gitignored. Copy Local.xcconfig.example to start. Without it, Xcode asks you
+// to pick a team, and CI builds with signing disabled.
+CODE_SIGN_STYLE = Automatic
+DEVELOPMENT_TEAM =
+
+#include? "Local.xcconfig"
