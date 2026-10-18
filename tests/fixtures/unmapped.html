@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Colors Nyx can't see</title>
+  <style>
+    body { background: #fff; color: #222; font: 16px system-ui, sans-serif; }
+    .card { background: #fff; border: 1px solid #ddd; padding: 12px; }
+    .name { color: var(--name-color); font-weight: 600; }
+  </style>
+</head>
+<body>
+  <div class="card" style="--name-color: #191919">
+    <span class="name" id="name">Set by a variable on the element</span>
+  </div>
+  <p id="late">Added later</p>
+  <script>
+    setTimeout(() => {
+      const s = document.createElement('span');
+      s.id = 'scripted';
+      s.textContent = 'Colored from script';
+      s.style.setProperty('color', 'rgb(30, 30, 30)', 'important');
+      document.body.append(s);
+    }, 300);
+  </script>
+</body>
+</html>

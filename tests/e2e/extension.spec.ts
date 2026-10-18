@@ -207,6 +207,20 @@ test('a cross-origin stylesheet included twice is darkened in both places', asyn
   await expect.poll(async () => luminance(await bg(page, '#cross'))).toBeLessThan(0.1);
 });
 
+test('text whose color Nyx could not map is lifted to a readable contrast', async ({ context }) => {
+  const page = await context.newPage();
+  await page.goto(url('unmapped.html'));
+  await page.waitForLoadState('load');
+  const ratio = async (sel: string) => {
+    const fgL = luminance(await fg(page, sel));
+    const bgL = luminance(await bg(page, 'body'));
+    return (Math.max(fgL, bgL) + 0.05) / (Math.min(fgL, bgL) + 0.05);
+  };
+  await expect.poll(() => ratio('#name')).toBeGreaterThan(4.4);
+  await page.waitForSelector('#scripted');
+  await expect.poll(() => ratio('#scripted')).toBeGreaterThan(4.4);
+});
+
 test('re-detects when a site switches its own theme', async ({ context }) => {
   const page = await context.newPage();
   await page.goto(url('toggle.html'));

@@ -1,0 +1,198 @@
+// Last line of defense against unreadable text. Whatever produced the final colors (a stylesheet
+// we could not read, a variable set from script, a pattern the rewriter does not know), this
+// checks the text that is actually on screen against the background actually behind it, and
+// lifts text that ended up too close to it.
+
+import {
+  composite,
+  contrastRatio,
+  oklabToOklch,
+  oklchToRgbaInGamut,
+  parseColor,
+  relativeLuminance,
+  rgbaToOklab,
+  type RGBA,
+} from '../shared/color';
+import { canvasColor } from './detect';
+
+export const ATTR_FIX = 'data-nyx-fix';
+export const FIX_VAR = '--nyx-fix-c';
+
+/** Below this the text is unreadable, so it gets fixed. */
+const MIN_RATIO = 3;
+/** What fixed text is lifted to (WCAG AA for body text). */
+const TARGET_RATIO = 4.5;
+const BATCH = 150;
+
+/** A text color with the same hue, moved away from `bg` until it reaches the target contrast. */
+export function readableOn(fg: RGBA, bg: RGBA): RGBA {
+  const lch = oklabToOklch(rgbaToOklab({ ...fg, a: 1 }));
+  const up = relativeLuminance(bg) < 0.18;
+  let L = lch.L;
+  let C = lch.C;
+  let out = fg;
+  for (let i = 0; i < 24 && contrastRatio(out, bg) < TARGET_RATIO; i++) {
+    L = up ? Math.min(0.98, L + 0.04) : Math.max(0.02, L - 0.04);
+    C *= 0.94;
+    out = oklchToRgbaInGamut({ L, C, h: lch.h, alpha: 1 });
+  }
+  return out;
+}
+
+function hasOwnText(el: Element): boolean {
+  for (let n = el.firstChild; n; n = n.nextSibling) {
+    if (n.nodeType === 3 && n.nodeValue && n.nodeValue.trim()) return true;
+  }
+  return false;
+}
+
+const SKIP = new Set(['script', 'style', 'noscript', 'template', 'svg', 'math', 'canvas', 'video', 'iframe', 'option', 'title']);
+
+export class ContrastGuard {
+  private io: IntersectionObserver;
+  private visible = new Set<Element>();
+  private queue = new Set<Element>();
+  private fixed = new Set<HTMLElement>();
+  /** The page's own inline `color: … !important`, which only an inline override can beat. */
+  private inlineOriginals = new Map<HTMLElement, string>();
+  private scheduled = false;
+  private recheckTimer: number | null = null;
+
+  constructor(private readonly win: Window & typeof globalThis) {
+    this.io = new win.IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          if (e.isIntersecting) {
+            this.visible.add(e.target);
+            this.enqueue(e.target);
+          } else this.visible.delete(e.target);
+        }
+      },
+      { rootMargin: '300px 0px' },
+    );
+  }
+
+  /** Starts watching an element if it directly holds text. */
+  observe(el: Element): void {
+    if (SKIP.has(el.localName) || !hasOwnText(el)) return;
+    this.io.observe(el);
+  }
+
+  /** The element's text changed or it was just added: check it if it's on screen. */
+  touch(el: Element): void {
+    if (this.visible.has(el)) this.enqueue(el);
+    else this.observe(el);
+  }
+
+  /** Styles changed somewhere: re-check everything on screen, soon. */
+  recheckVisible(delay = 250): void {
+    if (this.recheckTimer !== null) this.win.clearTimeout(this.recheckTimer);
+    this.recheckTimer = this.win.setTimeout(() => {
+      this.recheckTimer = null;
+      for (const el of this.visible) this.enqueue(el);
+    }, delay);
+  }
+
+  reset(): void {
+    this.io.disconnect();
+    this.visible.clear();
+    this.queue.clear();
+    if (this.recheckTimer !== null) this.win.clearTimeout(this.recheckTimer);
+    this.recheckTimer = null;
+    for (const el of this.fixed) this.unfix(el);
+    this.fixed.clear();
+  }
+
+  private enqueue(el: Element): void {
+    this.queue.add(el);
+    if (this.scheduled) return;
+    this.scheduled = true;
+    this.win.requestAnimationFrame(() => this.flush());
+  }
+
+  private flush(): void {
+    this.scheduled = false;
+    const batch: Element[] = [];
+    for (const el of this.queue) {
+      batch.push(el);
+      this.queue.delete(el);
+      if (batch.length >= BATCH) break;
+    }
+    // Measure fixed elements as the page would show them without our fix.
+    const refixed = batch.filter((el): el is HTMLElement => this.fixed.has(el as HTMLElement));
+    for (const el of refixed) {
+      el.removeAttribute(ATTR_FIX);
+      const original = this.inlineOriginals.get(el);
+      if (original !== undefined) el.style.setProperty('color', original, 'important');
+    }
+    const canvas = canvasColor(this.win.document);
+    const decisions: Array<[HTMLElement, string | null]> = [];
+    for (const el of batch) {
+      if (!el.isConnected) continue;
+      decisions.push([el as HTMLElement, this.fixFor(el, canvas)]);
+    }
+    for (const [el, color] of decisions) {
+      if (color) {
+        el.style.setProperty(FIX_VAR, color);
+        el.setAttribute(ATTR_FIX, '');
+        if (el.style.getPropertyPriority('color') === 'important') {
+          if (!this.inlineOriginals.has(el)) this.inlineOriginals.set(el, el.style.getPropertyValue('color'));
+          el.style.setProperty('color', color, 'important');
+        }
+        this.fixed.add(el);
+      } else if (this.fixed.has(el)) this.unfix(el);
+    }
+    if (this.queue.size) {
+      this.scheduled = true;
+      this.win.requestAnimationFrame(() => this.flush());
+    }
+  }
+
+  private unfix(el: HTMLElement): void {
+    el.removeAttribute(ATTR_FIX);
+    el.style.removeProperty(FIX_VAR);
+    const original = this.inlineOriginals.get(el);
+    if (original !== undefined) {
+      el.style.setProperty('color', original, 'important');
+      this.inlineOriginals.delete(el);
+    }
+    this.fixed.delete(el);
+  }
+
+  /** Returns a replacement text color when the element's text is unreadable, else null. */
+  private fixFor(el: Element, canvas: RGBA): string | null {
+    const cs = this.win.getComputedStyle(el);
+    if (cs.visibility !== 'visible' || cs.display === 'none') return null;
+    const fill = cs.getPropertyValue('-webkit-text-fill-color');
+    const fg = parseColor(fill && fill !== cs.color && !/currentcolor/i.test(fill) ? fill : cs.color);
+    if (!fg || fg.a < 0.05) return null;
+    const bg = this.backgroundBehind(el, canvas);
+    if (!bg) return null;
+    const text = composite(fg, bg);
+    if (contrastRatio(text, bg) >= MIN_RATIO) return null;
+    const c = readableOn(text, bg);
+    return `rgb(${c.r}, ${c.g}, ${c.b})`;
+  }
+
+  /**
+   * The solid color behind an element, or null when it can't be known (an image, gradient or
+   * text clipped to a background is in the way).
+   */
+  private backgroundBehind(el: Element, canvas: RGBA): RGBA | null {
+    const layers: RGBA[] = [];
+    for (let node: Element | null = el; node; node = node.parentElement ?? ((node.getRootNode() as ShadowRoot).host || null)) {
+      if (node.localName === 'html') break;
+      const s = this.win.getComputedStyle(node);
+      if (s.backgroundImage && s.backgroundImage !== 'none') return null;
+      if (s.backgroundClip === 'text' || s.getPropertyValue('-webkit-background-clip') === 'text') return null;
+      const c = parseColor(s.backgroundColor);
+      if (c && c.a > 0.01) {
+        layers.push(c);
+        if (c.a >= 0.99) break;
+      }
+    }
+    let out = canvas;
+    for (let i = layers.length - 1; i >= 0; i--) out = composite(layers[i], out);
+    return out;
+  }
+}

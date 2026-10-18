@@ -7,6 +7,7 @@ import type { AppearanceOptions } from '../shared/settings';
 import type { Theme } from '../shared/theme';
 import { transformRules, transformSheet } from './sheet-transform';
 import { ImageAnalyzer } from './images';
+import { ATTR_FIX, ContrastGuard, FIX_VAR } from './contrast';
 
 export const STYLE_CLASS = 'nyx-style';
 const ATTR_INLINE = 'data-nyx-inline';
@@ -172,7 +173,10 @@ class RootStyler {
       this.overrides.set(owner, o);
     }
     o.signature = sig;
-    if (o.el.textContent !== css) o.el.textContent = css;
+    if (o.el.textContent !== css) {
+      o.el.textContent = css;
+      this.engine.contrast.recheckVisible();
+    }
     if (o.el.previousSibling !== owner) owner.after(o.el);
   }
 
@@ -191,6 +195,7 @@ class RootStyler {
         const media = (owner as HTMLLinkElement).media;
         const wrapped = css && media && media !== 'all' ? `@media ${media} { ${css} }` : css;
         o.el.textContent = append ? `${wrapped}\n${o.el.textContent ?? ''}` : wrapped;
+        this.engine.contrast.recheckVisible();
       })
       .finally(() => pending.delete(key));
   }
@@ -215,6 +220,7 @@ class RootStyler {
     const css = sources.map((s) => transformRules(s.cssRules, opts)).join('\n');
     if (!this.adoptedOverride) this.adoptedOverride = new (this.engine.win.CSSStyleSheet)();
     this.adoptedOverride.replaceSync(css);
+    this.engine.contrast.recheckVisible();
     this.adoptedSignature = sig;
     r.adoptedStyleSheets = [...sources, this.adoptedOverride];
   }
@@ -287,6 +293,7 @@ class RootStyler {
       if (el.hasAttribute('style')) this.processInline(el);
       if (this.processAttributes(el)) attrsChanged = true;
       if (el.localName === 'img') this.engine.images.observe(el as HTMLImageElement);
+      else this.engine.contrast.observe(el);
       const sr = (el as HTMLElement).shadowRoot;
       if (sr) this.engine.attachRoot(sr);
       else if (el.localName.includes('-')) this.engine.pendingHosts.add(el);
@@ -305,6 +312,7 @@ export class DarkEngine {
   config: EngineConfig;
   running = false;
   readonly images: ImageAnalyzer;
+  readonly contrast: ContrastGuard;
   private roots = new Map<Document | ShadowRoot, RootStyler>();
   /** Custom elements that may attach a shadow root after they are upgraded (no DOM mutation signals it). */
   readonly pendingHosts = new Set<Element>();
@@ -325,6 +333,7 @@ export class DarkEngine {
     this.win = doc.defaultView as Window & typeof globalThis;
     this.config = config;
     this.palette = this.makePalette(config);
+    this.contrast = new ContrastGuard(this.win);
     this.images = new ImageAnalyzer(this.win, (el, invert) => {
       if (!this.running) return;
       if (invert && this.config.appearance.imageInversion) el.setAttribute(ATTR_INVERT, '');
@@ -401,6 +410,7 @@ export class DarkEngine {
     for (const [token, prop] of INLINE_PROPS) {
       css += `[${ATTR_INLINE}~="${token}"] { ${prop}: var(--nyx-i-${token}) !important; }\n`;
     }
+    css += `[${ATTR_FIX}] { color: var(${FIX_VAR}) !important; -webkit-text-fill-color: var(${FIX_VAR}) !important; }\n`;
     return css;
   }
 
@@ -452,6 +462,7 @@ export class DarkEngine {
     }
     for (const el of Array.from(this.doc.querySelectorAll(`[${ATTR_INVERT}]`))) el.removeAttribute(ATTR_INVERT);
     this.images.reset();
+    this.contrast.reset();
     this.pendingHosts.clear();
   }
 
@@ -464,6 +475,11 @@ export class DarkEngine {
     for (const r of this.roots.values()) {
       for (const el of Array.from(r.root.querySelectorAll('[style]'))) r.processInline(el);
       r.renderAttributes();
+    }
+    // Fixes were computed for the previous theme.
+    this.contrast.reset();
+    for (const r of this.roots.values()) {
+      for (const el of Array.from(r.root.querySelectorAll('*'))) if (el.localName !== 'img') this.contrast.observe(el);
     }
     if (!config.appearance.imageInversion) {
       for (const el of Array.from(this.doc.querySelectorAll(`[${ATTR_INVERT}]`))) el.removeAttribute(ATTR_INVERT);
@@ -520,9 +536,11 @@ export class DarkEngine {
       if (rec.type === 'characterData') {
         const parent = rec.target.parentNode as Element | null;
         if (parent && parent.localName === 'style') sheetsChanged = true;
+        else if (parent && isElement(parent)) this.contrast.touch(parent);
         continue;
       }
       const target = rec.target as Element;
+      if (isElement(target) && Array.from(rec.addedNodes).some((n) => n.nodeType === 3)) this.contrast.touch(target);
       if (target.localName === 'style' && !target.classList?.contains(STYLE_CLASS)) sheetsChanged = true;
       for (const node of Array.from(rec.addedNodes)) {
         if (!isElement(node)) continue;

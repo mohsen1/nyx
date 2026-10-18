@@ -82,6 +82,8 @@ for (const url of urls) {
     await page.waitForTimeout(4000);
     row.active = await page.evaluate(() => document.documentElement.hasAttribute('data-nyx-active'));
     row.nyxStyles = await page.evaluate(() => document.querySelectorAll('style[data-nyx=override]').length);
+    // Text the contrast guard had to rescue: each one is a color the rewriter missed.
+    row.fixes = await page.evaluate(() => document.querySelectorAll('[data-nyx-fix]').length);
     const png = await page.screenshot({ type: 'png' });
     writeFileSync(join(out, `${name}.png`), png);
     Object.assign(row, await measure(png));

@@ -13,6 +13,7 @@ extension/src/
     engine.ts        per-root (document and open shadow roots) style generation and DOM observation
     sheet-transform  CSSOM → override CSS, mirroring @media/@supports/@layer/@container wrappers
     detect.ts        built-in dark mode detection
+    contrast.ts      contrast guard: lifts any on-screen text that ended up unreadable
     images.ts        decides which images to invert
     theme-import.ts  one-click import on the theme sharing page
   background/        fetches cross-origin CSS/images, keyboard shortcuts, sync
@@ -59,11 +60,17 @@ apple/               Safari container app (iOS + macOS), native messaging, App I
 7. **Images.** Images get `brightness()` and `grayscale()` from the theme.
    Small images that are mostly dark pixels on transparency are inverted;
    pixels are read through the background script when cross-origin.
-8. **Detection.** After `DOMContentLoaded` (and again on `load`, or when
+8. **Contrast guard.** Whatever produced the final colors, text that is on screen is
+   checked against the solid background actually behind it. Text below 3:1 (a color
+   the rewriter could not see: an unreadable stylesheet, a variable set from script,
+   an inline `!important`) is lifted to 4.5:1, keeping its hue. It runs lazily on
+   elements as they scroll into view and again when stylesheets change. Text over
+   images or gradients is left alone.
+9. **Detection.** After `DOMContentLoaded` (and again on `load`, or when
    `<html>`/`<body>` theme classes change) Nyx briefly disables its styles and
    samples the rendered page. If the page is already dark, Nyx steps aside,
    unless "ignore built-in dark mode" applies.
-9. **Keep up.** The engine stays current through three mechanisms:
+10. **Keep up.** The engine stays current through three mechanisms:
    - **MutationObservers** catch new stylesheets, inline style changes and
      shadow roots.
    - **A one-second poll** catches CSSOM changes (`insertRule`) and custom
