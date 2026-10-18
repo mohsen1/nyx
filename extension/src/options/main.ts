@@ -25,19 +25,27 @@ import {
   themeShareLink,
   type Theme,
 } from '../shared/theme';
-import { formatTime, h, segmented, themeSwatch, toggle } from '../shared/ui';
+import { actionCell, cell, formatTime, group, h, icon, segmented, select, themeSwatch, toggle, type IconName } from '../shared/ui';
 
+const LINKS: Array<[string, string, IconName]> = [
+  ['Website', 'https://azimi.me/nyx/', 'house'],
+  ['Source code', 'https://github.com/mohsen1/nyx', 'code-xml'],
+  ['Privacy', 'https://azimi.me/nyx/privacy/', 'shield-check'],
+  ['Support', 'https://azimi.me/nyx/support/', 'life-buoy'],
+];
 const root = document.getElementById('app')!;
 let settings: Settings;
-let editing: string | null = null;
 let tab = (location.hash.slice(1) || 'general') as TabId;
+/** The theme open in the editor sheet, with unsaved edits kept across re-renders. */
+let editing: { draft: Theme; isNew: boolean } | null = null;
+let showHidden = false;
 
 type TabId = 'general' | 'themes' | 'websites' | 'advanced';
-const TABS: Array<[TabId, string]> = [
-  ['general', 'General'],
-  ['themes', 'Themes'],
-  ['websites', 'Websites'],
-  ['advanced', 'Advanced'],
+const TABS: Array<[TabId, string, IconName]> = [
+  ['general', 'General', 'sun-moon'],
+  ['themes', 'Themes', 'palette'],
+  ['websites', 'Websites', 'globe'],
+  ['advanced', 'Advanced', 'sliders-horizontal'],
 ];
 
 const update = (fn: (s: Settings) => Settings) => updateSettings(fn);
@@ -46,195 +54,265 @@ const updateLibrary = (fn: (s: Settings) => Settings) => update((s) => updateGlo
 
 function render(): void {
   const scrollY = window.scrollY;
-  root.replaceChildren(
-    h('header', { class: 'page-header' }, h('h1', {}, 'Nyx'), h('p', {}, 'Dark mode for every website.')),
+  const title = TABS.find(([id]) => id === tab)?.[1] ?? '';
+  document.title = `${title} – Nyx`;
+  const tabs = TABS.map(([id, label, ic]) =>
     h(
-      'nav',
-      { class: 'tabs', role: 'tablist' },
-      ...TABS.map(([id, label]) =>
-        h(
-          'button',
-          {
-            type: 'button',
-            role: 'tab',
-            'aria-selected': String(tab === id),
-            class: tab === id ? 'selected' : '',
-            onclick: () => {
-              tab = id;
-              location.hash = id;
-              render();
-            },
-          },
-          label,
-        ),
-      ),
+      'button',
+      {
+        type: 'button',
+        role: 'tab',
+        'aria-selected': String(tab === id),
+        onclick: () => {
+          tab = id;
+          location.hash = id;
+          render();
+        },
+      },
+      icon(ic, 22),
+      label,
     ),
-    h('main', {}, ...(tab === 'general' ? general() : tab === 'themes' ? themes() : tab === 'websites' ? websites() : advanced())),
   );
+  root.replaceChildren(
+    h(
+      'header',
+      { class: 'toolbar' },
+      h('span', { class: 'brand' }, h('img', { src: 'icons/icon-48.png', alt: '' }), h('span', {}, 'Nyx')),
+      h('nav', { class: 'tabs', role: 'tablist', 'aria-label': 'Settings' }, ...tabs),
+    ),
+    h(
+      'main',
+      { class: tab === 'themes' ? 'page wide' : 'page', role: 'tabpanel', 'aria-label': title },
+      h('h1', {}, title),
+      ...(tab === 'general' ? general() : tab === 'themes' ? themes() : tab === 'websites' ? websites() : advanced()),
+    ),
+  );
+  if (editing) openEditor(editing);
   window.scrollTo(0, scrollY);
 }
 
-function card(title: string, ...children: Array<Node | null | false>): HTMLElement {
-  return h('section', { class: 'card' }, h('h2', {}, title), ...children);
+// ── General ──────────────────────────────────────────────
+
+function statusFooter(g: Settings['global']): string {
+  if (g.mode === 'on') return 'Websites are always dark.';
+  if (g.mode === 'off') return 'Websites stay as they are, unless you turn Nyx on for one.';
+  return g.autoTrigger === 'schedule' ? 'Websites are dark during your schedule.' : 'Websites are dark when your device is in Dark Mode.';
+}
+
+function timeInput(label: string, value: string, key: 'start' | 'end'): HTMLInputElement {
+  return h('input', {
+    type: 'time',
+    class: 'field',
+    'aria-label': label,
+    value,
+    onchange: (e: Event) => update((s) => updateGlobal(s, { schedule: { ...s.global.schedule, [key]: (e.target as HTMLInputElement).value } })),
+  });
 }
 
 function general(): Node[] {
   const g = settings.global;
   const paused = !!g.pausedUntil && g.pausedUntil > Date.now();
   const themes = allThemes(settings);
-  const scheduleInputs =
-    g.autoTrigger === 'schedule'
-      ? h(
-          'div',
-          { class: 'row' },
-          h('label', {}, 'From ', h('input', { type: 'time', value: g.schedule.start, onchange: (e: Event) => update((s) => updateGlobal(s, { schedule: { ...s.global.schedule, start: (e.target as HTMLInputElement).value } })) })),
-          h('label', {}, ' to ', h('input', { type: 'time', value: g.schedule.end, onchange: (e: Event) => update((s) => updateGlobal(s, { schedule: { ...s.global.schedule, end: (e.target as HTMLInputElement).value } })) })),
-        )
-      : null;
+  const current = findTheme(themes, g.defaultThemeId);
   return [
-    card(
-      'Status',
-      h('p', { class: 'hint' }, 'Auto darkens websites only when your device is in Dark Mode (or during your schedule). Each website can override this from the toolbar menu.'),
-      segmented<GlobalMode>(
-        'Status',
-        [
-          { value: 'auto', label: 'Auto' },
-          { value: 'on', label: 'Always On' },
-          { value: 'off', label: 'Off' },
-        ],
-        g.mode,
-        (mode) => update((s) => updateGlobal(s, { mode })),
-      ),
-      g.mode === 'auto'
-        ? h(
-            'div',
-            { class: 'stack' },
-            h('h3', {}, 'Auto follows'),
-            segmented<AutoTrigger>(
-              'Auto follows',
-              [
-                { value: 'system', label: 'System Appearance' },
-                { value: 'schedule', label: 'Schedule' },
-              ],
-              g.autoTrigger,
-              (autoTrigger) => update((s) => updateGlobal(s, { autoTrigger })),
-            ),
-            scheduleInputs,
-          )
-        : null,
-      h(
-        'div',
-        { class: 'row' },
-        h(
-          'button',
-          { type: 'button', onclick: () => update((s) => updateGlobal(s, { pausedUntil: paused ? null : tomorrowMorning(new Date()) })) },
-          paused ? 'Resume Everywhere' : 'Pause Everywhere Until Tomorrow',
-        ),
-        paused ? h('span', { class: 'hint' }, `Paused until ${formatTime(g.pausedUntil!)}`) : null,
-      ),
-    ),
-    card(
-      'Default Theme',
-      h(
-        'div',
-        { class: 'theme-grid compact' },
-        ...themes.map((th) =>
-          h(
-            'button',
-            {
-              type: 'button',
-              class: `theme-chip ${th.id === g.defaultThemeId ? 'selected' : ''}`,
-              'aria-pressed': String(th.id === g.defaultThemeId),
-              onclick: () => update((s) => updateGlobal(s, { defaultThemeId: th.id })),
-            },
-            themeSwatch(th.background, th.text),
-            h('span', {}, th.name),
+    group(
+      null,
+      [
+        cell(
+          'Dark mode',
+          segmented<GlobalMode>(
+            'Status',
+            [
+              { value: 'auto', label: 'Auto' },
+              { value: 'on', label: 'On' },
+              { value: 'off', label: 'Off' },
+            ],
+            g.mode,
+            (mode) => update((s) => updateGlobal(s, { mode })),
           ),
         ),
-      ),
+        g.mode === 'auto'
+          ? cell(
+              'Auto follows',
+              select(
+                'Auto follows',
+                [
+                  { value: 'system', label: 'System appearance' },
+                  { value: 'schedule', label: 'Schedule' },
+                ],
+                g.autoTrigger,
+                (v) => update((s) => updateGlobal(s, { autoTrigger: v as AutoTrigger })),
+              ),
+            )
+          : null,
+        g.mode === 'auto' && g.autoTrigger === 'schedule'
+          ? cell(
+              'Schedule',
+              h('span', { class: 'time-range' }, timeInput('From', g.schedule.start, 'start'), 'to', timeInput('To', g.schedule.end, 'end')),
+            )
+          : null,
+      ],
+      statusFooter(g),
+    ),
+    group(
+      null,
+      [
+        actionCell(paused ? 'Resume all websites' : 'Pause all until tomorrow', paused ? 'play' : 'pause', () =>
+          update((s) => updateGlobal(s, { pausedUntil: paused ? null : tomorrowMorning(new Date()) })),
+        ),
+      ],
+      paused ? `Paused until ${formatTime(g.pausedUntil!)}.` : null,
+    ),
+    group(
+      null,
+      [
+        cell(
+          'Default theme',
+          h(
+            'span',
+            { class: 'row-value' },
+            themeSwatch(current.background, current.text),
+            select(
+              'Default theme',
+              themes.map((th) => ({ value: th.id, label: th.name })),
+              g.defaultThemeId,
+              (v) => update((s) => updateGlobal(s, { defaultThemeId: v })),
+            ),
+          ),
+        ),
+      ],
+      'Change the theme for one website from the toolbar menu.',
     ),
   ];
 }
 
-function preview(th: Pick<Theme, 'background' | 'text' | 'imageBrightness' | 'grayscale'>): HTMLElement {
-  const filter = `brightness(${th.imageBrightness}) grayscale(${th.grayscale})`;
+// ── Themes ───────────────────────────────────────────────
+
+/** "Editor Themes" → "Editor themes" for section headings. */
+function sentenceCase(text: string): string {
+  return text.charAt(0) + text.slice(1).toLowerCase();
+}
+
+function thumb(th: Pick<Theme, 'background' | 'text' | 'imageBrightness' | 'grayscale'>): HTMLElement {
   return h(
-    'div',
-    { class: 'preview', style: `background:${th.background};color:${th.text}` },
-    h('div', { class: 'preview-title' }, 'Headline'),
-    h('div', { class: 'preview-line' }),
-    h('div', { class: 'preview-line short' }),
-    h('div', { class: 'preview-image', style: `filter:${filter}` }),
+    'span',
+    { class: 'thumb', style: `background:${th.background};color:${th.text}`, 'aria-hidden': 'true' },
+    h('i', { class: 'head' }),
+    h('i'),
+    h('i', { class: 'short' }),
+    h('b', { style: `filter:brightness(${th.imageBrightness}) grayscale(${th.grayscale})` }),
   );
 }
 
-async function copy(text: string, button: HTMLButtonElement): Promise<void> {
+async function copy(text: string, done: () => void): Promise<void> {
   try {
     await navigator.clipboard.writeText(text);
-    const old = button.textContent;
-    button.textContent = 'Copied';
-    setTimeout(() => (button.textContent = old), 1200);
+    done();
   } catch {
     prompt('Copy this link:', text);
   }
 }
 
-function themeEditor(th: Theme): HTMLElement {
-  const draft: Theme = { ...th };
-  const pv = preview(draft);
-  const field = (label: string, input: HTMLElement) => h('label', { class: 'field' }, h('span', {}, label), input);
-  const color = (key: 'background' | 'text') =>
-    h('input', {
-      type: 'color',
-      value: draft[key],
-      oninput: (e: Event) => {
-        draft[key] = (e.target as HTMLInputElement).value;
-        editorEl.querySelector('.preview')?.replaceWith(preview(draft));
+function closeMenus(except?: Element): void {
+  for (const d of document.querySelectorAll<HTMLDetailsElement>('details.menu[open]')) if (d !== except) d.open = false;
+}
+
+function themeMenu(th: Theme): HTMLElement {
+  const original = BUILT_IN_THEMES.find((b) => b.id === th.id);
+  const modified = !!original && !!settings.themeOverrides[th.id];
+  const menu = h('details', { class: 'menu', ontoggle: () => menu.open && closeMenus(menu) });
+  const item = (label: string, ic: IconName, run: () => void, destructive = false) =>
+    h(
+      'button',
+      {
+        type: 'button',
+        class: destructive ? 'destructive' : '',
+        onclick: () => {
+          menu.open = false;
+          run();
+        },
       },
-    });
-  const slider = (key: 'imageBrightness' | 'grayscale', min: number) =>
-    h('input', {
-      type: 'range',
-      min,
-      max: 1,
-      step: 0.01,
-      value: draft[key],
-      oninput: (e: Event) => {
-        draft[key] = parseFloat((e.target as HTMLInputElement).value);
-        editorEl.querySelector('.preview')?.replaceWith(preview(draft));
-      },
-    });
-  const save = () =>
-    updateLibrary((s) => {
-      if (th.builtIn) return { ...s, themeOverrides: { ...s.themeOverrides, [th.id]: { ...draft, builtIn: true } } };
-      return { ...s, customThemes: s.customThemes.map((x) => (x.id === th.id ? draft : x)) };
-    }).then(() => {
-      editing = null;
-      render();
-    });
-  const editorEl = h(
-    'div',
-    { class: 'editor' },
-    pv,
-    field('Name', h('input', { type: 'text', value: draft.name, maxlength: 80, oninput: (e: Event) => (draft.name = (e.target as HTMLInputElement).value) })),
-    field('Background', color('background')),
-    field('Text', color('text')),
-    field('Image brightness', slider('imageBrightness', 0.3)),
-    field('Grayscale', slider('grayscale', 0)),
+      icon(ic),
+      label,
+    );
+  const copied = () => {
+    const name = menu.closest('.tile')?.querySelector('.tile-name');
+    if (!name) return;
+    const old = name.textContent;
+    name.textContent = 'Link copied';
+    setTimeout(() => (name.textContent = old), 1200);
+  };
+  menu.append(
+    h('summary', { 'aria-label': `Options for ${th.name}`, title: 'Options' }, icon('ellipsis', 14)),
     h(
       'div',
-      { class: 'row' },
-      h('button', { type: 'button', class: 'primary', onclick: save }, 'Save'),
-      h('button', { type: 'button', onclick: () => ((editing = null), render()) }, 'Cancel'),
+      { class: 'menu-items', role: 'menu' },
+      item('Edit…', 'pencil', () => {
+        editing = { draft: { ...th }, isNew: false };
+        render();
+      }),
+      item('Duplicate', 'copy-plus', () => {
+        const { builtIn: _b, collection: _c, ...rest } = th;
+        const copyTheme: Theme = { ...rest, id: newThemeId(), name: `${th.name} Copy` };
+        void updateLibrary((s) => ({ ...s, customThemes: [...s.customThemes, copyTheme] }));
+      }),
+      item('Copy link', 'link', () => copy(themeShareLink(th), copied)),
+      item('Copy compatible link', 'link', () => copy(themeShareLink(th, 'noir'), copied)),
+      modified
+        ? item('Reset to original', 'rotate-ccw', () =>
+            updateLibrary((s) => {
+              const o = { ...s.themeOverrides };
+              delete o[th.id];
+              return { ...s, themeOverrides: o };
+            }),
+          )
+        : null,
+      h('hr'),
+      original
+        ? item('Hide', 'eye-off', () => updateLibrary((s) => ({ ...s, hiddenThemeIds: [...s.hiddenThemeIds, th.id] })))
+        : item(
+            'Delete',
+            'trash-2',
+            () => {
+              if (confirm(`Delete “${th.name}”?`)) void updateLibrary((s) => ({ ...s, customThemes: s.customThemes.filter((x) => x.id !== th.id) }));
+            },
+            true,
+          ),
     ),
   );
-  return editorEl;
+  return menu;
+}
+
+function tile(th: Theme): HTMLElement {
+  const selected = th.id === settings.global.defaultThemeId;
+  return h(
+    'article',
+    { class: selected ? 'tile selected' : 'tile', 'data-theme': th.id },
+    h(
+      'button',
+      {
+        type: 'button',
+        class: 'tile-pick',
+        'aria-pressed': String(selected),
+        'aria-label': `${th.name}${selected ? ', default theme' : ''}`,
+        onclick: () => update((s) => updateGlobal(s, { defaultThemeId: th.id })),
+      },
+      thumb(th),
+    ),
+    h('h3', { class: 'tile-name' }, th.name),
+    themeMenu(th),
+  );
 }
 
 function themes(): Node[] {
   const list = allThemes(settings);
-  const importInput = h('input', { type: 'url', placeholder: 'https://getnoir.app/theme?name=…&bg=…&text=…', 'aria-label': 'Theme link' });
-  const importError = h('p', { class: 'error', role: 'alert' });
+  const collections = new Map<string, Theme[]>();
+  for (const th of list) {
+    const name = th.collection ?? 'My themes';
+    collections.set(name, [...(collections.get(name) ?? []), th]);
+  }
+  const importInput = h('input', { type: 'url', class: 'field', placeholder: 'Paste a theme link', 'aria-label': 'Theme link' });
+  const importError = h('span', { class: 'error', role: 'alert' });
   const doImport = () => {
     try {
       const parsed = parseThemeLink(importInput.value);
@@ -243,151 +321,214 @@ function themes(): Node[] {
       importInput.value = '';
       importError.textContent = '';
     } catch (e) {
-      importError.textContent = e instanceof ThemeLinkError ? e.message : 'Could not import that link.';
+      importError.textContent = e instanceof ThemeLinkError ? e.message : 'That link isn’t a theme.';
     }
   };
+  importInput.addEventListener('keydown', (e) => e.key === 'Enter' && doImport());
   const hidden = BUILT_IN_THEMES.filter((b) => settings.hiddenThemeIds.includes(b.id));
+
   return [
-    card(
-      'Add a Theme',
-      h('p', { class: 'hint' }, 'Paste a shared theme link. Links shared from Noir (getnoir.app/theme or noir://theme) work too.'),
-      h('div', { class: 'row' }, importInput, h('button', { type: 'button', onclick: doImport }, 'Import')),
+    group(
+      'Add a theme',
+      [
+        actionCell('New theme…', 'plus', () => {
+          editing = { draft: { id: newThemeId(), name: 'New theme', background: '#1c1c1e', text: '#e3e3e6', imageBrightness: 1, grayscale: 0 }, isNew: true };
+          render();
+        }),
+        cell(importInput, h('button', { type: 'button', class: 'btn', onclick: doImport }, 'Import'), { icon: 'link' }),
+      ],
       importError,
-      h(
-        'button',
-        {
-          type: 'button',
-          class: 'primary',
-          onclick: () => {
-            const th: Theme = { id: newThemeId(), name: 'New Theme', background: '#000000', text: '#ffffff', imageBrightness: 1, grayscale: 0 };
-            editing = th.id;
-            void updateLibrary((s) => ({ ...s, customThemes: [...s.customThemes, th] }));
-          },
-        },
-        'Create New Theme',
-      ),
     ),
     h(
       'div',
-      { class: 'theme-grid' },
-      ...list.map((th) => {
-        if (editing === th.id) return h('article', { class: 'theme-card editing' }, themeEditor(th));
-        const original = BUILT_IN_THEMES.find((b) => b.id === th.id);
-        const modified = !!original && !!settings.themeOverrides[th.id];
-        const shareBtn = h('button', { type: 'button', onclick: () => copy(themeShareLink(th), shareBtn) }, 'Copy Link');
-        const noirBtn = h('button', { type: 'button', title: 'Copy a link in Noir’s format', onclick: () => copy(themeShareLink(th, 'noir'), noirBtn) }, 'Copy Noir Link');
-        return h(
-          'article',
-          { class: `theme-card ${th.id === settings.global.defaultThemeId ? 'selected' : ''}` },
-          preview(th),
-          h('h3', {}, th.name, th.collection ? h('small', {}, th.collection) : null),
-          h(
-            'div',
-            { class: 'row wrap' },
-            h('button', { type: 'button', onclick: () => update((s) => updateGlobal(s, { defaultThemeId: th.id })) }, th.id === settings.global.defaultThemeId ? 'Default ✓' : 'Use as Default'),
-            h('button', { type: 'button', onclick: () => ((editing = th.id), render()) }, 'Edit'),
-            shareBtn,
-            noirBtn,
-            h(
-              'button',
-              {
-                type: 'button',
-                onclick: () => {
-                  const { builtIn: _b, collection: _c, ...rest } = th;
-                  const copyTheme: Theme = { ...rest, id: newThemeId(), name: `${th.name} Copy` };
-                  void updateLibrary((s) => ({ ...s, customThemes: [...s.customThemes, copyTheme] }));
-                },
-              },
-              'Duplicate',
-            ),
-            modified
-              ? h('button', { type: 'button', onclick: () => updateLibrary((s) => { const o = { ...s.themeOverrides }; delete o[th.id]; return { ...s, themeOverrides: o }; }) }, 'Reset')
-              : null,
-            original
-              ? h('button', { type: 'button', class: 'danger', onclick: () => updateLibrary((s) => ({ ...s, hiddenThemeIds: [...s.hiddenThemeIds, th.id] })) }, 'Hide')
-              : h('button', { type: 'button', class: 'danger', onclick: () => { if (confirm(`Delete “${th.name}”?`)) void updateLibrary((s) => ({ ...s, customThemes: s.customThemes.filter((x) => x.id !== th.id) })); } }, 'Delete'),
-          ),
-        );
-      }),
+      { class: 'gallery' },
+      ...[...collections].map(([name, items]) =>
+        h('section', { class: 'collection' }, h('h2', { class: 'group-title' }, sentenceCase(name)), h('div', { class: 'list tiles' }, ...items.map(tile))),
+      ),
     ),
     hidden.length
-      ? card(
-          'Hidden Built-in Themes',
-          h(
-            'div',
-            { class: 'row wrap' },
-            ...hidden.map((b) => h('button', { type: 'button', onclick: () => updateLibrary((s) => ({ ...s, hiddenThemeIds: s.hiddenThemeIds.filter((x) => x !== b.id) })) }, `Show ${b.name}`)),
-          ),
+      ? group(
+          null,
+          [
+            actionCell(`${showHidden ? 'Hide' : 'Show'} hidden themes (${hidden.length})`, showHidden ? 'eye-off' : 'eye', () => {
+              showHidden = !showHidden;
+              render();
+            }),
+            ...(showHidden
+              ? hidden.map((b) =>
+                  cell(
+                    b.name,
+                    h(
+                      'button',
+                      { type: 'button', class: 'btn', onclick: () => updateLibrary((s) => ({ ...s, hiddenThemeIds: s.hiddenThemeIds.filter((x) => x !== b.id) })) },
+                      'Show',
+                    ),
+                  ),
+                )
+              : []),
+          ],
         )
       : null,
   ].filter(Boolean) as Node[];
 }
+
+function openEditor(state: { draft: Theme; isNew: boolean }): void {
+  const draft = state.draft;
+  const preview = h('div', {}, thumb(draft));
+  const refresh = () => preview.replaceChildren(thumb(draft));
+  const color = (key: 'background' | 'text', label: string) =>
+    cell(
+      label,
+      h('input', {
+        type: 'color',
+        'aria-label': label,
+        value: draft[key],
+        oninput: (e: Event) => {
+          draft[key] = (e.target as HTMLInputElement).value;
+          refresh();
+        },
+      }),
+      { tag: 'label' },
+    );
+  const slider = (key: 'imageBrightness' | 'grayscale', label: string, min: number) =>
+    cell(
+      label,
+      h('input', {
+        type: 'range',
+        'aria-label': label,
+        min,
+        max: 1,
+        step: 0.01,
+        value: draft[key],
+        oninput: (e: Event) => {
+          draft[key] = parseFloat((e.target as HTMLInputElement).value);
+          refresh();
+        },
+      }),
+      { tag: 'label' },
+    );
+  const close = () => {
+    editing = null;
+    dialog.close();
+    dialog.remove();
+  };
+  const save = (e: Event) => {
+    e.preventDefault();
+    const th: Theme = { ...draft, name: draft.name.trim() || 'Untitled theme' };
+    editing = null;
+    void updateLibrary((s) => {
+      if (state.isNew) return { ...s, customThemes: [...s.customThemes, th] };
+      if (th.builtIn) return { ...s, themeOverrides: { ...s.themeOverrides, [th.id]: { ...th, builtIn: true } } };
+      return { ...s, customThemes: s.customThemes.map((x) => (x.id === th.id ? th : x)) };
+    }).then(render);
+    dialog.close();
+    dialog.remove();
+  };
+  const dialog = h(
+    'dialog',
+    { class: 'sheet', 'aria-label': state.isNew ? 'New theme' : 'Edit theme', oncancel: close },
+    h(
+      'form',
+      { method: 'dialog', class: 'theme-editor', onsubmit: save },
+      h('h2', {}, state.isNew ? 'New theme' : 'Edit theme'),
+      preview,
+      group(null, [
+        h(
+          'label',
+          { class: 'cell' },
+          h('input', {
+            type: 'text',
+            class: 'field',
+            'aria-label': 'Name',
+            maxlength: 80,
+            value: draft.name,
+            oninput: (e: Event) => (draft.name = (e.target as HTMLInputElement).value),
+          }),
+        ),
+        color('background', 'Background'),
+        color('text', 'Text'),
+      ]),
+      group('Images', [slider('imageBrightness', 'Brightness', 0.3), slider('grayscale', 'Grayscale', 0)]),
+      h(
+        'div',
+        { class: 'sheet-actions' },
+        h('button', { type: 'button', class: 'btn', onclick: close }, 'Cancel'),
+        h('button', { type: 'submit', class: 'btn primary' }, 'Save'),
+      ),
+    ),
+  );
+  document.body.querySelector('dialog.sheet')?.remove();
+  document.body.append(dialog);
+  dialog.showModal();
+}
+
+// ── Websites ─────────────────────────────────────────────
 
 function websites(): Node[] {
   const themes = allThemes(settings);
   const entries = Object.entries(settings.sites)
     .filter(([, s]) => !isDefaultSite(s))
     .sort(([a], [b]) => a.localeCompare(b));
-  const add = h('input', { type: 'text', placeholder: 'example.com', 'aria-label': 'Website' });
-  return [
-    card(
-      'Websites',
-      h('p', { class: 'hint' }, 'Websites, subdomains and pages with their own settings. Add example.com, app.example.com, 192.168.1.2:8080 or example.com/some/page.'),
+  const add = h('input', { type: 'text', class: 'field', placeholder: 'example.com', 'aria-label': 'Website', autocapitalize: 'off', spellcheck: 'false' });
+  const doAdd = () => {
+    const host = add.value.trim();
+    if (host) void update((s) => updateSite(s, normalizeSiteKey(host), { mode: 'off' }));
+  };
+  add.addEventListener('keydown', (e) => e.key === 'Enter' && doAdd());
+
+  const rows = entries.map(([host, s]) => {
+    const th = findTheme(themes, s.themeId ?? settings.global.defaultThemeId);
+    const notes = [
+      s.pausedUntil && s.pausedUntil > Date.now() ? `Paused until ${formatTime(s.pausedUntil)}` : null,
+      s.ignoreBuiltInDarkMode === true ? 'Ignores website’s dark mode' : null,
+    ].filter(Boolean);
+    return h(
+      'div',
+      { class: 'cell site-row' },
+      themeSwatch(th.background, th.text),
+      h('span', { class: 'label' }, h('strong', {}, host), notes.length ? h('small', {}, notes.join(' · ')) : null),
       h(
-        'div',
-        { class: 'row' },
-        add,
+        'span',
+        { class: 'controls' },
+        select(
+          `Status for ${host}`,
+          [
+            { value: 'default', label: 'Default' },
+            { value: 'auto', label: 'Auto' },
+            { value: 'on', label: 'On' },
+            { value: 'off', label: 'Off' },
+          ],
+          s.mode,
+          (mode) => update((x) => updateSite(x, host, { mode: mode as SiteMode })),
+        ),
+        select(
+          `Theme for ${host}`,
+          [{ value: '', label: 'Default theme' }, ...themes.map((t) => ({ value: t.id, label: t.name }))],
+          s.themeId ?? '',
+          (v) => update((x) => updateSite(x, host, { themeId: v || null })),
+        ),
         h(
           'button',
-          {
-            type: 'button',
-            onclick: () => {
-              const host = add.value.trim();
-              if (host) void update((s) => updateSite(s, normalizeSiteKey(host), { mode: 'off' }));
-            },
-          },
-          'Add (Off)',
+          { type: 'button', class: 'icon-button danger', title: 'Remove', 'aria-label': `Remove ${host}`, onclick: () => update((x) => resetSite(x, host)) },
+          icon('trash-2'),
         ),
       ),
-      entries.length === 0 ? h('p', { class: 'muted' }, 'No websites with custom settings yet.') : null,
-      h(
-        'ul',
-        { class: 'site-list' },
-        ...entries.map(([host, s]) => {
-          const select = h(
-            'select',
-            { 'aria-label': `Theme for ${host}`, onchange: (e: Event) => update((x) => updateSite(x, host, { themeId: (e.target as HTMLSelectElement).value || null })) },
-            h('option', { value: '' }, 'Default theme'),
-            ...themes.map((th) => h('option', { value: th.id }, th.name)),
-          );
-          select.value = s.themeId ?? '';
-          const th = findTheme(themes, s.themeId ?? settings.global.defaultThemeId);
-          return h(
-            'li',
-            {},
-            themeSwatch(th.background, th.text),
-            h('strong', {}, host),
-            segmented<SiteMode>(
-              `Status for ${host}`,
-              [
-                { value: 'default', label: 'Default' },
-                { value: 'auto', label: 'Auto' },
-                { value: 'on', label: 'On' },
-                { value: 'off', label: 'Off' },
-              ],
-              s.mode,
-              (mode) => update((x) => updateSite(x, host, { mode })),
-            ),
-            select,
-            s.ignoreBuiltInDarkMode === true ? h('span', { class: 'badge' }, 'Ignores built-in dark mode') : null,
-            s.pausedUntil && s.pausedUntil > Date.now() ? h('span', { class: 'badge' }, `Paused until ${formatTime(s.pausedUntil)}`) : null,
-            h('button', { type: 'button', class: 'danger', onclick: () => update((x) => resetSite(x, host)) }, 'Remove'),
-          );
-        }),
-      ),
+    );
+  });
+
+  return [
+    group(
+      null,
+      [cell(add, h('button', { type: 'button', class: 'btn', onclick: doAdd }, 'Add'), { icon: 'plus' })],
+      'New websites start with Nyx off.',
     ),
+    rows.length
+      ? group('Customized websites', rows)
+      : group(null, [h('p', { class: 'empty' }, 'Websites you change from the toolbar menu appear here.')]),
   ];
 }
+
+// ── Advanced ─────────────────────────────────────────────
 
 function advanced(): Node[] {
   const g = settings.global;
@@ -399,74 +540,73 @@ function advanced(): Node[] {
       if (!file) return;
       try {
         const imported = normalizeSettings(JSON.parse(await file.text()));
-        if (confirm('Replace all settings with the imported backup?')) await saveSettings(imported);
+        if (confirm('Replace all settings with this backup?')) await saveSettings(imported);
       } catch {
-        alert('That file is not a Nyx backup.');
+        alert('That file isn’t a Nyx backup.');
       }
     },
   });
+  const setAppearance = (k: keyof Settings['global']['appearance']) => (v: boolean) =>
+    update((s) => updateGlobal(s, { appearance: { ...s.global.appearance, [k]: v } }));
   return [
-    card(
-      'Advanced Appearance Options',
-      toggle(
-        'Show advanced appearance options',
-        g.advancedAppearanceEnabled,
-        (v) => update((s) => updateGlobal(s, { advancedAppearanceEnabled: v })),
-        'Adds per-website appearance switches to the toolbar menu.',
-      ),
-      g.advancedAppearanceEnabled
-        ? h(
-            'div',
-            { class: 'stack' },
-            h('h3', {}, 'Defaults for all websites'),
-            toggle('Dynamic colors', g.appearance.dynamicColors, (v) => update((s) => updateGlobal(s, { appearance: { ...s.global.appearance, dynamicColors: v } })), 'Off maps every color to the theme’s background and text colors.'),
-            toggle('Background images', g.appearance.backgroundImages, (v) => update((s) => updateGlobal(s, { appearance: { ...s.global.appearance, backgroundImages: v } })), 'Off hides all CSS background images.'),
-            toggle('Image inversion', g.appearance.imageInversion, (v) => update((s) => updateGlobal(s, { appearance: { ...s.global.appearance, imageInversion: v } })), 'Inverts dark logos and icons on transparent backgrounds.'),
-          )
-        : null,
+    group(
+      'Websites with their own dark mode',
+      [toggle('Ignore their dark mode', g.ignoreBuiltInDarkMode, (v) => update((s) => updateGlobal(s, { ignoreBuiltInDarkMode: v })))],
+      'Best left off. You can turn it on for one website from the toolbar menu.',
     ),
-    card(
-      'Built-in Dark Mode',
-      toggle(
-        'Ignore built-in dark modes',
-        g.ignoreBuiltInDarkMode,
-        (v) => update((s) => updateGlobal(s, { ignoreBuiltInDarkMode: v })),
-        'Nyx normally leaves websites that have their own dark mode alone. Detection is not perfect, so it is best to leave this off and turn it on per website from the toolbar menu.',
-      ),
+    group(
+      null,
+      [toggle('Offer to report detection mistakes', g.darkModeReporting === 'ask', (v) => update((s) => updateGlobal(s, { darkModeReporting: v ? 'ask' : 'never' })))],
+      'You review each report before it’s sent.',
     ),
-    card(
-      'Built-in Dark Mode Reports',
-      h('p', { class: 'hint' }, 'When a website’s own dark mode is detected incorrectly, Nyx can offer to open a pre-filled report. Nothing is sent unless you submit it.'),
-      segmented<'ask' | 'never'>('Reports', [{ value: 'ask', label: 'Offer to Report' }, { value: 'never', label: 'Never' }], g.darkModeReporting, (v) =>
-        update((s) => updateGlobal(s, { darkModeReporting: v })),
-      ),
+    group(
+      'Appearance options',
+      [
+        toggle('Show in toolbar menu', g.advancedAppearanceEnabled, (v) => update((s) => updateGlobal(s, { advancedAppearanceEnabled: v }))),
+        ...(g.advancedAppearanceEnabled
+          ? [
+              toggle('Dynamic colors', g.appearance.dynamicColors, setAppearance('dynamicColors'), 'Keep each website’s accent colors.'),
+              toggle('Background images', g.appearance.backgroundImages, setAppearance('backgroundImages')),
+              toggle('Invert dark images', g.appearance.imageInversion, setAppearance('imageInversion'), 'Keep dark logos and icons visible.'),
+            ]
+          : []),
+      ],
+      g.advancedAppearanceEnabled ? 'These are the defaults. Change them for one website from the toolbar menu.' : null,
     ),
-    card(
-      'Keyboard Shortcuts',
-      h('p', { class: 'hint' }, 'Toggle the current website, pause it until tomorrow, cycle themes or set the global status. Change the key combinations in your browser’s extension shortcut settings.'),
+    group(
+      null,
+      [cell('Keyboard shortcuts', null, { icon: 'keyboard', hint: 'Set them in your browser’s extension settings.' })],
     ),
-    card(
-      'Backup',
-      h(
-        'div',
-        { class: 'row' },
+    group('Backup', [
+      actionCell('Export settings…', 'download', () => {
+        const blob = new Blob([JSON.stringify(settings, null, 2)], { type: 'application/json' });
+        const a = h('a', { href: URL.createObjectURL(blob), download: 'nyx-settings.json' });
+        a.click();
+        setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+      }),
+      h('label', { class: 'cell action has-icon' }, icon('upload'), h('span', { class: 'label' }, 'Import settings…'), fileInput),
+    ]),
+    group(
+      'About',
+      [
         h(
-          'button',
-          {
-            type: 'button',
-            onclick: () => {
-              const blob = new Blob([JSON.stringify(settings, null, 2)], { type: 'application/json' });
-              const a = h('a', { href: URL.createObjectURL(blob), download: 'nyx-settings.json' });
-              a.click();
-              setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-            },
-          },
-          'Export Settings',
+          'div',
+          { class: 'cell about' },
+          h('img', { src: 'icons/icon-96.png', alt: '' }),
+          h('span', { class: 'label' }, h('strong', {}, 'Nyx'), h('small', {}, `Version ${api.runtime.getManifest().version}`)),
         ),
-        h('label', { class: 'button' }, 'Import Settings…', fileInput),
-      ),
+        ...LINKS.map(([label, href, ic]) =>
+          h(
+            'a',
+            { class: 'cell action has-icon', href, target: '_blank', rel: 'noopener' },
+            icon(ic),
+            h('span', { class: 'label' }, label),
+            icon('external-link', 14),
+          ),
+        ),
+      ],
+      'Nyx doesn’t collect any data.',
     ),
-    card('About', h('p', {}, `Nyx ${api.runtime.getManifest().version}. Open source under the MIT license. Nyx never collects your browsing data.`)),
   ];
 }
 
@@ -476,6 +616,13 @@ async function main(): Promise<void> {
   onSettingsChanged((s) => {
     settings = s;
     render();
+  });
+  document.addEventListener('click', (e) => {
+    const inMenu = (e.target as Element).closest('details.menu');
+    closeMenus(inMenu ?? undefined);
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeMenus();
   });
   window.addEventListener('hashchange', () => {
     const id = location.hash.slice(1) as TabId;

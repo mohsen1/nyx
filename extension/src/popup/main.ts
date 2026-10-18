@@ -20,7 +20,7 @@ import {
 } from '../shared/settings';
 import { loadSettings, onSettingsChanged, updateSettings } from '../shared/storage';
 import { findTheme } from '../shared/theme';
-import { formatTime, h, segmented, themeSwatch, toggle } from '../shared/ui';
+import { actionCell, cell, formatClock, formatTime, group, h, icon, segmented, select, themeSwatch, toggle } from '../shared/ui';
 
 const REPO = 'https://github.com/mohsen1/nyx';
 const root = document.getElementById('app')!;
@@ -30,15 +30,17 @@ let tab: Tab | undefined;
 let siteKey: string | null = null;
 let scopePinned = false;
 let page: PageState | null = null;
+/** The tab's URL, or the one its content script reports when the browser hides it. */
+let pageUrl: string | undefined;
 let settings: Settings;
 
 const REASONS: Record<string, string> = {
-  'global-off': 'Turned off everywhere',
-  'site-off': 'Turned off for this website',
-  'global-paused': 'Paused everywhere',
-  'site-paused': 'Paused on this website',
-  'system-light': 'Waiting for dark appearance',
-  'outside-schedule': 'Outside your schedule',
+  'global-off': 'Off for all websites',
+  'site-off': 'Off for this website',
+  'global-paused': 'Paused for all websites',
+  'site-paused': 'Paused',
+  'system-light': 'Off until your device is in Dark Mode',
+  'outside-schedule': 'Off until your schedule starts',
   on: 'Dark mode is on',
 };
 
@@ -51,12 +53,30 @@ async function refreshPage(): Promise<void> {
   }
 }
 
-function statusLine(): HTMLElement {
-  if (!siteKey) return h('p', { class: 'status muted' }, 'Nyx does not run on this page.');
-  if (!page) return h('p', { class: 'status muted' }, 'Reload the page to let Nyx style it.');
+/** Without a URL the browser is withholding access; with one, the page is a browser page Nyx can't style. */
+function blocked(): boolean {
+  return !siteKey && !!tab && !pageUrl;
+}
+
+/** Where to grant website access, in the words of the browser the user is in. */
+function permissionHelp(): string {
+  const ua = navigator.userAgent;
+  const safari = /Safari\//.test(ua) && !/Chrome|Chromium|Edg\//.test(ua);
+  const mobile = /iPhone|iPad/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
+  if (safari && mobile) return 'Tap the page menu in the address bar, tap Nyx, then choose Always Allow.';
+  if (safari) return 'In Safari Settings › Extensions › Nyx, choose Edit Websites and allow this website.';
+  if (/Firefox\//.test(ua)) return 'Open the Extensions menu in the toolbar and allow Nyx on this website.';
+  return 'Open the Extensions menu in the toolbar and allow Nyx on this site.';
+}
+
+function statusLine(): HTMLElement | null {
+  if (blocked()) return null;
+  if (!siteKey) return h('p', { class: 'status' }, 'Nyx can’t change this page');
+  if (!page) return h('p', { class: 'status' }, 'Reload the page to use Nyx');
   const systemDark = matchMedia('(prefers-color-scheme: dark)').matches;
   const d = decide(settings, siteKey, { systemDark, now: new Date() });
   let text = REASONS[d.reason] ?? '';
+  if (d.reason === 'outside-schedule') text = `Off until ${formatClock(settings.global.schedule.start)}`;
   if (d.enabled && page.builtInDarkMode && !d.ignoreBuiltInDarkMode) text = 'Using the website’s own dark mode';
   const site = settings.sites[siteKey];
   if (d.reason === 'site-paused' && site?.pausedUntil) text += ` until ${formatTime(site.pausedUntil)}`;
@@ -69,95 +89,104 @@ function update(fn: (s: Settings) => Settings): void {
 }
 
 function render(): void {
+  // Keep disclosure state across re-renders.
+  const appearanceOpen = !!root.querySelector<HTMLDetailsElement>('details.appearance')?.open;
   root.replaceChildren();
-  const header = h(
-    'header',
-    {},
-    h('div', { class: 'title' }, scopePicker(), statusLine()),
-    h('button', { class: 'icon', type: 'button', title: 'Settings', 'aria-label': 'Open settings', onclick: () => api.runtime.openOptionsPage() }, '⚙︎'),
+  root.append(
+    h(
+      'header',
+      { class: 'popup-header' },
+      h('div', { class: 'title' }, scopePicker(), statusLine()),
+      h(
+        'button',
+        { class: 'icon-button', type: 'button', title: 'Settings', 'aria-label': 'Open settings', onclick: () => api.runtime.openOptionsPage() },
+        icon('settings', 18),
+      ),
+    ),
   );
-  root.append(header);
+
+  const footer: Node[] = [];
+
+  if (blocked()) {
+    root.append(
+      group(null, [
+        h(
+          'div',
+          { class: 'cell has-icon notice' },
+          icon('hand'),
+          h('span', { class: 'label' }, 'Allow Nyx on this website', h('small', {}, permissionHelp())),
+        ),
+      ]),
+    );
+  }
 
   if (siteKey) {
-    const site = settings.sites[siteKey];
-    const now = Date.now();
-    const paused = !!site?.pausedUntil && site.pausedUntil > now;
     const key = siteKey;
-    root.append(
-      h(
-        'div',
-        { class: 'actions' },
-        h(
-          'button',
-          {
-            type: 'button',
-            class: 'primary',
-            onclick: () =>
-              update((s) => updateSite(s, key, { pausedUntil: paused ? null : tomorrowMorning(new Date()) })),
-          },
-          paused ? 'Resume on This Website' : 'Pause Until Tomorrow',
-        ),
-      ),
-    );
-
-    root.append(
-      h('section', {}, h('h2', {}, 'This Website')),
-      segmented<SiteMode>(
-        'Website status',
-        [
-          { value: 'default', label: 'Default', title: 'Use the global setting' },
-          { value: 'auto', label: 'Auto', title: 'Follow the system appearance or schedule' },
-          { value: 'on', label: 'On' },
-          { value: 'off', label: 'Off' },
-        ],
-        site?.mode ?? 'default',
-        (mode) => update((s) => updateSite(s, key, { mode, pausedUntil: null })),
-      ),
-    );
-
+    const site = settings.sites[key];
+    const paused = !!site?.pausedUntil && site.pausedUntil > Date.now();
     const themes = allThemes(settings);
     const defaultTheme = findTheme(themes, settings.global.defaultThemeId);
-    const select = h(
-      'select',
-      {
-        'aria-label': 'Theme for this website',
-        onchange: (e: Event) => {
-          const v = (e.target as HTMLSelectElement).value;
-          update((s) => updateSite(s, key, { themeId: v || null }));
-        },
-      },
-      h('option', { value: '' }, `Default (${defaultTheme.name})`),
-      ...themes.map((th) => h('option', { value: th.id }, th.name)),
-    );
-    select.value = site?.themeId ?? '';
     const effective = findTheme(themes, site?.themeId ?? settings.global.defaultThemeId);
-    root.append(h('label', { class: 'row' }, themeSwatch(effective.background, effective.text), h('span', {}, 'Theme'), select));
+
+    const rows: Array<Node | null> = [
+      h(
+        'div',
+        { class: 'cell stack' },
+        segmented<SiteMode>(
+          'Website status',
+          [
+            { value: 'default', label: 'Default', title: 'Use the setting for all websites' },
+            { value: 'auto', label: 'Auto', title: 'Follow Dark Mode or your schedule' },
+            { value: 'on', label: 'On' },
+            { value: 'off', label: 'Off' },
+          ],
+          site?.mode ?? 'default',
+          (mode) => update((s) => updateSite(s, key, { mode, pausedUntil: null })),
+          true,
+        ),
+      ),
+      cell(
+        'Theme',
+        h(
+          'span',
+          { class: 'row-value' },
+          themeSwatch(effective.background, effective.text),
+          select(
+            'Theme for this website',
+            [{ value: '', label: `Default (${defaultTheme.name})` }, ...themes.map((th) => ({ value: th.id, label: th.name }))],
+            site?.themeId ?? '',
+            (v) => update((s) => updateSite(s, key, { themeId: v || null })),
+          ),
+        ),
+        { icon: 'palette' },
+      ),
+    ];
 
     if (page?.builtInDarkMode || (site && site.ignoreBuiltInDarkMode !== null)) {
       const current = site?.ignoreBuiltInDarkMode;
-      root.append(
-        h('section', {}, h('h2', {}, 'Ignore Built-in Dark Mode')),
-        segmented<'default' | 'on' | 'off'>(
-          'Ignore built-in dark mode',
-          [
-            { value: 'default', label: `Default (${settings.global.ignoreBuiltInDarkMode ? 'On' : 'Off'})` },
-            { value: 'on', label: 'On', title: 'Darken even though the website has its own dark mode' },
-            { value: 'off', label: 'Off' },
-          ],
-          current === null || current === undefined ? 'default' : current ? 'on' : 'off',
-          (v) => update((s) => updateSite(s, key, { ignoreBuiltInDarkMode: v === 'default' ? null : v === 'on' })),
+      rows.push(
+        cell(
+          'Ignore website’s dark mode',
+          select(
+            'Ignore built-in dark mode',
+            [
+              { value: 'default', label: `Default (${settings.global.ignoreBuiltInDarkMode ? 'On' : 'Off'})` },
+              { value: 'on', label: 'On' },
+              { value: 'off', label: 'Off' },
+            ],
+            current === null || current === undefined ? 'default' : current ? 'on' : 'off',
+            (v) => update((s) => updateSite(s, key, { ignoreBuiltInDarkMode: v === 'default' ? null : v === 'on' })),
+          ),
+          { icon: 'sun-moon' },
         ),
       );
       if (settings.global.darkModeReporting !== 'never') {
-        root.append(
-          h('button', { type: 'button', class: 'link', onclick: () => reportDetection(key) }, 'Dark mode detected incorrectly? Report it'),
-        );
+        footer.push(h('button', { type: 'button', class: 'link', onclick: () => reportDetection(key) }, 'Report wrong detection'));
       }
     }
 
     if (settings.global.advancedAppearanceEnabled) {
-      const g = settings.global.appearance;
-      const a = { ...g, ...(site?.appearance ?? {}) };
+      const a = { ...settings.global.appearance, ...(site?.appearance ?? {}) };
       const set = (k: keyof AppearanceOptions) => (v: boolean) =>
         update((s) => {
           const current = { ...(s.sites[key]?.appearance ?? {}) };
@@ -165,74 +194,85 @@ function render(): void {
           else current[k] = v;
           return setSiteAppearance(s, key, current);
         });
-      root.append(
-        h('section', {}, h('h2', {}, 'Appearance')),
-        toggle('Dynamic colors', a.dynamicColors, set('dynamicColors'), 'Keep the website’s accent colors.'),
-        toggle('Background images', a.backgroundImages, set('backgroundImages')),
-        toggle('Image inversion', a.imageInversion, set('imageInversion'), 'Invert dark logos and icons.'),
+      rows.push(
+        h(
+          'details',
+          { class: 'appearance', open: appearanceOpen },
+          h(
+            'summary',
+            { class: 'cell has-icon' },
+            icon('sliders-horizontal'),
+            h('span', { class: 'label' }, 'Appearance'),
+            chevron(),
+          ),
+          toggle('Dynamic colors', a.dynamicColors, set('dynamicColors')),
+          toggle('Background images', a.backgroundImages, set('backgroundImages')),
+          toggle('Invert dark images', a.imageInversion, set('imageInversion')),
+        ),
       );
     }
 
+    rows.push(
+      actionCell(paused ? 'Resume' : 'Pause until tomorrow', paused ? 'play' : 'pause', () =>
+        update((s) => updateSite(s, key, { pausedUntil: paused ? null : tomorrowMorning(new Date()) })),
+      ),
+    );
+
+    root.append(group('This website', rows));
+
     if (site && !isDefaultSite(site)) {
-      root.append(
-        h('button', { type: 'button', class: 'link', onclick: () => update((s) => resetSite(s, key)) }, 'Reset website settings'),
-      );
+      footer.unshift(h('button', { type: 'button', class: 'link', onclick: () => update((s) => resetSite(s, key)) }, 'Reset website'));
     }
+    footer.push(h('button', { type: 'button', class: 'link', onclick: () => reportSite(key) }, 'Report a problem'));
   }
 
   const globalPaused = !!settings.global.pausedUntil && settings.global.pausedUntil > Date.now();
   root.append(
-    h('section', {}, h('h2', {}, 'All Websites')),
-    segmented<GlobalMode>(
-      'Global status',
-      [
-        { value: 'auto', label: 'Auto' },
-        { value: 'on', label: 'On' },
-        { value: 'off', label: 'Off' },
-      ],
-      settings.global.mode,
-      (mode) => update((s) => updateGlobal(s, { mode, pausedUntil: null })),
-    ),
-    h(
-      'button',
-      {
-        type: 'button',
-        class: 'secondary',
-        onclick: () => update((s) => updateGlobal(s, { pausedUntil: globalPaused ? null : tomorrowMorning(new Date()) })),
-      },
-      globalPaused ? 'Resume Everywhere' : 'Pause Everywhere Until Tomorrow',
-    ),
-    h(
-      'footer',
-      {},
-      siteKey
-        ? h('button', { type: 'button', class: 'link', onclick: () => reportSite(siteKey!) }, 'Report a problem with this website')
-        : null,
-    ),
+    group('All websites', [
+      h(
+        'div',
+        { class: 'cell stack' },
+        segmented<GlobalMode>(
+          'Global status',
+          [
+            { value: 'auto', label: 'Auto' },
+            { value: 'on', label: 'On' },
+            { value: 'off', label: 'Off' },
+          ],
+          settings.global.mode,
+          (mode) => update((s) => updateGlobal(s, { mode, pausedUntil: null })),
+          true,
+        ),
+      ),
+      actionCell(globalPaused ? 'Resume all websites' : 'Pause all until tomorrow', globalPaused ? 'play' : 'pause', () =>
+        update((s) => updateGlobal(s, { pausedUntil: globalPaused ? null : tomorrowMorning(new Date()) })),
+      ),
+    ]),
   );
+  if (footer.length) root.append(h('footer', { class: 'popup-footer' }, ...footer));
+}
+
+function chevron(): SVGSVGElement {
+  const el = icon('chevron-down', 14);
+  el.classList.add('chevron');
+  return el;
 }
 
 function scopePicker(): HTMLElement {
-  const scopes = tab?.url ? siteScopes(tab.url) : [];
-  if (!siteKey || scopes.length < 2) return h('strong', {}, siteKey ?? 'Nyx');
+  const scopes = pageUrl ? siteScopes(pageUrl) : [];
+  if (!siteKey || scopes.length < 2) return h('h1', { class: 'site' }, siteKey ?? 'Nyx');
   const host = scopes.find((k) => !k.includes('/'));
-  const select = h(
-    'select',
-    {
-      class: 'scope',
-      'aria-label': 'Settings apply to',
-      onchange: (e: Event) => {
-        siteKey = (e.target as HTMLSelectElement).value;
-        scopePinned = true;
-        render();
-      },
+  return select(
+    'Settings apply to',
+    scopes.map((k) => ({ value: k, label: k.includes('/') ? `This page (${k.slice(k.indexOf('/'))})` : k === host ? k : `All of ${k}` })),
+    siteKey,
+    (v) => {
+      siteKey = v;
+      scopePinned = true;
+      render();
     },
-    ...scopes.map((k) =>
-      h('option', { value: k }, k.includes('/') ? `This page (${k.slice(k.indexOf('/'))})` : k === host ? k : `All of ${k}`),
-    ),
+    { chevron: 'chevron-down', class: 'scope-picker' },
   );
-  select.value = siteKey;
-  return select;
 }
 
 function openIssue(title: string, body: string): void {
@@ -242,25 +282,28 @@ function openIssue(title: string, body: string): void {
 }
 
 function reportSite(key: string): void {
-  openIssue(`Website issue: ${key}`, `**Website:** ${tab?.url ?? key}\n\n**What looks wrong?**\n\n`);
+  openIssue(`Website issue: ${key}`, `**Website:** ${pageUrl ?? key}\n\n**What looks wrong?**\n\n`);
 }
 
 function reportDetection(key: string): void {
   openIssue(
     `Dark mode detection: ${key}`,
-    `**Website:** ${tab?.url ?? key}\n**Detected built-in dark mode:** ${page?.builtInDarkMode ? 'yes' : 'no'}\n\nThe detection is incorrect because…\n`,
+    `**Website:** ${pageUrl ?? key}\n**Detected built-in dark mode:** ${page?.builtInDarkMode ? 'yes' : 'no'}\n\nThe detection is incorrect because…\n`,
   );
 }
 
 async function main(): Promise<void> {
   [tab] = await api.tabs.query({ active: true, currentWindow: true });
   settings = await loadSettings();
-  siteKey = tab?.url ? matchSiteKey(settings, tab.url) : null;
   await refreshPage();
+  // Browsers hide a tab's URL when the extension isn't allowed on that website (Safari does this
+  // until the user grants access), so fall back to the URL the content script reports.
+  pageUrl = tab?.url ?? page?.url;
+  siteKey = pageUrl ? matchSiteKey(settings, pageUrl) : null;
   render();
   onSettingsChanged(async (s) => {
     settings = s;
-    if (!scopePinned && tab?.url) siteKey = matchSiteKey(settings, tab.url);
+    if (!scopePinned && pageUrl) siteKey = matchSiteKey(settings, pageUrl);
     // Give the content script a moment to apply the change before asking for its state.
     setTimeout(async () => {
       await refreshPage();
