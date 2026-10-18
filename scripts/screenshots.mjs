@@ -20,6 +20,7 @@ const context = await chromium.launchPersistentContext(mkdtempSync(join(tmpdir()
   headless: true,
   colorScheme: 'dark',
   viewport: { width: 1100, height: 720 },
+  deviceScaleFactor: 2,
   args: [`--disable-extensions-except=${ext}`, `--load-extension=${ext}`],
 });
 const worker = context.serviceWorkers()[0] ?? (await context.waitForEvent('serviceworker'));

@@ -23,6 +23,7 @@ targetTemplates:
     type: application
     sources:
       - path: App
+        excludes: ["Info-*.plist"]
       - path: Shared
       - path: ../extension/src/shared/builtin-themes.json
         buildPhase: resources
@@ -58,8 +59,10 @@ targetTemplates:
     type: app-extension
     sources:
       - path: Extension
+        excludes: ["Info-*.plist"]
       - path: Shared/SettingsStore.swift
       - path: Shared/Theme.swift
+      - path: Shared/PrivacyInfo.xcprivacy
     info:
       path: Extension/Info-${target_name}.plist
       properties:
