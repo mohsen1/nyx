@@ -30,7 +30,23 @@ function topUrl(): string {
 async function fetchResource(url: string, as: 'text' | 'dataUrl'): Promise<string | null> {
   try {
     const res = (await api.runtime.sendMessage({ type: 'fetchResource', url, as } satisfies Message)) as FetchResult;
-    return res?.ok ? (res.body ?? null) : null;
+    if (res?.ok && res.body) return res.body;
+  } catch {
+    /* fall through */
+  }
+  // The background script can't reach hosts the user hasn't granted (Safari grants access per
+  // website, so a site's CDN is often not covered). Many CDNs allow CORS reads, so try from here.
+  try {
+    const res = await fetch(url, { mode: 'cors', credentials: 'omit' });
+    if (!res.ok) return null;
+    if (as === 'text') return await res.text();
+    const blob = await res.blob();
+    return await new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(typeof reader.result === 'string' ? reader.result : null);
+      reader.onerror = () => resolve(null);
+      reader.readAsDataURL(blob);
+    });
   } catch {
     return null;
   }

@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Light page behind a modal</title>
+  <style>
+    body { margin: 0; background: #f4f2ee; color: #1a1a1a; font: 16px system-ui, sans-serif; }
+    main { padding: 40px; }
+    .card { background: #fff; border: 1px solid #ddd; border-radius: 8px; padding: 20px; margin-bottom: 16px; }
+    .scrim { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.6); display: grid; place-items: center; }
+    .dialog { background: #fff; padding: 24px; border-radius: 12px; width: 280px; }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="card" id="card">Feed item</div>
+    <div class="card">Another item</div>
+    <div class="card">Third item</div>
+  </main>
+  <div class="scrim"><div class="dialog">Sign in to continue</div></div>
+</body>
+</html>

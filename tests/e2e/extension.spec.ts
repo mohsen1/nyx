@@ -28,7 +28,7 @@ function serve(): Promise<void> {
     }
     let body: string | Buffer = readFileSync(path);
     if (path.endsWith('.html')) body = body.toString().replace('CROSS_ORIGIN', `http://127.0.0.1:${port}`);
-    res.writeHead(200, { 'content-type': TYPES[extname(path)] ?? 'application/octet-stream' }).end(body);
+    res.writeHead(200, { 'content-type': TYPES[extname(path)] ?? 'application/octet-stream', 'access-control-allow-origin': '*' }).end(body);
   });
   return new Promise((r) => server.listen(0, () => ((port = (server.address() as { port: number }).port), r())));
 }
@@ -169,6 +169,26 @@ test('leaves sites with their own dark mode alone unless told to ignore it', asy
     s.sites = { localhost: { mode: 'default', themeId: null, pausedUntil: null, ignoreBuiltInDarkMode: true, appearance: {}, updatedAt: Date.now() } };
   });
   await expect.poll(() => page.getAttribute('html', 'data-nyx-active')).toBe('');
+});
+
+test('a modal backdrop over a light page is not mistaken for a dark mode', async ({ context }) => {
+  const page = await context.newPage();
+  await page.goto(url('modal.html'));
+  await page.waitForLoadState('load');
+  await page.waitForTimeout(500);
+  expect(await page.getAttribute('html', 'data-nyx-active')).toBe('');
+  await expect.poll(async () => luminance(await bg(page, '#card'))).toBeLessThan(0.05);
+});
+
+test('falls back to fetching cross-origin sheets from the page when the background cannot', async ({ context, worker }) => {
+  // Safari grants host access per website, so the background often can't reach a site's CDN.
+  await worker.evaluate(() => {
+    (globalThis as any).fetch = () => Promise.reject(new TypeError('blocked'));
+  });
+  const page = await context.newPage();
+  await page.goto(url('light.html'));
+  await page.waitForLoadState('load');
+  await expect.poll(async () => luminance(await bg(page, '#cross'))).toBeLessThan(0.1);
 });
 
 test('re-detects when a site switches its own theme', async ({ context }) => {
