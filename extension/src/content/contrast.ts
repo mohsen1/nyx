@@ -311,13 +311,13 @@ export class ContrastGuard {
    * A large pale background image (a light hero, a paper texture) stays bright on a dark page and
    * leaves text on it unreadable. Multiply it with a dark gray so it lands near the theme background.
    */
-  private considerDimming(el: Element, backgroundImage: string): void {
+  private considerDimming(el: Element, backgroundImage: string, textOnTop = false): void {
     if (this.dimPending.has(el)) return;
     const url = /url\(\s*(['"]?)(.*?)\1\s*\)/.exec(backgroundImage)?.[2];
     if (!url) return;
     // Not yet laid out, or small: may grow later, so don't remember it.
     const r = el.getBoundingClientRect();
-    if (r.width < Math.min(320, this.win.innerWidth * 0.4) || r.height < 120) return;
+    if (textOnTop ? r.width < 16 || r.height < 12 : r.width < Math.min(320, this.win.innerWidth * 0.4) || r.height < 120) return;
     this.dimPending.add(el);
     void this.images.statsForUrl(url).then((stats) => {
       if (!stats || !isPaleSurface(stats) || !el.isConnected) return;
@@ -349,7 +349,8 @@ export class ContrastGuard {
       }
       const s = this.win.getComputedStyle(node);
       if (s.backgroundImage && s.backgroundImage !== 'none' && !isIconBackground(s, node)) {
-        this.considerDimming(node, s.backgroundImage);
+        // Text sits on this image, so even a button-sized pale image needs darkening.
+        this.considerDimming(node, s.backgroundImage, true);
         return null;
       }
       if (s.backgroundClip === 'text' || s.getPropertyValue('-webkit-background-clip') === 'text') return null;
