@@ -25,7 +25,12 @@ export interface PixelStats {
   light: number; // share of opaque pixels that are light
   colorful: number; // share of opaque pixels with noticeable saturation
   darkNeutral: number; // share of opaque pixels that are gray-to-black (not colorful), up to #737373
+  deep: number; // share of opaque pixels of any hue with HSL lightness under DEEP_L (navy, #5f6368, black)
 }
+
+/** Pixels darker than this (HSL lightness) vanish on a dark page; recoloring flips their lightness. */
+const DEEP_L = 0.45;
+const hslLightness = (r: number, g: number, b: number) => (Math.max(r, g, b) + Math.min(r, g, b)) / 510;
 
 /** Pure decision on pixel statistics; exported for tests. */
 export function shouldInvert(s: PixelStats): boolean {
@@ -34,24 +39,38 @@ export function shouldInvert(s: PixelStats): boolean {
 
 /** A logo with dark gray or black parts mixed with color (Gmail's wordmark next to its M). */
 export function shouldRecolor(s: PixelStats): boolean {
-  return !shouldInvert(s) && s.transparent > 0.12 && s.darkNeutral >= 0.25 && s.light < 0.2;
+  return !shouldInvert(s) && s.transparent > 0.12 && s.deep >= 0.25 && s.light < 0.2;
 }
 
-/** Lightens dark neutral pixels in place, leaving colored ones alone. */
+/**
+ * Flips the HSL lightness of dark pixels in place, keeping hue and saturation: black text turns
+ * white, a navy wordmark light blue, while mid-tone and light colors (a red mark) stay as they are.
+ */
 export function recolorPixels(data: Uint8ClampedArray): void {
   for (let i = 0; i < data.length; i += 4) {
     if (data[i + 3] < 8) continue;
-    const r = data[i], g = data[i + 1], b = data[i + 2];
-    if (Math.max(r, g, b) - Math.min(r, g, b) > 60) continue;
-    if (0.2126 * r + 0.7152 * g + 0.0722 * b >= 140) continue;
-    data[i] = 255 - r;
-    data[i + 1] = 255 - g;
-    data[i + 2] = 255 - b;
+    const r = data[i] / 255, g = data[i + 1] / 255, b = data[i + 2] / 255;
+    const max = Math.max(r, g, b), min = Math.min(r, g, b);
+    const l = (max + min) / 2;
+    if (l >= DEEP_L) continue;
+    const d = max - min;
+    const sat = d === 0 ? 0 : d / (1 - Math.abs(2 * l - 1));
+    let h = 0;
+    if (d) h = max === r ? ((g - b) / d) % 6 : max === g ? (b - r) / d + 2 : (r - g) / d + 4;
+    const L = 1 - l;
+    const c = (1 - Math.abs(2 * L - 1)) * sat;
+    const x = c * (1 - Math.abs((h % 2) - 1));
+    const m = L - c / 2;
+    const hh = (h + 6) % 6;
+    const [R, G, B] = hh < 1 ? [c, x, 0] : hh < 2 ? [x, c, 0] : hh < 3 ? [0, c, x] : hh < 4 ? [0, x, c] : hh < 5 ? [x, 0, c] : [c, 0, x];
+    data[i] = Math.round((R + m) * 255);
+    data[i + 1] = Math.round((G + m) * 255);
+    data[i + 2] = Math.round((B + m) * 255);
   }
 }
 
 export function computeStats(data: Uint8ClampedArray): PixelStats {
-  let transparent = 0, opaque = 0, dark = 0, light = 0, colorful = 0, darkNeutral = 0;
+  let transparent = 0, opaque = 0, dark = 0, light = 0, colorful = 0, darkNeutral = 0, deep = 0;
   for (let i = 0; i < data.length; i += 4) {
     const a = data[i + 3];
     if (a < 40) {
@@ -66,10 +85,11 @@ export function computeStats(data: Uint8ClampedArray): PixelStats {
     else if (lum > 180) light++;
     if (max - min > 60) colorful++;
     else if (lum < 115) darkNeutral++;
+    if (hslLightness(r, g, b) < DEEP_L) deep++;
   }
   const total = transparent + opaque || 1;
   const o = opaque || 1;
-  return { transparent: transparent / total, dark: dark / o, light: light / o, colorful: colorful / o, darkNeutral: darkNeutral / o };
+  return { transparent: transparent / total, dark: dark / o, light: light / o, colorful: colorful / o, darkNeutral: darkNeutral / o, deep: deep / o };
 }
 
 /** A background image that reads as a pale surface (paper texture, light hero gradient), not a photo. */

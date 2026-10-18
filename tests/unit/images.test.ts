@@ -27,11 +27,21 @@ describe('image decisions', () => {
     expect(shouldRecolor(computeStats(pixels([0, 0, 0, 0, 60], [240, 240, 240, 255, 40])))).toBe(false);
   });
 
-  it('lightens only dark neutral pixels', () => {
-    const data = pixels([95, 99, 104, 255, 1], [234, 67, 53, 255, 1], [250, 250, 250, 255, 1]);
+  it('recolors a navy wordmark on transparency (a company logo)', () => {
+    expect(shouldRecolor(computeStats(pixels([0, 0, 0, 0, 60], [12, 35, 90, 255, 40])))).toBe(true);
+  });
+
+  it('flips the lightness of dark pixels only, keeping their hue', () => {
+    const data = pixels([95, 99, 104, 255, 1], [12, 35, 90, 255, 1], [234, 67, 53, 255, 1], [250, 250, 250, 255, 1], [0, 0, 0, 255, 1]);
     recolorPixels(data);
-    expect(Array.from(data.slice(0, 3))).toEqual([160, 156, 151]);
-    expect(Array.from(data.slice(4, 7))).toEqual([234, 67, 53]);
-    expect(Array.from(data.slice(8, 11))).toEqual([250, 250, 250]);
+    const [gr, , gb] = data.slice(0, 3);
+    expect(gr).toBeGreaterThan(140); // gray text turns light gray
+    expect(gb).toBeGreaterThanOrEqual(gr); // still slightly cool
+    const [nr, , nb] = data.slice(4, 7);
+    expect(nb).toBeGreaterThan(200); // navy turns light blue
+    expect(nb).toBeGreaterThan(nr);
+    expect(Array.from(data.slice(8, 11))).toEqual([234, 67, 53]); // the red mark stays
+    expect(Array.from(data.slice(12, 15))).toEqual([250, 250, 250]);
+    expect(Array.from(data.slice(16, 19))).toEqual([255, 255, 255]);
   });
 });
