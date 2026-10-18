@@ -357,6 +357,10 @@ test('channel lists assembled from one variable per channel are mapped (XenForo)
   await page.waitForLoadState('load');
   await expect.poll(async () => luminance(await fg(page, '#text')), { timeout: 8000 }).toBeGreaterThan(0.5);
   await expect.poll(async () => luminance(await bg(page, '#block')), { timeout: 8000 }).toBeLessThan(0.08);
+  // A gradient whose second stop is composed in place from the channel variables.
+  await expect
+    .poll(() => page.$eval('#header', (el) => getComputedStyle(el).backgroundImage), { timeout: 8000 })
+    .not.toMatch(/rgb\((2[3-5]\d), \1, \1\)/);
 });
 
 test('colors composed from several variables are resolved and darkened (iCloud)', async ({ context }) => {

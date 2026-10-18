@@ -13,10 +13,13 @@
     }
     html { color: hsla(var(--c-text)); background: #fafafa; }
     body { margin: 0; font: 16px system-ui, sans-serif; }
+    .header { padding: 8px 24px; background: linear-gradient(0deg, hsla(var(--c-content)),
+      hsla(var(--c-content--h),var(--c-content--s),calc(var(--c-content--l) - (var(--adjust, 1) * 5%)),var(--c-content--a))); }
     .block { margin: 24px; padding: 24px; background: hsla(var(--c-content)); }
   </style>
 </head>
 <body>
+  <h2 class="header" id="header">Official forums</h2>
   <div class="block" id="block"><p id="text">A forum thread title</p></div>
 </body>
 </html>

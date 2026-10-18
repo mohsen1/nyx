@@ -40,8 +40,11 @@ const COMPOSED_LONGHAND: Record<string, string> = {
 /** A color function or color-mix() with var() among its arguments. */
 const COMPOSED_COLOR = /\b(rgba?|hsla?|hwb|oklch|oklab|lab|lch|color|color-mix)\([^;]*var\(/i;
 
-/** A channel list assembled from one variable per channel: `var(--c--h),var(--c--s),var(--c--l),var(--c--a)`. */
-const SPLIT_CHANNELS = /^\s*var\([^()]+\)(\s*,\s*var\([^()]+\)){2,3}\s*$/;
+/**
+ * A channel list assembled from one variable per channel: `var(--c--h),var(--c--s),var(--c--l),var(--c--a)`,
+ * some of them adjusted (`calc(var(--c--l) - 8%)`).
+ */
+const SPLIT_CHANNELS = /^\s*var\([^()]+\)(\s*,\s*(var\([^()]+\)|calc\(([^()]|\([^()]*\))*\))){2,3}\s*$/;
 
 const BG_IMAGE_PROPS = new Set(['background', 'background-image']);
 
@@ -87,7 +90,10 @@ export function transformDeclarations(style: CSSStyleDeclaration, opts: Transfor
     const v = rewriteValue(value, role, { ...opts, hideImages: hide });
     if (v !== null) emit(prop, v, important);
     const composed = selector && !selector.includes('&') && COMPOSED_LONGHAND[prop] && !clipText ? composedColorIn(value) : null;
-    if (composed) opts.onComposedProperty?.(selector!, prop, important, composed);
+    const gradient = composed && BG_IMAGE_PROPS.has(prop) ? gradientIn(value) : null;
+    // A gradient with a stop composed in place (XenForo headers): resolve the whole image.
+    if (gradient && composedColorIn(gradient)) opts.onComposedProperty?.(selector!, 'background-image', important, gradient);
+    else if (composed) opts.onComposedProperty?.(selector!, prop, important, composed);
     // background-color: currentColor paints with the *text* color, which Nyx lightens for reading;
     // resolve it at runtime from the page's own text color, mapped as a background.
     else if (selector && !selector.includes('&') && prop === 'background-color' && /^\s*currentcolor\s*$/i.test(value)) {
@@ -103,6 +109,8 @@ export function transformDeclarations(style: CSSStyleDeclaration, opts: Transfor
     const role = clipText && PROPERTY_ROLES[sh] === 'background' ? 'text' : PROPERTY_ROLES[sh];
     const v = rewriteValue(value, role, { ...opts, hideImages: !!opts.hideImages && sh === 'background' });
     if (v !== null) emit(sh, v, style.getPropertyPriority(sh) === 'important');
+    const gradient = selector && !selector.includes('&') && !clipText && BG_IMAGE_PROPS.has(sh) ? gradientIn(value) : null;
+    if (gradient && composedColorIn(gradient)) opts.onComposedProperty?.(selector!, 'background-image', style.getPropertyPriority(sh) === 'important', gradient);
   }
   return out;
 }
@@ -127,6 +135,18 @@ function composedColorIn(value: string): string | null {
     return value.slice(m.index, i);
   }
   return null;
+}
+
+/** The first gradient in a background value, with balanced arguments. */
+function gradientIn(value: string): string | null {
+  const m = /\b(?:repeating-)?(?:linear|radial|conic)-gradient\(/i.exec(value);
+  if (!m) return null;
+  let depth = 1, i = m.index + m[0].length;
+  for (; i < value.length && depth; i++) {
+    if (value[i] === '(') depth++;
+    else if (value[i] === ')') depth--;
+  }
+  return depth ? null : value.slice(m.index, i);
 }
 
 /** Rule-type checks that work across realms (iframes, jsdom) where instanceof is unreliable. */

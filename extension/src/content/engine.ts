@@ -2,7 +2,7 @@
 // override for each of them, plus overrides for inline styles and presentational attributes.
 
 import { Palette } from '../shared/palette';
-import { channelVarName, PROPERTY_ROLES, rewriteChannels, rewriteCustomProperty, rewriteValue, roleVarName, type RewriteContext } from '../shared/css-values';
+import { channelVarName, literalChannels, PROPERTY_ROLES, rewriteChannels, rewriteCustomProperty, rewriteValue, roleVarName, type RewriteContext } from '../shared/css-values';
 import type { AppearanceOptions } from '../shared/settings';
 import type { Theme } from '../shared/theme';
 import { stripImports, transformRules, transformSheet, type TransformOptions } from './sheet-transform';
@@ -284,6 +284,11 @@ class RootStyler {
       // Substitute the variables as each element sees them; they must agree to write one rule.
       const exprs = new Set(els.map((el) => substituteVars(value, win.getComputedStyle(el))));
       if (exprs.size !== 1) continue;
+      if (prop === 'background-image') {
+        const image = this.mapGradient([...exprs][0]);
+        if (image) css += `${selector} { background-image: ${image}${important ? ' !important' : ''}; }\n`;
+        continue;
+      }
       const c = this.engine.evaluateColor([...exprs][0]);
       if (!c || c.a === 0) continue;
       const role = prop === 'color' || prop === 'fill' || prop === 'stroke' ? 'text' : prop.startsWith('border') || prop === 'outline-color' ? 'border' : 'background';
@@ -297,6 +302,24 @@ class RootStyler {
     }
     if (this.propsEl.textContent !== css) this.propsEl.textContent = css;
     if (parent.lastChild !== this.propsEl) parent.appendChild(this.propsEl);
+  }
+
+  /** A gradient with its color stops evaluated by the browser and mapped as backgrounds. */
+  private mapGradient(gradient: string): string | null {
+    const re = /\b(rgba?|hsla?|hwb|oklch|oklab|lab|lch|color|color-mix)\(/gi;
+    let out = '', last = 0;
+    for (let m = re.exec(gradient); m; m = re.exec(gradient)) {
+      let depth = 1, i = m.index + m[0].length;
+      for (; i < gradient.length && depth; i++) {
+        if (gradient[i] === '(') depth++;
+        else if (gradient[i] === ')') depth--;
+      }
+      const c = this.engine.evaluateColor(gradient.slice(m.index, i));
+      if (!c) return null;
+      out += gradient.slice(last, m.index) + formatColor(this.engine.palette.mapRgba(c, 'background'));
+      last = re.lastIndex = i;
+    }
+    return out ? out + gradient.slice(last) : null;
   }
 
   private readonly onComposedColor = (selector: string, name: string) => {
@@ -373,8 +396,14 @@ class RootStyler {
         const c = this.engine.evaluateColor(value);
         if (!c) {
           // A channel list for rgb()/hsl() to wrap: give it mapped channel copies.
+          let literal = value;
+          if (value.includes('calc(')) {
+            const hsl = value.split(',')[1]?.trim().endsWith('%');
+            const evaluated = this.engine.evaluateColor(`${hsl ? 'hsla' : 'rgba'}(${value})`);
+            literal = (evaluated && literalChannels(value, evaluated)) || value;
+          }
           for (const role of roles) {
-            const channels = rewriteChannels(value, role, this.engine.palette);
+            const channels = rewriteChannels(literal, role, this.engine.palette);
             if (channels !== null) decls.push(`${channelVarName(name, role)}: ${channels}`);
           }
           continue;

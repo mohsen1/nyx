@@ -344,6 +344,21 @@ function rgbToHsl(r: number, g: number, b: number): [number, number, number] {
 
 const round1 = (n: number) => Math.round(n * 10) / 10;
 
+/**
+ * A channel list the browser has to finish (`0,0%,calc(100% - 8%),1`), given the color it
+ * evaluates to: rewritten as literal channels in the same model, so rewriteChannels can map it.
+ */
+export function literalChannels(value: string, c: { r: number; g: number; b: number; a: number }): string | null {
+  const parts = value.split(',').map((p) => p.trim());
+  if (parts.length < 3 || parts.length > 4) return null;
+  const alpha = parts.length === 4 ? `,${round1(c.a * 100) / 100}` : '';
+  if (parts[1].endsWith('%')) {
+    const [h, sat, l] = rgbToHsl(c.r, c.g, c.b);
+    return `${round1(h)},${round1(sat)}%,${round1(l)}%${alpha}`;
+  }
+  return `${c.r},${c.g},${c.b}${alpha}`;
+}
+
 /** Maps a bare channel list (`249, 249, 248` or `210 40% 98%`) for a role, keeping its format. */
 export function rewriteChannels(value: string, role: ColorRole, palette: Palette): string | null {
   let m = RGB_CHANNELS.exec(value);
