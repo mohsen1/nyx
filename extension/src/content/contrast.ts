@@ -376,7 +376,7 @@ export class ContrastGuard {
     const doc = this.win.document;
     const w = this.win.innerWidth, h = this.win.innerHeight;
     for (const fx of [0.1, 0.5, 0.9]) {
-      for (const fy of [0.2, 0.5, 0.85]) {
+      for (const fy of [0.05, 0.2, 0.5, 0.85]) {
         for (const el of doc.elementsFromPoint(w * fx, h * fy)) {
           if (el.localName === 'html') break;
           if ((el.localName === 'img' || el.localName === 'video' || el.localName === 'canvas') && !el.hasAttribute(ATTR_DIM)) {
@@ -401,7 +401,8 @@ export class ContrastGuard {
     if (!url) return;
     // Not yet laid out, or small: may grow later, so don't remember it.
     const r = el.getBoundingClientRect();
-    if (textOnTop ? r.width < 16 || r.height < 12 : r.width < Math.min(320, this.win.innerWidth * 0.4) || r.height < 120) return;
+    const banner = r.width >= this.win.innerWidth * 0.6 && r.height >= 60; // a full-width header strip
+    if (textOnTop ? r.width < 16 || r.height < 12 : !banner && (r.width < Math.min(320, this.win.innerWidth * 0.4) || r.height < 120)) return;
     this.dimPending.add(el);
     void this.images.statsForUrl(url).then((stats) => {
       if (!stats || !isPaleSurface(stats) || !el.isConnected) return;

@@ -312,6 +312,8 @@ test('backdrops beside the content and canvas heroes are darkened', async ({ con
   await expect.poll(() => page.getAttribute('#canvas', 'data-nyx-dim-bg'), { timeout: 8000 }).toBe('');
   // A button-sized pale sprite with text on it (old Reddit's "Submit a new link").
   await expect.poll(() => page.getAttribute('#submit', 'data-nyx-dim-bg'), { timeout: 8000 }).toBe('');
+  // A short full-width header strip with nothing on it (timeanddate.com).
+  await expect.poll(() => page.getAttribute('#banner', 'data-nyx-dim-bg'), { timeout: 8000 }).toBe('');
 });
 
 test('colors composed from several variables are resolved and darkened (iCloud)', async ({ context }) => {
