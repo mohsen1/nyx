@@ -209,8 +209,6 @@ export class ContrastGuard {
       if (this.blindDone.has(node)) break;
       this.blindDone.add(node);
       const cs = this.win.getComputedStyle(node);
-      // A blurred glow (Stripe's hero) would turn into a gray blob.
-      if (cs.filter !== 'none') continue;
       let bg = parseColor(cs.backgroundColor);
       let rest: string | null = null;
       if (cs.backgroundImage !== 'none') {
@@ -220,16 +218,23 @@ export class ContrastGuard {
         const layers = topLevelLayers(cs.backgroundImage);
         const first = layers[0];
         if (first.includes('url(')) continue;
-        const colors = (first.match(/rgba?\([^)]*\)/g) ?? []).map((c) => parseColor(c));
-        if (!colors.length || colors.some((c) => !c || c.a < 0.5 || relativeLuminance(c) < 0.4)) continue;
-        bg = colors[0];
-        rest = layers.slice(1).join(', ');
+        // Transparent stops are holes (Stripe's dot pattern: transparent dots on white) and stay.
+        const stops = first.match(/rgba?\([^)]*\)/g) ?? [];
+        const colors = stops.map((c) => parseColor(c));
+        const solid = colors.filter((c): c is RGBA => !!c && c.a >= 0.05);
+        if (!solid.length || colors.some((c) => !c) || solid.some((c) => c.a < 0.5 || relativeLuminance(c) < 0.4)) continue;
+        bg = solid[0];
+        const mappedFirst = first.replace(/rgba?\([^)]*\)/g, (stop) => {
+          const c = parseColor(stop)!;
+          return c.a < 0.05 ? stop : this.mapBackground(c) ?? stop;
+        });
+        rest = [mappedFirst, ...layers.slice(1)].join(', ');
       }
       if (!bg || bg.a < 0.5 || relativeLuminance(bg) < 0.4) continue;
       const mapped = this.mapBackground(bg);
       if (!mapped) continue;
       (node as HTMLElement).style.setProperty(BLIND_VAR, mapped);
-      if (rest !== null) (node as HTMLElement).style.setProperty(BLIND_IMAGE_VAR, `linear-gradient(${mapped}, ${mapped})${rest ? ', ' + rest : ''}`);
+      if (rest !== null) (node as HTMLElement).style.setProperty(BLIND_IMAGE_VAR, rest);
       node.setAttribute(ATTR_BLIND_BG, rest !== null ? 'gradient' : '');
       this.blindMapped.add(node as HTMLElement);
     }
@@ -461,6 +466,8 @@ export class ContrastGuard {
       for (const fy of [0.05, 0.2, 0.5, 0.85]) {
         for (const el of doc.elementsFromPoint(w * fx, h * fy)) {
           if (el.localName === 'html') break;
+          // Surfaces beside the text rather than under it in the tree (Stripe's dotted overlay).
+          if (this.blind) this.mapBlindBackgrounds(el);
           if ((el.localName === 'img' || el.localName === 'video' || el.localName === 'canvas') && !el.hasAttribute(ATTR_DIM)) {
             this.images.reconsiderBackdrop(el as HTMLImageElement | HTMLVideoElement | HTMLCanvasElement);
           }
