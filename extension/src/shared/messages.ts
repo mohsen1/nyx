@@ -17,6 +17,8 @@ export type Message =
   | { type: 'fetchResource'; url: string; as: 'text' | 'dataUrl' }
   | { type: 'reportBuiltInDarkMode'; siteKey: string; url: string; detected: boolean }
   | { type: 'syncNow' }
+  /** Switches Nyx off on the page (to screenshot the original); answers once it has repainted. */
+  | { type: 'setSuspended'; suspended: boolean }
   /** Sent by pages as they load; syncs if the last sync is older than a minute. */
   | { type: 'syncSoon' };
 

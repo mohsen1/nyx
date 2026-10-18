@@ -475,6 +475,24 @@ test('settings page imports a Noir theme link', async ({ context, worker }) => {
   if (SCREENSHOTS) await page.screenshot({ path: join(SCREENSHOTS, 'settings-themes.png'), fullPage: false });
 });
 
+test('a problem report can show the page without Nyx for a moment', async ({ context, worker }) => {
+  const page = await context.newPage();
+  await page.goto(url('light.html'));
+  await page.waitForLoadState('load');
+  await expect.poll(async () => luminance(await bg(page, 'body'))).toBeLessThan(0.05);
+  const suspend = (suspended: boolean) =>
+    worker.evaluate(async ({ href, suspended }) => {
+      const c = (globalThis as any).chrome;
+      const [t] = await c.tabs.query({ url: href });
+      return c.tabs.sendMessage(t.id, { type: 'setSuspended', suspended });
+    }, { href: page.url(), suspended });
+  // The answer comes after the original page has been painted, ready for a screenshot.
+  expect(await suspend(true)).toBe(true);
+  expect(luminance(await bg(page, 'body'))).toBeGreaterThan(0.8);
+  await suspend(false);
+  await expect.poll(async () => luminance(await bg(page, 'body'))).toBeLessThan(0.05);
+});
+
 test('toolbar menu renders', async ({ context, worker }) => {
   const id = new URL(worker.url()).host;
   const page = await context.newPage();

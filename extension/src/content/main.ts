@@ -63,6 +63,9 @@ class Controller {
   private readonly media = window.matchMedia('(prefers-color-scheme: dark)');
   private url = topUrl();
   private siteKey: string | null = null;
+  /** Switched off for a moment so a problem report can show the original page. */
+  private suspended = false;
+  private resumeTimer: number | null = null;
 
   async init(): Promise<void> {
     onSettingsChanged((s) => {
@@ -73,6 +76,12 @@ class Controller {
     api.runtime.onMessage.addListener((msg: Message, _sender, sendResponse) => {
       if (msg?.type === 'getPageState' && isTop) {
         sendResponse(this.state());
+        return true;
+      }
+      if (msg?.type === 'setSuspended') {
+        this.suspend(msg.suspended);
+        // Answer after the change has been painted, so a screenshot taken next shows it.
+        requestAnimationFrame(() => requestAnimationFrame(() => sendResponse(true)));
         return true;
       }
       return false;
@@ -117,7 +126,7 @@ class Controller {
     this.siteKey = matchSiteKey(this.settings, this.url);
     const d = decide(this.settings, this.siteKey, { systemDark: this.media.matches, now: new Date() });
     this.decision = d;
-    const want = d.enabled && !(this.builtInDarkMode && !d.ignoreBuiltInDarkMode);
+    const want = d.enabled && !(this.builtInDarkMode && !d.ignoreBuiltInDarkMode) && !this.suspended;
     if (want) {
       if (!this.engine) this.engine = new DarkEngine(document, this.config(d), fetchResource);
       else this.engine.update(this.config(d));
@@ -127,6 +136,16 @@ class Controller {
     }
     document.documentElement.toggleAttribute('data-nyx-active', want);
     this.scheduleRecheck();
+  }
+
+  private suspend(on: boolean): void {
+    if (this.resumeTimer !== null) window.clearTimeout(this.resumeTimer);
+    this.resumeTimer = null;
+    // The toolbar menu may close mid-capture; never leave the page undarkened.
+    if (on) this.resumeTimer = window.setTimeout(() => this.suspend(false), 5000);
+    if (this.suspended === on) return;
+    this.suspended = on;
+    this.apply();
   }
 
   /** Re-evaluates when a pause ends or the schedule flips. */

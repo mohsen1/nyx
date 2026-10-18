@@ -50,6 +50,8 @@ export interface ExtensionApi {
     query(q: { active?: boolean; currentWindow?: boolean; lastFocusedWindow?: boolean }): Promise<Tab[]>;
     sendMessage(tabId: number, message: unknown, options?: { frameId?: number }): Promise<any>;
     create(props: { url: string }): Promise<Tab>;
+    /** A PNG or JPEG data URL of the visible part of the window's active tab. */
+    captureVisibleTab?(windowId?: number, options?: { format?: 'png' | 'jpeg'; quality?: number }): Promise<string>;
   };
   commands?: { onCommand: { addListener(cb: (command: string, tab?: Tab) => void): void } };
   alarms?: {

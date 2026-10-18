@@ -20,6 +20,7 @@ import {
 } from '../shared/settings';
 import { loadSettings, onSettingsChanged, updateSettings } from '../shared/storage';
 import { findTheme } from '../shared/theme';
+import { captureComparison, copyImage } from './report';
 import { actionCell, cell, formatClock, formatTime, group, h, icon, segmented, select, themeSwatch, toggle } from '../shared/ui';
 
 const REPO = 'https://github.com/mohsen1/nyx';
@@ -216,7 +217,7 @@ function render(): void {
     if (site && !isDefaultSite(site)) rows.push(actionCell('Reset website', 'rotate-ccw', () => update((s) => resetSite(s, key))));
 
     root.append(group('This website', rows));
-    footer.push(h('button', { type: 'button', class: 'link', onclick: () => reportSite(key) }, 'Report a problem'));
+    footer.push(h('button', { type: 'button', class: 'link', onclick: (e: Event) => reportSite(key, e.currentTarget as HTMLButtonElement) }, 'Report a problem'));
   }
 
   const globalPaused = !!settings.global.pausedUntil && settings.global.pausedUntil > Date.now();
@@ -272,11 +273,33 @@ function openIssue(title: string, body: string): void {
   window.close();
 }
 
-function reportSite(key: string): void {
-  openIssue(
-    `Website issue: ${key}`,
-    `**Website:** ${pageUrl ?? key}\n**Detected built-in dark mode:** ${page?.builtInDarkMode ? 'yes' : 'no'}\n\n**What looks wrong?**\n\n`,
-  );
+/** "Chrome 141", "Safari 26", "Firefox 144": enough to reproduce a rendering problem. */
+function browserName(): string {
+  const ua = navigator.userAgent;
+  const m = /(Edg|Firefox|OPR)\/(\d+)/.exec(ua) ?? /(Chrome)\/(\d+)/.exec(ua);
+  if (m) return `${{ Edg: 'Edge', OPR: 'Opera' }[m[1]] ?? m[1]} ${m[2]}`;
+  const safari = /Version\/(\d+).*Safari/.exec(ua);
+  return safari ? `Safari ${safari[1]}` : 'Unknown browser';
+}
+
+async function reportSite(key: string, button: HTMLButtonElement): Promise<void> {
+  button.disabled = true;
+  button.textContent = 'Taking a screenshot…';
+  // Started inside the click: Safari only lets the clipboard be written during a user gesture.
+  const copied = tab ? await copyImage(captureComparison(tab, !!page?.active).catch(() => null)) : false;
+  const s = settings.sites[key];
+  const theme = findTheme(allThemes(settings), s?.themeId ?? settings.global.defaultThemeId);
+  const details = [
+    `**Website:** ${pageUrl ?? key}`,
+    `**Nyx:** ${api.runtime.getManifest().version} on ${browserName()}`,
+    `**Theme:** ${theme.name}${page?.active ? '' : ' (Nyx was not restyling the page)'}`,
+    `**Detected built-in dark mode:** ${page?.builtInDarkMode ? 'yes' : 'no'}`,
+  ].join('\n');
+  const screenshot = copied
+    ? `\n\n**Screenshot:** ${page?.active ? 'the page without and with Nyx is' : 'the page is'} on your clipboard. ` +
+      'Check that it shows nothing private, then paste it here (⌘V or Ctrl+V).\n\n'
+    : '\n\n';
+  openIssue(`Website issue: ${key}`, `${details}${screenshot}**What looks wrong?**\n\n`);
 }
 
 async function main(): Promise<void> {
