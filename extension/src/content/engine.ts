@@ -605,11 +605,13 @@ class RootStyler {
   renderAttributes(): void {
     const palette = this.engine.palette;
     let css = '';
+    let opts: RewriteContext | null = null;
     for (const { attr, selector, prop, role } of ATTRS) {
       const values = this.attrValues.get(attr);
       if (!values) continue;
       for (const v of values) {
-        const mapped = palette.map(v, role);
+        // The Guardian's icons: fill="var(--masthead-veggie-burger-icon)" points at a site color.
+        const mapped = palette.map(v, role) ?? (v.includes('var(') ? rewriteValue(v, role, (opts ??= this.engine.rewriteOptions(this.engine.doc.baseURI))) : null);
         if (mapped) css += `${selector(JSON.stringify(v))} { ${prop}: ${mapped}; }\n`;
       }
     }

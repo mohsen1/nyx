@@ -1,0 +1,16 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>SVG fill attribute pointing at a variable</title>
+<style>
+  :root { --icon: #052962; }
+  body { margin: 0; padding: 40px; background: #fff; color: #222; font: 16px system-ui; }
+</style>
+</head>
+<body>
+  <p>Menu</p>
+  <!-- The Guardian's menu icon: fill="var(--masthead-veggie-burger-icon)". -->
+  <svg width="26" viewBox="0 0 30 30"><path id="icon" fill="var(--icon)" d="M3 6h24v3H3zM3 13h24v3H3zM3 20h24v3H3z"/></svg>
+</body>
+</html>

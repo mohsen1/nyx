@@ -359,6 +359,13 @@ test('color functions over a channel variable with a channel fallback are darken
   expect(luminance(color)).toBeGreaterThan(0.4);
 });
 
+test('an SVG fill attribute that points at a variable is mapped (The Guardian)', async ({ context }) => {
+  const page = await context.newPage();
+  await page.goto(url('svg-var-fill.html'));
+  await page.waitForLoadState('load');
+  await expect.poll(async () => luminance(await page.$eval('#icon', (el) => getComputedStyle(el).fill))).toBeGreaterThan(0.3);
+});
+
 test('re-detects when a site switches its own theme', async ({ context }) => {
   const page = await context.newPage();
   await page.goto(url('toggle.html'));
