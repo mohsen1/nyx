@@ -303,6 +303,21 @@ test('colors composed from several variables are resolved and darkened (iCloud)'
   expect(luminance(await fg(page, '#text'))).toBeGreaterThan(0.5);
 });
 
+test('a shadow root attached to a plain element after load is styled (consent dialogs)', async ({ context }) => {
+  const page = await context.newPage();
+  await page.goto(url('late-shadow.html'));
+  await page.waitForLoadState('load');
+  await expect
+    .poll(async () => {
+      const panelBg = await page.evaluate(() => {
+        const panel = document.getElementById('consent')?.shadowRoot?.getElementById('panel');
+        return panel ? getComputedStyle(panel).backgroundColor : 'rgb(255, 255, 255)';
+      });
+      return luminance(panelBg);
+    }, { timeout: 5000 })
+    .toBeLessThan(0.08);
+});
+
 test('re-detects when a site switches its own theme', async ({ context }) => {
   const page = await context.newPage();
   await page.goto(url('toggle.html'));

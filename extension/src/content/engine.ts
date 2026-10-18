@@ -42,6 +42,9 @@ function substituteVars(value: string, style: CSSStyleDeclaration, depth = 0): s
 }
 
 const ATTR_INVERT = 'data-nyx-invert';
+/** How long a plain element added after load is watched for a late shadow root. */
+const RECENT_HOST_MS = 15_000;
+const RECENT_HOST_MAX = 5_000;
 const ATTR_RECOLOR = 'data-nyx-recolor';
 
 function unrecolor(el: Element): void {
@@ -579,8 +582,10 @@ class RootStyler {
   }
 
   /** Processes a subtree: inline styles, attributes, images and nested shadow roots. */
-  scan(node: ParentNode): void {
+  /** `added`: the subtree was inserted after the engine started, so any element may still attach a shadow root. */
+  scan(node: ParentNode, added = false): void {
     let attrsChanged = false;
+    const watchUntil = Date.now() + RECENT_HOST_MS;
     const visit = (el: Element) => {
       if (el.hasAttribute('style')) this.processInline(el);
       if (this.processAttributes(el)) attrsChanged = true;
@@ -590,6 +595,8 @@ class RootStyler {
       const sr = (el as HTMLElement).shadowRoot;
       if (sr) this.engine.attachRoot(sr);
       else if (el.localName.includes('-')) this.engine.pendingHosts.add(el);
+      // Shadow hosts start out empty; in the first scan only empty elements are candidates.
+      else if (added || (el.childElementCount === 0 && !el.textContent?.trim())) this.engine.watchRecentHost(el, watchUntil);
     };
     if (isElement(node as Node)) visit(node as Element);
     const all = node.querySelectorAll('*');
@@ -609,6 +616,16 @@ export class DarkEngine {
   private roots = new Map<Document | ShadowRoot, RootStyler>();
   /** Custom elements that may attach a shadow root after they are upgraded (no DOM mutation signals it). */
   readonly pendingHosts = new Set<Element>();
+  /**
+   * Plain elements inserted after load, watched for a while in case script attaches a shadow root
+   * to them (consent dialogs and chat widgets do; nothing in the DOM signals it).
+   */
+  private recentHosts = new Map<Element, number>();
+
+  watchRecentHost(el: Element, until: number): void {
+    if (this.recentHosts.size >= RECENT_HOST_MAX) return;
+    this.recentHosts.set(el, until);
+  }
   private observers = new Map<Document | ShadowRoot, MutationObserver>();
   private pollTimer: number | null = null;
   private loadingEl: HTMLStyleElement | null = null;
@@ -813,6 +830,7 @@ export class DarkEngine {
     this.images.reset();
     this.contrast.reset();
     this.pendingHosts.clear();
+    this.recentHosts.clear();
   }
 
   update(config: EngineConfig): void {
@@ -899,7 +917,7 @@ export class DarkEngine {
         const name = node.localName;
         if (name === 'style' || name === 'link') sheetsChanged = true;
         else if (node.querySelector?.('style, link[rel~="stylesheet"]')) sheetsChanged = true;
-        styler.scan(node);
+        styler.scan(node, true);
       }
       for (const node of Array.from(rec.removedNodes)) {
         if (!isElement(node)) continue;
@@ -938,6 +956,14 @@ export class DarkEngine {
         this.pendingHosts.delete(el);
         this.attachRoot(sr);
       } else if (!el.isConnected) this.pendingHosts.delete(el);
+    }
+    const now = Date.now();
+    for (const [el, until] of this.recentHosts) {
+      const sr = (el as HTMLElement).shadowRoot;
+      if (sr) {
+        this.recentHosts.delete(el);
+        this.attachRoot(sr);
+      } else if (now > until || !el.isConnected) this.recentHosts.delete(el);
     }
     this.syncAll();
   }
