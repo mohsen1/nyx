@@ -122,7 +122,7 @@ export class Palette {
 
   /** Maps a CSS color string; returns null when it cannot be parsed (e.g. contains var()). */
   map(value: string, role: ColorRole): string | null {
-    const key = role[0] + value;
+    const key = `${role}:${value}`; // not role[0]: background and border both start with "b"
     const hit = this.cache.get(key);
     if (hit !== undefined) return hit;
     const parsed = parseColor(value);

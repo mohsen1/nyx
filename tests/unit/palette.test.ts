@@ -55,4 +55,12 @@ describe('Palette', () => {
       expect(contrastRatio(bg, fg), t.id).toBeGreaterThanOrEqual(4.5);
     }
   });
+
+  it('keeps background and border mappings of the same color apart (cache)', () => {
+    const p = new Palette({ background: '#1c1c1e', text: '#e3e3e6', dynamicColors: true });
+    const border = p.map('rgb(0, 0, 0)', 'border');
+    const background = p.map('rgb(0, 0, 0)', 'background');
+    expect(background).not.toBe(border);
+    expect(background).toBe(new Palette({ background: '#1c1c1e', text: '#e3e3e6', dynamicColors: true }).map('rgb(0, 0, 0)', 'background'));
+  });
 });
