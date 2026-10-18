@@ -149,4 +149,10 @@ describe('stripImports', () => {
   it('leaves sheets without imports untouched', () => {
     expect(stripImports('.a{color:red}')).toBe('.a{color:red}');
   });
+
+  it('maps the background of a mask icon as ink (text), so the icon stays visible', () => {
+    const css = transformRules(sheetFrom('.icon { -webkit-mask-image: url(i.svg); mask-image: url(i.svg); background-color: #444746; }').cssRules, ctx);
+    const m = /background-color: #([0-9a-f]{6})/.exec(css)!;
+    expect(parseInt(m[1].slice(0, 2), 16)).toBeGreaterThan(150);
+  });
 });

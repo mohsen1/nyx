@@ -51,7 +51,11 @@ export function transformDeclarations(style: CSSStyleDeclaration, opts: Transfor
   };
 
   // Gradient text (background-clip: text): the background *is* the text, so map it as text.
-  const clipText = /\btext\b/.test(style.getPropertyValue('background-clip') + ' ' + style.getPropertyValue('-webkit-background-clip'));
+  // Mask icons (background-color showing through mask-image: url(icon.svg)) are the same: the
+  // background color is the icon's ink, so it must stay visible on a dark page.
+  const clipText =
+    /\btext\b/.test(style.getPropertyValue('background-clip') + ' ' + style.getPropertyValue('-webkit-background-clip')) ||
+    /url\(/.test(style.getPropertyValue('mask-image') + style.getPropertyValue('-webkit-mask-image') + style.getPropertyValue('mask') + style.getPropertyValue('-webkit-mask'));
   for (let i = 0; i < style.length; i++) {
     const prop = style[i];
     if (seen.has(prop)) continue;
