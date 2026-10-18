@@ -129,6 +129,14 @@ export class ContrastGuard {
       },
       { rootMargin: '300px 0px' },
     );
+    // Pages keep restyling while they load (classes added by script, late stylesheets), so a fix
+    // made early can be measured against a background that no longer exists. Look again.
+    win.addEventListener('load', () => this.recheckVisible(300), { once: true });
+    let settles = 0;
+    const settle = win.setInterval(() => {
+      if (++settles >= 5) win.clearInterval(settle);
+      if (this.visible.size) this.recheckVisible(0);
+    }, 4000);
   }
 
   /** Starts watching an element if it directly holds text. */
