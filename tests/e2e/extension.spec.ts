@@ -201,7 +201,7 @@ test('settings page imports a Noir theme link', async ({ context, worker }) => {
   await page.goto(`chrome-extension://${id}/options.html#themes`);
   await page.fill('input[type="url"]', 'https://getnoir.app/theme?name=John%E2%80%99s%20Theme&bg=182530&text=DBB745&imageBrightness=0.93');
   await page.click('text=Import');
-  await expect(page.locator('.theme-card h3', { hasText: 'John’s Theme' })).toBeVisible();
+  await expect(page.locator('.tile h3', { hasText: 'John’s Theme' })).toBeVisible();
   const stored = await worker.evaluate(async () => (await (globalThis as any).chrome.storage.local.get('settings')).settings.customThemes);
   expect(stored[0]).toMatchObject({ name: 'John’s Theme', background: '#182530', text: '#dbb745', imageBrightness: 0.93 });
   if (SCREENSHOTS) await page.screenshot({ path: join(SCREENSHOTS, 'settings-themes.png'), fullPage: false });

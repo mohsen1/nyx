@@ -11,19 +11,18 @@ struct ContentView: View {
         NavigationStack {
             Form {
                 Section {
-                    Picker("Status", selection: Binding(get: { model.mode }, set: model.setMode)) {
+                    Picker("Dark mode", selection: Binding(get: { model.mode }, set: model.setMode)) {
                         Text("Auto").tag("auto")
                         Text("On").tag("on")
                         Text("Off").tag("off")
                     }
                     .pickerStyle(.segmented)
-                    Text(statusCaption).font(.footnote).foregroundStyle(.secondary)
                     if model.mode == "auto" {
                         Picker("Auto follows", selection: Binding(
                             get: { model.autoTrigger },
                             set: { model.setSchedule(trigger: $0, start: model.start, end: model.end) }
                         )) {
-                            Text("System Dark Mode").tag("system")
+                            Text("System appearance").tag("system")
                             Text("Schedule").tag("schedule")
                         }
                         if model.autoTrigger == "schedule" {
@@ -31,60 +30,88 @@ struct ContentView: View {
                             TimeField(title: "To", value: model.end) { model.setSchedule(trigger: "schedule", start: model.start, end: $0) }
                         }
                     }
-                    Button(model.pausedUntil == nil ? "Pause Everywhere Until Tomorrow" : "Resume") { model.togglePause() }
-                    if let until = model.pausedUntil {
-                        Text("Paused until \(until.formatted(date: .omitted, time: .shortened))").font(.footnote).foregroundStyle(.secondary)
-                    }
-                    if model.focusFilterApplied {
-                        Button("Stop Focus Filter") { model.stopFocusFilter() }
-                    }
-                } header: {
-                    Text("Default Settings")
                 } footer: {
-                    Text("These settings apply to every website unless a website has its own settings. Change website settings from the Nyx menu in Safari.")
+                    Text(statusCaption)
                 }
 
-                Section("Default Theme") {
-                    ForEach(model.themes) { theme in
-                        Button { model.setTheme(theme.id) } label: {
-                            HStack {
-                                ThemeSwatch(theme: theme)
-                                Text(theme.name).foregroundStyle(.primary)
-                                Spacer()
-                                if theme.id == model.defaultThemeId { Image(systemName: "checkmark").foregroundStyle(.tint) }
-                            }
+                Section {
+                    Button {
+                        model.togglePause()
+                    } label: {
+                        Label(
+                            model.pausedUntil == nil ? "Pause all until tomorrow" : "Resume all websites",
+                            systemImage: model.pausedUntil == nil ? "pause.circle" : "play.circle"
+                        )
+                    }
+                    if model.focusFilterApplied {
+                        Button {
+                            model.stopFocusFilter()
+                        } label: {
+                            Label("Stop Focus filter", systemImage: "moon.circle")
                         }
-                        .buttonStyle(.plain)
+                    }
+                } footer: {
+                    if let until = model.pausedUntil {
+                        Text("Paused until \(until.formatted(date: .omitted, time: .shortened)).")
                     }
                 }
 
                 Section {
-                    TextField("Theme link", text: $link)
+                    NavigationLink {
+                        ThemeList()
+                    } label: {
+                        LabeledContent {
+                            Text(currentTheme?.name ?? "")
+                        } label: {
+                            Label {
+                                Text("Default theme")
+                            } icon: {
+                                if let theme = currentTheme { ThemeSwatch(theme: theme, size: 22) }
+                            }
+                        }
+                    }
+                    TextField("Theme link", text: $link, prompt: Text("Paste a theme link"))
                         .autocorrectionDisabled()
                         #if os(iOS)
                         .textContentType(.URL)
+                        .keyboardType(.URL)
                         .textInputAutocapitalization(.never)
                         #endif
-                    Button("Import Theme") { model.importLink(link); link = "" }
-                        .disabled(link.isEmpty)
-                    if let message = model.importMessage { Text(message).font(.footnote) }
+                        .onSubmit(importLink)
+                    Button("Add theme", action: importLink)
+                        .disabled(link.trimmingCharacters(in: .whitespaces).isEmpty)
                 } header: {
-                    Text("Import")
+                    Text("Theme")
                 } footer: {
-                    Text("Paste a shared theme link. Links shared from Noir work too. Edit themes in Nyx Settings, opened from the Nyx menu in Safari.")
+                    if let message = model.importMessage { Text(message) }
                 }
 
-                Section("Set Up") {
+                Section {
                     #if os(macOS)
-                    Button("Open Safari Extension Settings") {
+                    Button {
                         SFSafariApplication.showPreferencesForExtension(withIdentifier: "app.nyx.NyxDarkMode.Extension")
+                    } label: {
+                        Label("Open Safari extension settings", systemImage: "safari")
                     }
-                    Text("Turn on Nyx, then choose Always Allow on Every Website so Nyx can darken pages as they load.")
-                        .font(.footnote).foregroundStyle(.secondary)
                     #else
-                    Text("Open Settings → Apps → Safari → Extensions → Nyx. Turn on the extension and set Permissions → All Websites to Allow.")
-                        .font(.footnote)
+                    Label("Settings → Apps → Safari → Extensions → Nyx", systemImage: "safari")
                     #endif
+                } header: {
+                    Text("Set up")
+                } footer: {
+                    Text("Turn on Nyx and allow it on all websites.")
+                }
+
+                Section {
+                    LabeledContent("Version", value: version)
+                    AboutLink(title: "Website", systemImage: "globe", url: "https://azimi.me/nyx/")
+                    AboutLink(title: "Source code", systemImage: "chevron.left.forwardslash.chevron.right", url: "https://github.com/mohsen1/nyx")
+                    AboutLink(title: "Privacy", systemImage: "hand.raised", url: "https://azimi.me/nyx/privacy/")
+                    AboutLink(title: "Support", systemImage: "questionmark.circle", url: "https://azimi.me/nyx/support/")
+                } header: {
+                    Text("About")
+                } footer: {
+                    Text("Nyx doesn’t collect any data.")
                 }
             }
             .formStyle(.grouped)
@@ -92,14 +119,91 @@ struct ContentView: View {
         }
     }
 
+    private var version: String {
+        Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? ""
+    }
+
+    private var currentTheme: Theme? {
+        model.themes.first { $0.id == model.defaultThemeId } ?? model.themes.first
+    }
+
+    private func importLink() {
+        model.importLink(link)
+        link = ""
+    }
+
     private var statusCaption: String {
         switch model.mode {
-        case "on": return "Nyx will always darken websites."
-        case "off": return "Nyx will never darken websites, unless a website is set to On."
+        case "on": return "Websites are always dark."
+        case "off": return "Websites stay as they are, unless you turn Nyx on for one in Safari."
         default: return model.autoTrigger == "schedule"
-            ? "Nyx will darken websites between \(model.start) and \(model.end)."
-            : "Nyx will darken websites when Dark Mode is on."
+            ? "Websites are dark from \(model.start) to \(model.end)."
+            : "Websites are dark when your device is in Dark Mode."
         }
+    }
+}
+
+private struct AboutLink: View {
+    let title: String
+    let systemImage: String
+    let url: String
+
+    var body: some View {
+        Link(destination: URL(string: url)!) {
+            HStack {
+                Label(title, systemImage: systemImage)
+                Spacer()
+                Image(systemName: "arrow.up.right").font(.footnote).foregroundStyle(.tertiary)
+            }
+            .contentShape(Rectangle())
+        }
+    }
+}
+
+/// The theme library, grouped by collection. Picking a theme makes it the default.
+private struct ThemeList: View {
+    @EnvironmentObject private var model: AppModel
+
+    var body: some View {
+        Form {
+            ForEach(collections, id: \.name) { collection in
+                Section(collection.name) {
+                    ForEach(collection.themes) { theme in
+                        Button {
+                            model.setTheme(theme.id)
+                        } label: {
+                            HStack(spacing: 12) {
+                                ThemeSwatch(theme: theme, size: 28)
+                                Text(theme.name).foregroundStyle(.primary)
+                                Spacer()
+                                if theme.id == model.defaultThemeId {
+                                    Image(systemName: "checkmark").foregroundStyle(.tint).fontWeight(.semibold)
+                                }
+                            }
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityAddTraits(theme.id == model.defaultThemeId ? .isSelected : [])
+                    }
+                }
+            }
+        }
+        .formStyle(.grouped)
+        .navigationTitle("Default theme")
+        #if os(iOS)
+        .navigationBarTitleDisplayMode(.inline)
+        #endif
+    }
+
+    private var collections: [(name: String, themes: [Theme])] {
+        var order: [String] = []
+        var groups: [String: [Theme]] = [:]
+        for theme in model.themes {
+            let name = theme.collection ?? "My Themes"
+            if groups[name] == nil { order.append(name) }
+            groups[name, default: []].append(theme)
+        }
+        return order.map { ($0, groups[$0] ?? []) }
     }
 }
 
@@ -128,14 +232,16 @@ private struct TimeField: View {
 
 private struct ThemeSwatch: View {
     let theme: Theme
+    var size: CGFloat = 28
 
     var body: some View {
         Text("Aa")
-            .font(.caption.bold())
+            .font(.system(size: size * 0.4, weight: .bold))
             .foregroundStyle(Color(hex: theme.text))
-            .frame(width: 30, height: 30)
-            .background(Color(hex: theme.background), in: RoundedRectangle(cornerRadius: 7))
-            .overlay(RoundedRectangle(cornerRadius: 7).strokeBorder(.secondary.opacity(0.3)))
+            .frame(width: size, height: size)
+            .background(Color(hex: theme.background), in: RoundedRectangle(cornerRadius: size * 0.25, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: size * 0.25, style: .continuous).strokeBorder(.secondary.opacity(0.3)))
+            .accessibilityHidden(true)
     }
 }
 
