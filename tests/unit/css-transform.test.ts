@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest';
-import { rewriteValue } from '../../extension/src/shared/css-values';
+import { rewriteCustomProperty, rewriteChannels, rewriteValue } from '../../extension/src/shared/css-values';
 import { Palette } from '../../extension/src/shared/palette';
 import { transformRules } from '../../extension/src/content/sheet-transform';
 
@@ -32,6 +32,31 @@ describe('rewriteValue', () => {
   it('points var() at role-specific copies with the original as fallback', () => {
     expect(rewriteValue('var(--brand)', 'text', ctx)).toBe('var(--nyx-t--brand, var(--brand))');
     expect(rewriteValue('var(--brand, #000)', 'text', ctx)).toBe('var(--nyx-t--brand, var(--brand, #e3e3e6))');
+  });
+
+  it('points channel-list variables in color functions at channel copies', () => {
+    expect(rewriteValue('rgb(var(--grey-50))', 'background', ctx)).toBe('rgb(var(--nyx-bc--grey-50, var(--grey-50)))');
+    expect(rewriteValue('rgba(var(--brand-rgb), 0.1)', 'background', ctx)).toBe('rgba(var(--nyx-bc--brand-rgb, var(--brand-rgb)), 0.1)');
+    expect(rewriteValue('hsl(var(--background) / 50%)', 'background', ctx)).toBe('hsl(var(--nyx-bc--background, var(--background)) / 50%)');
+  });
+
+  it('maps rgb and hsl channel lists, keeping their format', () => {
+    expect(rewriteChannels('249, 249, 248', 'background', palette)).toMatch(/^\d+, \d+, \d+$/);
+    const [r] = rewriteChannels('249, 249, 248', 'background', palette)!.split(', ').map(Number);
+    expect(r).toBeLessThan(60);
+    const [, , l] = rewriteChannels('0 0% 100%', 'background', palette)!.split(' ');
+    expect(parseFloat(l)).toBeLessThan(25);
+    expect(parseFloat(rewriteChannels('222.2 84% 4.9%', 'text', palette)!.split(' ')[2])).toBeGreaterThan(70);
+    expect(rewriteChannels('4 8 400', 'background', palette)).toBeNull();
+    expect(rewriteChannels('1px 2px 3px', 'background', palette)).toBeNull();
+  });
+
+  it('defines channel copies for channel lists and aliases only', () => {
+    const names = (v: string) => rewriteCustomProperty('--x', v, ctx).map(([n]) => n);
+    expect(names('249, 249, 248')).toContain('--nyx-bc--x');
+    expect(names('var(--y)')).toContain('--nyx-tc--x');
+    expect(rewriteCustomProperty('--x', 'var(--y)', ctx).find(([n]) => n === '--nyx-bc--x')![1]).toBe('var(--nyx-bc--y, var(--y))');
+    expect(names('12px')).toEqual([]);
   });
 
   it('absolutizes relative urls and can hide images', () => {

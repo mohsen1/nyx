@@ -62,7 +62,8 @@ class RootStyler {
   private adoptedOverride: CSSStyleSheet | null = null;
   private adoptedSignature = '';
   private attrValues = new Map<string, Set<string>>();
-  private pendingFetch = new Set<string>();
+  /** In-flight fetches per owner element: pages often include the same stylesheet twice. */
+  private pendingFetch = new WeakMap<Element, Set<string>>();
 
   constructor(
     readonly root: Document | ShadowRoot,
@@ -177,8 +178,10 @@ class RootStyler {
 
   private fetchSheet(href: string, owner: Element, sig: string, append = false): void {
     const key = `${href}|${sig}`;
-    if (this.pendingFetch.has(key)) return;
-    this.pendingFetch.add(key);
+    let pending = this.pendingFetch.get(owner);
+    if (!pending) this.pendingFetch.set(owner, (pending = new Set()));
+    if (pending.has(key)) return;
+    pending.add(key);
     this.engine
       .fetchText(href)
       .then((text) => {
@@ -189,7 +192,7 @@ class RootStyler {
         const wrapped = css && media && media !== 'all' ? `@media ${media} { ${css} }` : css;
         o.el.textContent = append ? `${wrapped}\n${o.el.textContent ?? ''}` : wrapped;
       })
-      .finally(() => this.pendingFetch.delete(key));
+      .finally(() => pending.delete(key));
   }
 
   private syncAdopted(): void {
@@ -337,8 +340,18 @@ export class DarkEngine {
     return { palette: this.palette, baseUrl, hideImages: !this.config.appearance.backgroundImages };
   }
 
+  private textCache = new Map<string, Promise<string | null>>();
+
+  /** Fetches a resource's text once per URL, shared by every element that includes it. */
   fetchText(url: string): Promise<string | null> {
-    return this.fetcher(url, 'text');
+    let p = this.textCache.get(url);
+    if (!p) {
+      p = this.fetcher(url, 'text');
+      this.textCache.set(url, p);
+      // Don't remember failures; a later sync may succeed.
+      void p.then((t) => t === null && this.textCache.delete(url));
+    }
+    return p;
   }
 
   /** Transforms raw CSS text (cross-origin sheets) by parsing it in a detached sheet. */

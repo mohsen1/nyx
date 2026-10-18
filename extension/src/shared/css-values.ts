@@ -2,7 +2,7 @@
 // references are pointed at role-specific copies of custom properties, and relative url()s
 // are made absolute so the rewritten rule still works from our own <style> element.
 
-import { NAMED_COLOR_NAMES } from './color';
+import { NAMED_COLOR_NAMES, parseColor } from './color';
 import type { ColorRole, Palette } from './palette';
 
 /** CSS properties whose colors we transform, with the role that decides how. */
@@ -172,6 +172,12 @@ export function rewriteValue(value: string, role: ColorRole, ctx: RewriteContext
         } else if (lower === 'var') {
           out += rewriteVar(inner, role, ctx);
           changed = true;
+        } else if (COLOR_FUNCS.has(lower) && CHANNEL_VAR.test(inner)) {
+          // rgb(var(--grey-50)) / rgba(var(--brand-rgb), .5) / hsl(var(--background) / 50%):
+          // the variable holds bare channels, so point it at a channel copy.
+          const m = CHANNEL_VAR.exec(inner)!;
+          out += `${ident}(var(${channelVarName(m[1], role)}, var(${m[1]}))${m[2]})`;
+          changed = true;
         } else if (COLOR_FUNCS.has(lower) && !inner.includes('var(')) {
           const mapped = ctx.palette.map(s.slice(i, end + 1), role);
           if (mapped) {
@@ -223,6 +229,62 @@ export function roleVarName(name: string, role: ColorRole): string {
   return `${ROLE_PREFIX[role]}${name}`;
 }
 
+/** A color function whose channels all come from one variable, plus whatever follows (alpha). */
+const CHANNEL_VAR = /^\s*var\(\s*(--[a-zA-Z0-9_-]+)\s*\)(\s*(?:[,/][^()]*)?)$/;
+
+/**
+ * Copies of channel-list variables (`--grey-50: 249, 249, 248`) get their own prefix, because they
+ * are only valid inside rgb()/hsl(). A triplet used anywhere else (shadow offsets, grid tracks)
+ * never reads them.
+ */
+export function channelVarName(name: string, role: ColorRole): string {
+  return `${ROLE_PREFIX[role]}c${name}`;
+}
+
+const N = '(\\d{1,3}(?:\\.\\d+)?)';
+const RGB_CHANNELS = new RegExp(`^\\s*${N}\\s*(,|\\s)\\s*${N}\\s*\\2\\s*${N}\\s*$`);
+const HSL_CHANNELS = new RegExp(`^\\s*${N}(?:deg)?\\s*(,|\\s)\\s*${N}%\\s*\\2\\s*${N}%\\s*$`);
+
+function rgbToHsl(r: number, g: number, b: number): [number, number, number] {
+  r /= 255; g /= 255; b /= 255;
+  const max = Math.max(r, g, b), min = Math.min(r, g, b);
+  const l = (max + min) / 2;
+  if (max === min) return [0, 0, l * 100];
+  const d = max - min;
+  const s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+  let h = max === r ? (g - b) / d + (g < b ? 6 : 0) : max === g ? (b - r) / d + 2 : (r - g) / d + 4;
+  h *= 60;
+  return [h, s * 100, l * 100];
+}
+
+const round1 = (n: number) => Math.round(n * 10) / 10;
+
+/** Maps a bare channel list (`249, 249, 248` or `210 40% 98%`) for a role, keeping its format. */
+export function rewriteChannels(value: string, role: ColorRole, palette: Palette): string | null {
+  let m = RGB_CHANNELS.exec(value);
+  if (m) {
+    const [r, g, b] = [m[1], m[3], m[4]].map(Number);
+    if (r > 255 || g > 255 || b > 255) return null;
+    const mapped = palette.map(`rgb(${r}, ${g}, ${b})`, role);
+    const c = mapped ? parseColor(mapped) : null;
+    if (!c) return null;
+    const sep = m[2] === ',' ? ', ' : ' ';
+    return [c.r, c.g, c.b].join(sep);
+  }
+  m = HSL_CHANNELS.exec(value);
+  if (m) {
+    const [h, sat, l] = [m[1], m[3], m[4]].map(Number);
+    if (h > 360 || sat > 100 || l > 100) return null;
+    const mapped = palette.map(`hsl(${h}, ${sat}%, ${l}%)`, role);
+    const c = mapped ? parseColor(mapped) : null;
+    if (!c) return null;
+    const [H, S, L] = rgbToHsl(c.r, c.g, c.b);
+    const sep = m[2] === ',' ? ', ' : ' ';
+    return `${round1(H)}${sep}${round1(S)}%${sep}${round1(L)}%`;
+  }
+  return null;
+}
+
 /** Whether a custom property value may hold a color (and so needs role-specific copies). */
 export function mayContainColor(value: string): boolean {
   if (value.includes('var(') || value.includes('#')) return true;
@@ -237,11 +299,21 @@ const ALL_ROLES: ColorRole[] = ['background', 'text', 'border', 'shadow'];
  * For a custom property declaration, returns `[name, value]` pairs defining its role-specific copies.
  */
 export function rewriteCustomProperty(name: string, value: string, ctx: RewriteContext): Array<[string, string]> {
-  if (!mayContainColor(value)) return [];
   const out: Array<[string, string]> = [];
+  if (mayContainColor(value)) {
+    for (const role of ALL_ROLES) {
+      const v = rewriteValue(value, role, { ...ctx, hideImages: false });
+      if (v !== null) out.push([roleVarName(name, role), v]);
+    }
+  }
+  // Channel lists, and aliases that may point at one (`--body-bg-rgb: var(--grey-50-rgb)`).
+  const alias = /^\s*var\(\s*(--[a-zA-Z0-9_-]+)\s*\)\s*$/.exec(value);
   for (const role of ALL_ROLES) {
-    const v = rewriteValue(value, role, { ...ctx, hideImages: false });
-    if (v !== null) out.push([roleVarName(name, role), v]);
+    if (alias) out.push([channelVarName(name, role), `var(${channelVarName(alias[1], role)}, var(${alias[1]}))`]);
+    else {
+      const v = rewriteChannels(value, role, ctx.palette);
+      if (v !== null) out.push([channelVarName(name, role), v]);
+    }
   }
   return out;
 }

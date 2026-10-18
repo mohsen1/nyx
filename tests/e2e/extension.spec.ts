@@ -27,7 +27,7 @@ function serve(): Promise<void> {
       return;
     }
     let body: string | Buffer = readFileSync(path);
-    if (path.endsWith('.html')) body = body.toString().replace('CROSS_ORIGIN', `http://127.0.0.1:${port}`);
+    if (path.endsWith('.html')) body = body.toString().replaceAll('CROSS_ORIGIN', `http://127.0.0.1:${port}`);
     res.writeHead(200, { 'content-type': TYPES[extname(path)] ?? 'application/octet-stream', 'access-control-allow-origin': '*' }).end(body);
   });
   return new Promise((r) => server.listen(0, () => ((port = (server.address() as { port: number }).port), r())));
@@ -198,6 +198,13 @@ test('legacy pages: body background tiles, bgcolor and text attributes', async (
   await expect.poll(() => page.$eval('body', (el) => getComputedStyle(el).backgroundImage)).toBe('none');
   expect(luminance(await bg(page, 'body'))).toBeLessThan(0.05);
   expect(luminance(await fg(page, '#essay'))).toBeGreaterThan(0.5);
+});
+
+test('a cross-origin stylesheet included twice is darkened in both places', async ({ context }) => {
+  const page = await context.newPage();
+  await page.goto(url('duplicate-sheets.html'));
+  await page.waitForLoadState('load');
+  await expect.poll(async () => luminance(await bg(page, '#cross'))).toBeLessThan(0.1);
 });
 
 test('re-detects when a site switches its own theme', async ({ context }) => {
