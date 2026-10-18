@@ -28,11 +28,10 @@ export function segmented<T extends string>(
   options: Array<{ value: T; label: string; title?: string }>,
   current: T,
   onChange: (v: T) => void,
-  fill = false,
 ): HTMLElement {
   return h(
     'div',
-    { class: fill ? 'segmented fill' : 'segmented', role: 'radiogroup', 'aria-label': label },
+    { class: 'segmented', role: 'radiogroup', 'aria-label': label },
     ...options.map((o) =>
       h(
         'button',

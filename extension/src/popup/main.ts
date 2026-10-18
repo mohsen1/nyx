@@ -129,9 +129,8 @@ function render(): void {
     const effective = findTheme(themes, site?.themeId ?? settings.global.defaultThemeId);
 
     const rows: Array<Node | null> = [
-      h(
-        'div',
-        { class: 'cell stack' },
+      cell(
+        'Status',
         segmented<SiteMode>(
           'Website status',
           [
@@ -142,7 +141,6 @@ function render(): void {
           ],
           site?.mode ?? 'default',
           (mode) => update((s) => updateSite(s, key, { mode, pausedUntil: null })),
-          true,
         ),
       ),
       cell(
@@ -180,9 +178,6 @@ function render(): void {
           { icon: 'sun-moon' },
         ),
       );
-      if (settings.global.darkModeReporting !== 'never') {
-        footer.push(h('button', { type: 'button', class: 'link', onclick: () => reportDetection(key) }, 'Report wrong detection'));
-      }
     }
 
     if (settings.global.advancedAppearanceEnabled) {
@@ -218,20 +213,17 @@ function render(): void {
       ),
     );
 
-    root.append(group('This website', rows));
+    if (site && !isDefaultSite(site)) rows.push(actionCell('Reset website', 'rotate-ccw', () => update((s) => resetSite(s, key))));
 
-    if (site && !isDefaultSite(site)) {
-      footer.unshift(h('button', { type: 'button', class: 'link', onclick: () => update((s) => resetSite(s, key)) }, 'Reset website'));
-    }
+    root.append(group('This website', rows));
     footer.push(h('button', { type: 'button', class: 'link', onclick: () => reportSite(key) }, 'Report a problem'));
   }
 
   const globalPaused = !!settings.global.pausedUntil && settings.global.pausedUntil > Date.now();
   root.append(
     group('All websites', [
-      h(
-        'div',
-        { class: 'cell stack' },
+      cell(
+        'Status',
         segmented<GlobalMode>(
           'Global status',
           [
@@ -241,7 +233,6 @@ function render(): void {
           ],
           settings.global.mode,
           (mode) => update((s) => updateGlobal(s, { mode, pausedUntil: null })),
-          true,
         ),
       ),
       actionCell(globalPaused ? 'Resume all websites' : 'Pause all until tomorrow', globalPaused ? 'play' : 'pause', () =>
@@ -282,13 +273,9 @@ function openIssue(title: string, body: string): void {
 }
 
 function reportSite(key: string): void {
-  openIssue(`Website issue: ${key}`, `**Website:** ${pageUrl ?? key}\n\n**What looks wrong?**\n\n`);
-}
-
-function reportDetection(key: string): void {
   openIssue(
-    `Dark mode detection: ${key}`,
-    `**Website:** ${pageUrl ?? key}\n**Detected built-in dark mode:** ${page?.builtInDarkMode ? 'yes' : 'no'}\n\nThe detection is incorrect because…\n`,
+    `Website issue: ${key}`,
+    `**Website:** ${pageUrl ?? key}\n**Detected built-in dark mode:** ${page?.builtInDarkMode ? 'yes' : 'no'}\n\n**What looks wrong?**\n\n`,
   );
 }
 
