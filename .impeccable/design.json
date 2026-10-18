@@ -1,0 +1,482 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-18T00:00:00Z",
+  "title": "Design System: Nyx website",
+  "extensions": {
+    "colorMeta": {
+      "page": {
+        "role": "neutral",
+        "displayName": "Page White",
+        "canonical": "#ffffff",
+        "tonalRamp": [
+          "oklch(15% 0.005 286)",
+          "oklch(25% 0.005 286)",
+          "oklch(35% 0.005 286)",
+          "oklch(45% 0.005 286)",
+          "oklch(58% 0.005 286)",
+          "oklch(70% 0.005 286)",
+          "oklch(82% 0.005 286)",
+          "oklch(95% 0.005 286)"
+        ]
+      },
+      "band": {
+        "role": "neutral",
+        "displayName": "Band Gray",
+        "canonical": "#f5f5f7",
+        "tonalRamp": [
+          "oklch(15% 0.005 286)",
+          "oklch(25% 0.005 286)",
+          "oklch(35% 0.005 286)",
+          "oklch(45% 0.005 286)",
+          "oklch(58% 0.005 286)",
+          "oklch(70% 0.005 286)",
+          "oklch(82% 0.005 286)",
+          "oklch(95% 0.005 286)"
+        ]
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Ink",
+        "canonical": "#1d1d1f",
+        "tonalRamp": [
+          "oklch(15% 0.005 286)",
+          "oklch(25% 0.005 286)",
+          "oklch(35% 0.005 286)",
+          "oklch(45% 0.005 286)",
+          "oklch(58% 0.005 286)",
+          "oklch(70% 0.005 286)",
+          "oklch(82% 0.005 286)",
+          "oklch(95% 0.005 286)"
+        ]
+      },
+      "ink-secondary": {
+        "role": "neutral",
+        "displayName": "Secondary Ink",
+        "canonical": "#6e6e73",
+        "tonalRamp": [
+          "oklch(15% 0.005 286)",
+          "oklch(25% 0.005 286)",
+          "oklch(35% 0.005 286)",
+          "oklch(45% 0.005 286)",
+          "oklch(58% 0.005 286)",
+          "oklch(70% 0.005 286)",
+          "oklch(82% 0.005 286)",
+          "oklch(95% 0.005 286)"
+        ]
+      },
+      "hairline": {
+        "role": "neutral",
+        "displayName": "Hairline",
+        "canonical": "rgb(0 0 0 / 0.1)"
+      },
+      "nyx-indigo": {
+        "role": "primary",
+        "displayName": "Nyx Indigo",
+        "canonical": "#5856d6",
+        "tonalRamp": [
+          "oklch(15% 0.19 281)",
+          "oklch(25% 0.19 281)",
+          "oklch(35% 0.19 281)",
+          "oklch(45% 0.19 281)",
+          "oklch(58% 0.19 281)",
+          "oklch(70% 0.19 281)",
+          "oklch(82% 0.19 281)",
+          "oklch(95% 0.19 281)"
+        ]
+      },
+      "nyx-indigo-soft": {
+        "role": "primary",
+        "displayName": "Indigo Wash",
+        "canonical": "rgb(88 86 214 / 0.1)"
+      },
+      "tint-ink": {
+        "role": "neutral",
+        "displayName": "On Indigo",
+        "canonical": "#ffffff"
+      },
+      "page-dark": {
+        "role": "neutral",
+        "displayName": "Page Black",
+        "canonical": "#000000",
+        "tonalRamp": [
+          "oklch(15% 0.005 286)",
+          "oklch(25% 0.005 286)",
+          "oklch(35% 0.005 286)",
+          "oklch(45% 0.005 286)",
+          "oklch(58% 0.005 286)",
+          "oklch(70% 0.005 286)",
+          "oklch(82% 0.005 286)",
+          "oklch(95% 0.005 286)"
+        ]
+      },
+      "band-dark": {
+        "role": "neutral",
+        "displayName": "Band Near-Black",
+        "canonical": "#161617",
+        "tonalRamp": [
+          "oklch(15% 0.005 286)",
+          "oklch(25% 0.005 286)",
+          "oklch(35% 0.005 286)",
+          "oklch(45% 0.005 286)",
+          "oklch(58% 0.005 286)",
+          "oklch(70% 0.005 286)",
+          "oklch(82% 0.005 286)",
+          "oklch(95% 0.005 286)"
+        ]
+      },
+      "ink-dark": {
+        "role": "neutral",
+        "displayName": "Ink (dark)",
+        "canonical": "#f5f5f7",
+        "tonalRamp": [
+          "oklch(15% 0.005 286)",
+          "oklch(25% 0.005 286)",
+          "oklch(35% 0.005 286)",
+          "oklch(45% 0.005 286)",
+          "oklch(58% 0.005 286)",
+          "oklch(70% 0.005 286)",
+          "oklch(82% 0.005 286)",
+          "oklch(95% 0.005 286)"
+        ]
+      },
+      "ink-secondary-dark": {
+        "role": "neutral",
+        "displayName": "Secondary Ink (dark)",
+        "canonical": "#a1a1a6",
+        "tonalRamp": [
+          "oklch(15% 0.005 286)",
+          "oklch(25% 0.005 286)",
+          "oklch(35% 0.005 286)",
+          "oklch(45% 0.005 286)",
+          "oklch(58% 0.005 286)",
+          "oklch(70% 0.005 286)",
+          "oklch(82% 0.005 286)",
+          "oklch(95% 0.005 286)"
+        ]
+      },
+      "hairline-dark": {
+        "role": "neutral",
+        "displayName": "Hairline (dark)",
+        "canonical": "rgb(255 255 255 / 0.14)"
+      },
+      "nyx-indigo-dark": {
+        "role": "primary",
+        "displayName": "Nyx Indigo (dark links)",
+        "canonical": "#7d7aff",
+        "tonalRamp": [
+          "oklch(15% 0.19 283)",
+          "oklch(25% 0.19 283)",
+          "oklch(35% 0.19 283)",
+          "oklch(45% 0.19 283)",
+          "oklch(58% 0.19 283)",
+          "oklch(70% 0.19 283)",
+          "oklch(82% 0.19 283)",
+          "oklch(95% 0.19 283)"
+        ]
+      },
+      "nyx-indigo-fill-dark": {
+        "role": "primary",
+        "displayName": "Indigo Fill (dark)",
+        "canonical": "#5e5ce6",
+        "tonalRamp": [
+          "oklch(15% 0.2 281)",
+          "oklch(25% 0.2 281)",
+          "oklch(35% 0.2 281)",
+          "oklch(45% 0.2 281)",
+          "oklch(58% 0.2 281)",
+          "oklch(70% 0.2 281)",
+          "oklch(82% 0.2 281)",
+          "oklch(95% 0.2 281)"
+        ]
+      },
+      "nyx-indigo-soft-dark": {
+        "role": "primary",
+        "displayName": "Indigo Wash (dark)",
+        "canonical": "rgb(125 122 255 / 0.16)"
+      },
+      "button-secondary-bg-dark": {
+        "role": "neutral",
+        "displayName": "White Wash (dark secondary button)",
+        "canonical": "rgb(255 255 255 / 0.12)"
+      },
+      "tag-dark-glass": {
+        "role": "neutral",
+        "displayName": "Dark Glass Tag",
+        "canonical": "rgb(29 29 31 / 0.78)"
+      },
+      "tag-light-glass": {
+        "role": "neutral",
+        "displayName": "Light Glass Tag",
+        "canonical": "rgb(255 255 255 / 0.9)"
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "The single centered hero headline."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "One section headline per section."
+      },
+      "doc-title": {
+        "displayName": "Doc Title",
+        "purpose": "h1 on privacy, support and 404."
+      },
+      "doc-heading": {
+        "displayName": "Doc Heading",
+        "purpose": "h2 on document pages."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "h3 for points, facts, install cards and FAQ summaries."
+      },
+      "lede": {
+        "displayName": "Lede",
+        "purpose": "Secondary-ink paragraph under a headline; document summary box."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "All running text; 1.6 line height on document pages."
+      },
+      "caption": {
+        "displayName": "Caption",
+        "purpose": "Compare caption, doc meta line, theme group names."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Nav links, segmented options, theme names."
+      },
+      "small": {
+        "displayName": "Small",
+        "purpose": "Footer and compare tags."
+      },
+      "mono": {
+        "displayName": "Mono",
+        "purpose": "Inline code only."
+      }
+    },
+    "shadows": [
+      {
+        "name": "raise",
+        "value": "0 18px 50px -18px rgb(0 0 0 / 0.28), 0 2px 6px rgb(0 0 0 / 0.06)",
+        "purpose": "Compare frame and popup screenshot (light)."
+      },
+      {
+        "name": "raise-dark",
+        "value": "0 18px 50px -18px rgb(0 0 0 / 0.9), 0 0 0 1px rgb(255 255 255 / 0.08)",
+        "purpose": "Same, dark appearance."
+      },
+      {
+        "name": "raise-sm",
+        "value": "0 6px 18px -8px rgb(0 0 0 / 0.25)",
+        "purpose": "Theme swatches and compare handle (light)."
+      },
+      {
+        "name": "raise-sm-dark",
+        "value": "0 6px 18px -8px rgb(0 0 0 / 0.8), 0 0 0 1px rgb(255 255 255 / 0.08)",
+        "purpose": "Same, dark appearance."
+      },
+      {
+        "name": "segment-lift",
+        "value": "0 1px 3px rgb(0 0 0 / 0.14), 0 0 0 0.5px rgb(0 0 0 / 0.06)",
+        "purpose": "Selected segmented option."
+      },
+      {
+        "name": "tag-lift",
+        "value": "0 1px 3px rgb(0 0 0 / 0.18)",
+        "purpose": "Compare tags."
+      }
+    ],
+    "motion": [
+      {
+        "name": "ease",
+        "value": "cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "All transitions; 0.2s for hover, press and chevrons, 0.25s for the handle."
+      },
+      {
+        "name": "seam-entrance",
+        "value": "1400ms, 1 - 2^(-10t), from 92% to rest",
+        "purpose": "One-time compare seam sweep on first view; off under reduced motion."
+      },
+      {
+        "name": "press",
+        "value": "transform: scale(0.98)",
+        "purpose": "Button active state."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "compare-phone",
+        "value": "640px"
+      },
+      {
+        "name": "nav-mid",
+        "value": "520px"
+      },
+      {
+        "name": "points",
+        "value": "700px"
+      },
+      {
+        "name": "nav-wide",
+        "value": "760px"
+      },
+      {
+        "name": "install",
+        "value": "760px"
+      },
+      {
+        "name": "split",
+        "value": "820px"
+      },
+      {
+        "name": "themes-scroll",
+        "value": "900px"
+      },
+      {
+        "name": "facts",
+        "value": "900px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Indigo pill for the main action (Get Nyx, download).",
+      "html": "<a class=\"ds-btn ds-btn-primary\" href=\"#\">Get Nyx</a>",
+      "css": ":host{--page:#fff;--band:#f5f5f7;--ink:#1d1d1f;--ink-2:#6e6e73;--line:rgb(0 0 0 / .1);--tint:#5856d6;--tint-fill:#5856d6;--tint-ink:#fff;--button-2-ink:#5856d6;--button-2-bg:rgb(88 86 214 / .1);--raise:0 18px 50px -18px rgb(0 0 0 / .28),0 2px 6px rgb(0 0 0 / .06);--raise-sm:0 6px 18px -8px rgb(0 0 0 / .25);--ease:cubic-bezier(0.16,1,0.3,1)} .ds-btn{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 22px;border-radius:999px;font:500 17px/1.5 -apple-system, BlinkMacSystemFont, \"SF Pro Text\", system-ui, sans-serif;letter-spacing:-0.01em;text-decoration:none;transition:filter .2s var(--ease),transform .2s var(--ease)} .ds-btn-primary{color:var(--tint-ink);background:var(--tint-fill)} .ds-btn:hover{filter:brightness(1.06)} .ds-btn:active{transform:scale(.98)} .ds-btn:focus-visible{outline:2px solid var(--tint);outline-offset:3px}"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Indigo-wash pill for a supporting action.",
+      "html": "<a class=\"ds-btn ds-btn-secondary\" href=\"#\">Safari instructions</a>",
+      "css": ":host{--page:#fff;--band:#f5f5f7;--ink:#1d1d1f;--ink-2:#6e6e73;--line:rgb(0 0 0 / .1);--tint:#5856d6;--tint-fill:#5856d6;--tint-ink:#fff;--button-2-ink:#5856d6;--button-2-bg:rgb(88 86 214 / .1);--raise:0 18px 50px -18px rgb(0 0 0 / .28),0 2px 6px rgb(0 0 0 / .06);--raise-sm:0 6px 18px -8px rgb(0 0 0 / .25);--ease:cubic-bezier(0.16,1,0.3,1)} .ds-btn{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 22px;border-radius:999px;font:500 17px/1.5 -apple-system, BlinkMacSystemFont, \"SF Pro Text\", system-ui, sans-serif;letter-spacing:-0.01em;text-decoration:none;transition:filter .2s var(--ease),transform .2s var(--ease)} .ds-btn-secondary{color:var(--button-2-ink);background:var(--button-2-bg)} .ds-btn:hover{filter:brightness(1.06)} .ds-btn:active{transform:scale(.98)} .ds-btn:focus-visible{outline:2px solid var(--tint);outline-offset:3px}"
+    },
+    {
+      "name": "Link Arrow",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Quiet text action with a sliding CSS chevron.",
+      "html": "<a class=\"ds-link-arrow\" href=\"#\">See how it works</a>",
+      "css": ":host{--page:#fff;--band:#f5f5f7;--ink:#1d1d1f;--ink-2:#6e6e73;--line:rgb(0 0 0 / .1);--tint:#5856d6;--tint-fill:#5856d6;--tint-ink:#fff;--button-2-ink:#5856d6;--button-2-bg:rgb(88 86 214 / .1);--raise:0 18px 50px -18px rgb(0 0 0 / .28),0 2px 6px rgb(0 0 0 / .06);--raise-sm:0 6px 18px -8px rgb(0 0 0 / .25);--ease:cubic-bezier(0.16,1,0.3,1)} .ds-link-arrow{font:17px/1.5 -apple-system, BlinkMacSystemFont, \"SF Pro Text\", system-ui, sans-serif;color:var(--tint);text-decoration:none;display:inline-flex;align-items:center;gap:4px} .ds-link-arrow::after{content:'';width:7px;height:7px;border:solid currentColor;border-width:1.6px 1.6px 0 0;transform:rotate(45deg);margin-left:2px;transition:transform .2s var(--ease)} .ds-link-arrow:hover{text-decoration:underline;text-underline-offset:.18em} .ds-link-arrow:hover::after{transform:translateX(3px) rotate(45deg)} .ds-link-arrow:focus-visible{outline:2px solid var(--tint);outline-offset:3px;border-radius:6px}"
+    },
+    {
+      "name": "Navigation Bar",
+      "kind": "nav",
+      "refersTo": "nav-bar",
+      "description": "Sticky translucent header with brand, secondary links and the Get Nyx pill.",
+      "html": "<header class=\"ds-nav\"><a class=\"ds-brand\" href=\"#\"><span class=\"ds-brand-icon\"></span>Nyx</a><nav class=\"ds-links\"><a href=\"#\">How it works</a><a href=\"#\" aria-current=\"page\">Support</a><a href=\"#\">GitHub</a><a class=\"ds-cta\" href=\"#\">Get Nyx</a></nav></header>",
+      "css": ":host{--page:#fff;--band:#f5f5f7;--ink:#1d1d1f;--ink-2:#6e6e73;--line:rgb(0 0 0 / .1);--tint:#5856d6;--tint-fill:#5856d6;--tint-ink:#fff;--button-2-ink:#5856d6;--button-2-bg:rgb(88 86 214 / .1);--raise:0 18px 50px -18px rgb(0 0 0 / .28),0 2px 6px rgb(0 0 0 / .06);--raise-sm:0 6px 18px -8px rgb(0 0 0 / .25);--ease:cubic-bezier(0.16,1,0.3,1)} .ds-nav{display:flex;align-items:center;justify-content:space-between;height:52px;padding:0 24px;font-family:-apple-system, BlinkMacSystemFont, \"SF Pro Text\", system-ui, sans-serif;background:color-mix(in srgb,var(--page) 80%,transparent);backdrop-filter:saturate(180%) blur(20px);border-bottom:1px solid var(--line)} .ds-brand{display:inline-flex;align-items:center;gap:9px;color:var(--ink);font-weight:600;font-size:18px;letter-spacing:-0.02em;text-decoration:none} .ds-brand-icon{width:28px;height:28px;border-radius:7px;background:#1d1d3a} .ds-links{display:flex;align-items:center;gap:24px;font-size:14px} .ds-links a{color:var(--ink-2);text-decoration:none} .ds-links a:hover,.ds-links a[aria-current=page]{color:var(--ink)} .ds-links .ds-cta{color:var(--tint-ink);background:var(--tint-fill);padding:4px 13px;border-radius:999px;font-weight:500} .ds-links .ds-cta:hover{color:var(--tint-ink);filter:brightness(1.08)} .ds-links a:focus-visible{outline:2px solid var(--tint);outline-offset:3px;border-radius:6px}"
+    },
+    {
+      "name": "Segmented Control",
+      "kind": "chip",
+      "refersTo": "segmented-track",
+      "description": "Native-style radiogroup that switches the compare site.",
+      "html": "<div class=\"ds-seg\" role=\"radiogroup\"><button role=\"radio\" aria-checked=\"true\">Hacker News</button><button role=\"radio\" aria-checked=\"false\">Craigslist</button><button role=\"radio\" aria-checked=\"false\">xkcd</button></div>",
+      "css": ":host{--page:#fff;--band:#f5f5f7;--ink:#1d1d1f;--ink-2:#6e6e73;--line:rgb(0 0 0 / .1);--tint:#5856d6;--tint-fill:#5856d6;--tint-ink:#fff;--button-2-ink:#5856d6;--button-2-bg:rgb(88 86 214 / .1);--raise:0 18px 50px -18px rgb(0 0 0 / .28),0 2px 6px rgb(0 0 0 / .06);--raise-sm:0 6px 18px -8px rgb(0 0 0 / .25);--ease:cubic-bezier(0.16,1,0.3,1)} .ds-seg{display:inline-flex;padding:3px;gap:2px;border-radius:999px;background:var(--band);box-shadow:inset 0 0 0 1px var(--line)} .ds-seg button{font:500 14px/1.5 -apple-system, BlinkMacSystemFont, \"SF Pro Text\", system-ui, sans-serif;letter-spacing:-0.01em;color:var(--ink-2);background:transparent;border:0;border-radius:999px;min-height:32px;padding:0 16px;cursor:pointer;transition:background-color .2s var(--ease),color .2s var(--ease)} .ds-seg button:hover{color:var(--ink)} .ds-seg button[aria-checked=true]{color:var(--ink);background:var(--page);box-shadow:0 1px 3px rgb(0 0 0 / .14),0 0 0 .5px rgb(0 0 0 / .06)} .ds-seg button:focus-visible{outline:2px solid var(--tint);outline-offset:3px}"
+    },
+    {
+      "name": "Compare Viewer",
+      "kind": "custom",
+      "refersTo": "compare-frame",
+      "description": "Signature before/after frame with a leaning seam, round handle and glass tags.",
+      "html": "<div class=\"ds-cmp\"><div class=\"ds-cmp-light\"></div><div class=\"ds-cmp-nyx\"></div><span class=\"ds-cmp-seam\"><span class=\"ds-cmp-handle\"><svg viewBox=\"0 0 24 24\" width=\"20\" height=\"20\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m9 18-6-6 6-6M15 6l6 6-6 6\"/></svg></span></span><span class=\"ds-tag ds-tag-l\">Original</span><span class=\"ds-tag ds-tag-n\">With Nyx</span></div>",
+      "css": ":host{--page:#fff;--band:#f5f5f7;--ink:#1d1d1f;--ink-2:#6e6e73;--line:rgb(0 0 0 / .1);--tint:#5856d6;--tint-fill:#5856d6;--tint-ink:#fff;--button-2-ink:#5856d6;--button-2-bg:rgb(88 86 214 / .1);--raise:0 18px 50px -18px rgb(0 0 0 / .28),0 2px 6px rgb(0 0 0 / .06);--raise-sm:0 6px 18px -8px rgb(0 0 0 / .25);--ease:cubic-bezier(0.16,1,0.3,1)} .ds-cmp{--pos:40%;--lean:6%;--tilt:-10.87deg;position:relative;aspect-ratio:16/10;width:480px;border-radius:18px;overflow:hidden;box-shadow:var(--raise);background:var(--band);cursor:ew-resize;font-family:-apple-system, BlinkMacSystemFont, \"SF Pro Text\", system-ui, sans-serif} .ds-cmp-light,.ds-cmp-nyx{position:absolute;inset:0} .ds-cmp-light{background:#f6f6ef} .ds-cmp-nyx{background:#1c1c1e;clip-path:polygon(calc(var(--pos) + var(--lean)) 0,100% 0,100% 100%,calc(var(--pos) - var(--lean)) 100%)} .ds-cmp-seam{position:absolute;top:-2%;bottom:-2%;left:var(--pos);width:2px;margin-left:-1px;background:#fff;box-shadow:0 0 0 1px rgb(0 0 0 / .12),0 0 18px rgb(0 0 0 / .25);transform:skewX(var(--tilt))} .ds-cmp-handle{position:absolute;top:50%;left:50%;width:44px;height:44px;margin:-22px 0 0 -22px;display:grid;place-items:center;border-radius:50%;background:#fff;color:#1d1d1f;box-shadow:var(--raise-sm),0 0 0 1px rgb(0 0 0 / .08);transform:skewX(calc(-1 * var(--tilt)));transition:transform .25s var(--ease)} .ds-cmp:hover .ds-cmp-handle{transform:skewX(calc(-1 * var(--tilt))) scale(1.08)} .ds-tag{position:absolute;top:14px;padding:4px 11px;border-radius:999px;font-size:13px;font-weight:500;backdrop-filter:blur(12px);box-shadow:0 1px 3px rgb(0 0 0 / .18)} .ds-tag-l{left:14px;color:#fff;background:rgb(29 29 31 / .78)} .ds-tag-n{right:14px;color:#1d1d1f;background:rgb(255 255 255 / .9)}"
+    },
+    {
+      "name": "Theme Swatch",
+      "kind": "card",
+      "refersTo": "theme-swatch",
+      "description": "A 4:3 tile painted in a theme's own colors, name below.",
+      "html": "<div class=\"ds-theme\"><span class=\"ds-theme-page\" style=\"--t-bg:#282a36;--t-fg:#f8f8f2\"><span class=\"ds-aa\">Aa</span><span class=\"ds-line\">Reading at night</span></span><span class=\"ds-theme-name\">Dracula</span></div>",
+      "css": ":host{--page:#fff;--band:#f5f5f7;--ink:#1d1d1f;--ink-2:#6e6e73;--line:rgb(0 0 0 / .1);--tint:#5856d6;--tint-fill:#5856d6;--tint-ink:#fff;--button-2-ink:#5856d6;--button-2-bg:rgb(88 86 214 / .1);--raise:0 18px 50px -18px rgb(0 0 0 / .28),0 2px 6px rgb(0 0 0 / .06);--raise-sm:0 6px 18px -8px rgb(0 0 0 / .25);--ease:cubic-bezier(0.16,1,0.3,1)} .ds-theme{display:flex;flex-direction:column;gap:9px;width:140px;font-family:-apple-system, BlinkMacSystemFont, \"SF Pro Text\", system-ui, sans-serif} .ds-theme-page{display:flex;flex-direction:column;justify-content:flex-end;gap:2px;aspect-ratio:4/3;border-radius:12px;overflow:hidden;background:var(--t-bg);color:var(--t-fg);box-shadow:var(--raise-sm),inset 0 0 0 1px var(--line);padding:12% 13%} .ds-aa{font-size:28px;font-weight:600;letter-spacing:-0.03em;line-height:1} .ds-line{font-size:11px;line-height:1.3;opacity:.8;white-space:nowrap} .ds-theme-name{font-size:14px;color:var(--ink);letter-spacing:-0.005em}"
+    },
+    {
+      "name": "Ticks List",
+      "kind": "custom",
+      "refersTo": "",
+      "description": "Unbulleted list with an indigo CSS tick per item.",
+      "html": "<ul class=\"ds-ticks\"><li>Set it to Auto, On or Off.</li><li>Pause it until tomorrow.</li></ul>",
+      "css": ":host{--page:#fff;--band:#f5f5f7;--ink:#1d1d1f;--ink-2:#6e6e73;--line:rgb(0 0 0 / .1);--tint:#5856d6;--tint-fill:#5856d6;--tint-ink:#fff;--button-2-ink:#5856d6;--button-2-bg:rgb(88 86 214 / .1);--raise:0 18px 50px -18px rgb(0 0 0 / .28),0 2px 6px rgb(0 0 0 / .06);--raise-sm:0 6px 18px -8px rgb(0 0 0 / .25);--ease:cubic-bezier(0.16,1,0.3,1)} .ds-ticks{list-style:none;margin:0;padding:0;display:grid;gap:14px;font:17px/1.5 -apple-system, BlinkMacSystemFont, \"SF Pro Text\", system-ui, sans-serif;color:var(--ink)} .ds-ticks li{position:relative;padding-left:30px} .ds-ticks li::before{content:'';position:absolute;left:4px;top:.42em;width:12px;height:7px;border:solid var(--tint);border-width:0 0 2px 2px;transform:rotate(-45deg)}"
+    },
+    {
+      "name": "Install Item",
+      "kind": "card",
+      "refersTo": "install-item",
+      "description": "Flat page-colored panel on a band with steps and a bottom-pinned pill.",
+      "html": "<div class=\"ds-band\"><div class=\"ds-install\"><h3>Chrome, Edge and Firefox</h3><ol><li>Download the latest release.</li><li>Load it unpacked.</li></ol><a class=\"ds-btn\" href=\"#\">Download</a></div></div>",
+      "css": ":host{--page:#fff;--band:#f5f5f7;--ink:#1d1d1f;--ink-2:#6e6e73;--line:rgb(0 0 0 / .1);--tint:#5856d6;--tint-fill:#5856d6;--tint-ink:#fff;--button-2-ink:#5856d6;--button-2-bg:rgb(88 86 214 / .1);--raise:0 18px 50px -18px rgb(0 0 0 / .28),0 2px 6px rgb(0 0 0 / .06);--raise-sm:0 6px 18px -8px rgb(0 0 0 / .25);--ease:cubic-bezier(0.16,1,0.3,1)} .ds-band{background:var(--band);padding:24px;font-family:-apple-system, BlinkMacSystemFont, \"SF Pro Text\", system-ui, sans-serif} .ds-install{display:flex;flex-direction:column;align-items:flex-start;padding:32px;border-radius:18px;background:var(--page);color:var(--ink)} .ds-install h3{margin:0;font-size:19px;font-weight:600;letter-spacing:-0.015em} .ds-install ol{margin:16px 0 28px;padding-left:1.2em;color:var(--ink-2);display:grid;gap:8px} .ds-btn{display:inline-flex;align-items:center;min-height:44px;padding:0 22px;border-radius:999px;font-size:17px;font-weight:500;text-decoration:none;color:var(--tint-ink);background:var(--tint-fill)} .ds-btn:hover{filter:brightness(1.06)} .ds-btn:focus-visible{outline:2px solid var(--tint);outline-offset:3px}"
+    },
+    {
+      "name": "Document FAQ Row",
+      "kind": "custom",
+      "refersTo": "doc-summary",
+      "description": "Hairline-divided details row with a rotating CSS chevron.",
+      "html": "<details class=\"ds-faq\"><summary>Can I make my own theme?</summary><p>Yes. Open Themes in Nyx's settings.</p></details>",
+      "css": ":host{--page:#fff;--band:#f5f5f7;--ink:#1d1d1f;--ink-2:#6e6e73;--line:rgb(0 0 0 / .1);--tint:#5856d6;--tint-fill:#5856d6;--tint-ink:#fff;--button-2-ink:#5856d6;--button-2-bg:rgb(88 86 214 / .1);--raise:0 18px 50px -18px rgb(0 0 0 / .28),0 2px 6px rgb(0 0 0 / .06);--raise-sm:0 6px 18px -8px rgb(0 0 0 / .25);--ease:cubic-bezier(0.16,1,0.3,1)} .ds-faq{border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:16px 0;font:17px/1.6 -apple-system, BlinkMacSystemFont, \"SF Pro Text\", system-ui, sans-serif;color:var(--ink);max-width:680px} .ds-faq summary{cursor:pointer;font-weight:600;list-style:none;display:flex;align-items:center;justify-content:space-between;gap:16px} .ds-faq summary::-webkit-details-marker{display:none} .ds-faq summary::after{content:'';flex:none;width:8px;height:8px;margin-right:4px;border:solid var(--ink-2);border-width:0 1.6px 1.6px 0;transform:rotate(45deg) translateY(-2px);transition:transform .2s var(--ease)} .ds-faq[open] summary::after{transform:rotate(225deg) translateY(-2px)} .ds-faq p{margin:10px 0 0} .ds-faq summary:focus-visible{outline:2px solid var(--tint);outline-offset:3px;border-radius:6px}"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Quiet Product Page",
+    "overview": "The site reads like an Apple product page: a white (or black) page, big tightly tracked headlines, lots of room, and the product itself doing the persuading. The first thing a visitor touches is a real website they can wipe from light to Nyx with a diagonal seam. Everything else holds back so that proof can carry the page.\n\nIt follows the visitor's appearance in both directions with no toggle: light visitors get white and pale gray bands, dark visitors get true black and near-black bands. One color, Nyx indigo, is the only hue the site adds. Real screenshots supply all other color: the comparison captures, the popup shot, and the 26 theme swatches, whose colors are data, not decoration.\n\nDensity is low and the rhythm is one-column: a centered hero, then sections that switch between page and band, each opening with a headline and a gray lede. Structure comes from whitespace and hairline rules, not from cards. Motion is limited to one entrance (the seam sweeps in from the right once) and small hover and press feedback.",
+    "keyCharacteristics": [
+      "Follows `prefers-color-scheme`; every token has a light and a dark value.",
+      "One indigo tint for links, focus, the primary button and tick marks; nothing else is colored.",
+      "System SF Pro stack, 600-weight headlines with negative tracking.",
+      "Pill-shaped controls everywhere; 18px corners on large imagery.",
+      "Soft, long, offset-down shadows on product imagery only.",
+      "Hairline top rules organize feature lists instead of cards."
+    ],
+    "rules": [
+      {
+        "name": "The One Tint Rule",
+        "body": "Indigo is the only hue the site contributes. It marks what you can act on (links, primary button, focus) and the ticks list, and nothing decorative. No gradients, no glows, no second accent.",
+        "section": "colors"
+      },
+      {
+        "name": "The Content Brings the Color Rule",
+        "body": "Screenshots and theme swatches carry their own colors; the chrome around them stays neutral so they read as true.",
+        "section": "colors"
+      },
+      {
+        "name": "The Tight Display Rule",
+        "body": "Headings are 600 weight, `text-wrap: balance`, with negative tracking that scales with size. Never uppercase, never letterspaced open.",
+        "section": "typography"
+      },
+      {
+        "name": "The Gray Lede Rule",
+        "body": "Every section headline is followed by at most one lede in secondary ink. The headline makes the claim; the lede backs it up.",
+        "section": "typography"
+      },
+      {
+        "name": "The Only Pictures Float Rule",
+        "body": "Shadows belong to product imagery and to the one draggable handle. Cards, sections and text blocks stay flat and separate by tone.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do give every color a light and a dark value and switch on `prefers-color-scheme`; there is no theme toggle.",
+      "Do keep indigo to links, the primary button, focus and the ticks list.",
+      "Do use the full pill (`rounded.pill`) for anything pressable, with at least a 44px touch height for buttons.",
+      "Do put shadows on product imagery only, and add the 1px white ring at 8% in dark mode.",
+      "Do separate content with whitespace, page/band alternation and hairline top rules.",
+      "Do use real screenshots and real theme colors as the page's imagery.",
+      "Do keep motion to `cubic-bezier(0.16, 1, 0.3, 1)` at about 0.2s for feedback, and turn off any entrance animation under `prefers-reduced-motion`.",
+      "Do keep a visible 2px indigo `:focus-visible` outline at 3px offset on every interactive element."
+    ],
+    "donts": [
+      "Don't add a second accent, gradients, or colored glows behind content.",
+      "Don't put eyebrow or kicker labels above headlines; the headline opens the section.",
+      "Don't wrap features in a grid of equal shadowed cards; use rule-topped columns.",
+      "Don't shadow text sections, install cards or the summary box.",
+      "Don't add icons as decoration; an icon appears only where it labels a control (the compare handle).",
+      "Don't set headlines in uppercase or with open letter-spacing."
+    ]
+  }
+}
