@@ -28,7 +28,8 @@ function serve(): Promise<void> {
     }
     let body: string | Buffer = readFileSync(path);
     if (path.endsWith('.html')) body = body.toString().replaceAll('CROSS_ORIGIN', `http://127.0.0.1:${port}`);
-    res.writeHead(200, { 'content-type': TYPES[extname(path)] ?? 'application/octet-stream', 'access-control-allow-origin': '*' }).end(body);
+    const cors: Record<string, string> = req.url!.includes('nocors') ? {} : { 'access-control-allow-origin': '*' };
+    res.writeHead(200, { 'content-type': TYPES[extname(path)] ?? 'application/octet-stream', ...cors }).end(body);
   });
   return new Promise((r) => server.listen(0, () => ((port = (server.address() as { port: number }).port), r())));
 }
@@ -231,6 +232,31 @@ test('a large pale background image is darkened so text on it stays readable', a
   await expect.poll(() => page.getAttribute('#hero', 'data-nyx-dim-bg')).toBe('');
   expect(await page.$eval('#hero', (el) => getComputedStyle(el).backgroundBlendMode)).toBe('multiply');
   expect(luminance(await fg(page, '#title'))).toBeGreaterThan(0.4);
+});
+
+test('a logo mixing color with a gray wordmark is recolored, keeping the color', async ({ context }) => {
+  const page = await context.newPage();
+  await page.goto(url('logos.html'));
+  await page.waitForLoadState('load');
+  await expect.poll(() => page.getAttribute('#mixed', 'data-nyx-recolor')).toBe('');
+  expect(await page.$eval('#mixed', (el) => getComputedStyle(el).content)).toMatch(/^url\("data:image\/png/);
+  expect(await page.getAttribute('#mixed', 'data-nyx-invert')).toBeNull();
+});
+
+test('text on a button with an icon background is still checked (Gmail Compose)', async ({ context, worker }) => {
+  // The label's color comes from a stylesheet Nyx can't read at all.
+  await worker.evaluate(() => {
+    (globalThis as any).fetch = () => Promise.reject(new TypeError('blocked'));
+  });
+  const page = await context.newPage();
+  await page.goto(url('compose.html'));
+  await page.waitForLoadState('load');
+  const ratio = async () => {
+    const t = luminance(await fg(page, '#compose'));
+    const b = luminance(await bg(page, '.compose'));
+    return (Math.max(t, b) + 0.05) / (Math.min(t, b) + 0.05);
+  };
+  await expect.poll(ratio).toBeGreaterThan(4.4);
 });
 
 test('re-detects when a site switches its own theme', async ({ context }) => {

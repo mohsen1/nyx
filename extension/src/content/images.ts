@@ -1,19 +1,30 @@
-// Decides which images to invert. Dark artwork on a transparent background (logos, icons,
-// diagrams) would disappear on a dark page, so those images are inverted; photos are not.
+// Decides which images to invert or recolor. Dark artwork on a transparent background (logos,
+// icons, diagrams) would disappear on a dark page, so it is inverted, or for logos that mix color
+// with dark parts, redrawn with only the dark parts lightened. Photos are left alone.
 
-export type ImageVerdictHandler = (el: HTMLImageElement, invert: boolean) => void;
+/**
+ * invert: dark artwork on transparency, flipped with a CSS filter.
+ * recolor: a logo mixing color with dark neutral parts (a colored mark next to a gray
+ * wordmark); `url` is a copy with only the dark neutral pixels lightened.
+ */
+export type ImageVerdict = { kind: 'none' } | { kind: 'invert' } | { kind: 'recolor'; url: string };
+export type ImageVerdictHandler = (el: HTMLImageElement, verdict: ImageVerdict) => void;
 /** Called for a large pale image that has text on top of it (a hero backdrop). */
 export type BackdropHandler = (el: HTMLImageElement) => void;
 type Fetcher = (url: string, as: 'text' | 'dataUrl') => Promise<string | null>;
 
 const SAMPLE = 48;
 const MAX_NATURAL_AREA = 1200 * 1200;
+/** Largest side of a recolored copy; bigger logos are scaled down for the copy. */
+const RECOLOR_MAX = 640;
+const NONE: ImageVerdict = { kind: 'none' };
 
 export interface PixelStats {
   transparent: number; // share of (mostly) transparent pixels
   dark: number; // share of opaque pixels that are dark
   light: number; // share of opaque pixels that are light
   colorful: number; // share of opaque pixels with noticeable saturation
+  darkNeutral: number; // share of opaque pixels that are gray-to-black (not colorful), up to #737373
 }
 
 /** Pure decision on pixel statistics; exported for tests. */
@@ -21,8 +32,26 @@ export function shouldInvert(s: PixelStats): boolean {
   return s.transparent > 0.12 && s.dark > 0.65 && s.light < 0.15 && s.colorful < 0.2;
 }
 
+/** A logo with dark gray or black parts mixed with color (Gmail's wordmark next to its M). */
+export function shouldRecolor(s: PixelStats): boolean {
+  return !shouldInvert(s) && s.transparent > 0.12 && s.darkNeutral >= 0.25 && s.light < 0.2;
+}
+
+/** Lightens dark neutral pixels in place, leaving colored ones alone. */
+export function recolorPixels(data: Uint8ClampedArray): void {
+  for (let i = 0; i < data.length; i += 4) {
+    if (data[i + 3] < 8) continue;
+    const r = data[i], g = data[i + 1], b = data[i + 2];
+    if (Math.max(r, g, b) - Math.min(r, g, b) > 60) continue;
+    if (0.2126 * r + 0.7152 * g + 0.0722 * b >= 140) continue;
+    data[i] = 255 - r;
+    data[i + 1] = 255 - g;
+    data[i + 2] = 255 - b;
+  }
+}
+
 export function computeStats(data: Uint8ClampedArray): PixelStats {
-  let transparent = 0, opaque = 0, dark = 0, light = 0, colorful = 0;
+  let transparent = 0, opaque = 0, dark = 0, light = 0, colorful = 0, darkNeutral = 0;
   for (let i = 0; i < data.length; i += 4) {
     const a = data[i + 3];
     if (a < 40) {
@@ -36,10 +65,11 @@ export function computeStats(data: Uint8ClampedArray): PixelStats {
     if (lum < 90) dark++;
     else if (lum > 180) light++;
     if (max - min > 60) colorful++;
+    else if (lum < 115) darkNeutral++;
   }
   const total = transparent + opaque || 1;
   const o = opaque || 1;
-  return { transparent: transparent / total, dark: dark / o, light: light / o, colorful: colorful / o };
+  return { transparent: transparent / total, dark: dark / o, light: light / o, colorful: colorful / o, darkNeutral: darkNeutral / o };
 }
 
 /** A background image that reads as a pale surface (paper texture, light hero gradient), not a photo. */
@@ -48,7 +78,7 @@ export function isPaleSurface(s: PixelStats): boolean {
 }
 
 export class ImageAnalyzer {
-  private verdicts = new Map<string, Promise<boolean>>();
+  private verdicts = new Map<string, Promise<ImageVerdict>>();
   private backgroundStats = new Map<string, Promise<PixelStats | null>>();
   private tracked = new Set<HTMLImageElement>();
 
@@ -90,11 +120,11 @@ export class ImageAnalyzer {
     if (img.naturalWidth * img.naturalHeight > MAX_NATURAL_AREA) return; // photos and large art
     let verdict = this.verdicts.get(src);
     if (!verdict) {
-      verdict = this.measure(img, src).catch(() => false);
+      verdict = this.measure(img, src).catch(() => NONE);
       this.verdicts.set(src, verdict);
     }
-    verdict.then((invert) => {
-      if (img.isConnected && (img.currentSrc || img.src) === src) this.onVerdict(img, invert);
+    verdict.then((v) => {
+      if (img.isConnected && (img.currentSrc || img.src) === src) this.onVerdict(img, v);
     });
   }
 
@@ -150,21 +180,40 @@ export class ImageAnalyzer {
     return computeStats(ctx.getImageData(0, 0, canvas.width, canvas.height).data);
   }
 
-  private async measure(img: HTMLImageElement, src: string): Promise<boolean> {
+  private async measure(img: HTMLImageElement, src: string): Promise<ImageVerdict> {
     const w = img.naturalWidth || 32;
     const h = img.naturalHeight || 32;
+    let source: CanvasImageSource = img;
+    let stats: PixelStats;
     try {
-      return shouldInvert(this.draw(img, w, h));
+      stats = this.draw(img, w, h);
     } catch {
       // Cross-origin pixels are not readable from the page; load a copy through the extension.
+      if (src.startsWith('data:')) return NONE;
+      const dataUrl = await this.fetcher(src, 'dataUrl');
+      if (!dataUrl) return NONE;
+      const copy = new this.win.Image();
+      copy.decoding = 'async';
+      copy.src = dataUrl;
+      await copy.decode();
+      source = copy;
+      stats = this.draw(copy, copy.naturalWidth || w, copy.naturalHeight || h);
     }
-    if (src.startsWith('data:')) return false;
-    const dataUrl = await this.fetcher(src, 'dataUrl');
-    if (!dataUrl) return false;
-    const copy = new this.win.Image();
-    copy.decoding = 'async';
-    copy.src = dataUrl;
-    await copy.decode();
-    return shouldInvert(this.draw(copy, copy.naturalWidth || w, copy.naturalHeight || h));
+    if (shouldInvert(stats)) return { kind: 'invert' };
+    if (shouldRecolor(stats)) return { kind: 'recolor', url: this.recolor(source, w, h) };
+    return NONE;
+  }
+
+  private recolor(source: CanvasImageSource, w: number, h: number): string {
+    const scale = Math.min(1, RECOLOR_MAX / Math.max(w, h, 1));
+    const canvas = this.win.document.createElement('canvas');
+    canvas.width = Math.max(1, Math.round(w * scale));
+    canvas.height = Math.max(1, Math.round(h * scale));
+    const ctx = canvas.getContext('2d', { willReadFrequently: true })!;
+    ctx.drawImage(source, 0, 0, canvas.width, canvas.height);
+    const data = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    recolorPixels(data.data);
+    ctx.putImageData(data, 0, 0);
+    return canvas.toDataURL('image/png');
   }
 }

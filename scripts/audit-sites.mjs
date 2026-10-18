@@ -72,6 +72,49 @@ async function measure(png) {
   }, `data:image/png;base64,${png.toString('base64')}`);
 }
 
+const RESIDUAL = `(() => {
+  const parse = (c) => { const m = c.match(/[\\d.]+/g); if (!m) return null; const [r, g, b, a = 1] = m.map(Number); return { r, g, b, a }; };
+  const lin = (v) => { v /= 255; return v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; };
+  const lum = (c) => 0.2126 * lin(c.r) + 0.7152 * lin(c.g) + 0.0722 * lin(c.b);
+  const over = (t, b) => ({ r: t.r * t.a + b.r * (1 - t.a), g: t.g * t.a + b.g * (1 - t.a), b: t.b * t.a + b.b * (1 - t.a), a: 1 });
+  const ratio = (x, y) => { const [a, b] = [lum(x), lum(y)].sort((p, q) => q - p); return (a + 0.05) / (b + 0.05); };
+  const canvas = parse(getComputedStyle(document.documentElement).backgroundColor);
+  const base = canvas && canvas.a > 0.01 ? canvas : { r: 255, g: 255, b: 255, a: 1 };
+  const bad = [];
+  let checked = 0;
+  for (const el of document.querySelectorAll('body *')) {
+    let own = false;
+    for (let n = el.firstChild; n; n = n.nextSibling) if (n.nodeType === 3 && n.nodeValue.trim().length > 1) { own = true; break; }
+    if (!own) continue;
+    const r = el.getBoundingClientRect();
+    if (r.width < 2 || r.height < 2 || r.bottom < 0 || r.top > innerHeight || r.right < 0 || r.left > innerWidth) continue;
+    const cs = getComputedStyle(el);
+    if (cs.visibility !== 'visible' || +cs.opacity < 0.1) continue;
+    const fg = parse(cs.color);
+    if (!fg || fg.a < 0.1) continue;
+    const layers = [];
+    let skip = false;
+    for (let n = el; n && n !== document.documentElement; n = n.parentElement) {
+      const s = getComputedStyle(n);
+      if (s.backgroundImage !== 'none') {
+        const icon = !/gradient\\(/.test(s.backgroundImage) && s.backgroundRepeat.split(',').every((x) => x.trim() === 'no-repeat') &&
+          (s.backgroundSize.split(',').every((v) => v.trim().split(/\\s+/).every((q) => /^[\\d.]+px$/.test(q) && parseFloat(q) <= 64)) ||
+           (s.backgroundSize.split(',').every((v) => ['auto', 'contain'].includes(v.trim())) && n.getBoundingClientRect().height <= 64));
+        if (!icon) { skip = true; break; }
+      }
+      const c = parse(s.backgroundColor);
+      if (c && c.a > 0.01) { layers.push(c); if (c.a >= 0.99) break; }
+    }
+    if (skip) continue;
+    let bg = base;
+    for (let i = layers.length - 1; i >= 0; i--) bg = over(layers[i], bg);
+    checked++;
+    const k = ratio(over(fg, bg), bg);
+    if (k < 3) bad.push({ k: +k.toFixed(2), tag: el.localName, cls: String(el.className?.baseVal ?? el.className ?? '').slice(0, 50), text: el.textContent.trim().slice(0, 30), fg: cs.color, bg: 'rgb(' + [bg.r, bg.g, bg.b].map(Math.round).join(',') + ')' });
+  }
+  return { checked, lowContrast: bad.length, samples: bad.slice(0, 5) };
+})()`;
+
 const results = [];
 for (const url of urls) {
   const name = url.replace(/^https?:\/\//, '').replace(/[^a-z0-9]+/gi, '_').slice(0, 60);
@@ -84,6 +127,8 @@ for (const url of urls) {
     row.nyxStyles = await page.evaluate(() => document.querySelectorAll('style[data-nyx=override]').length);
     // Text the contrast guard had to rescue: each one is a color the rewriter missed.
     row.fixes = await page.evaluate(() => document.querySelectorAll('[data-nyx-fix]').length);
+    // Visible text still under 3:1 after everything Nyx does (an independent check of the guard).
+    Object.assign(row, await page.evaluate(RESIDUAL));
     const png = await page.screenshot({ type: 'png' });
     writeFileSync(join(out, `${name}.png`), png);
     Object.assign(row, await measure(png));

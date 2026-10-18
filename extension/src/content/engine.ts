@@ -13,6 +13,12 @@ import { parseColor } from '../shared/color';
 export const STYLE_CLASS = 'nyx-style';
 const ATTR_INLINE = 'data-nyx-inline';
 const ATTR_INVERT = 'data-nyx-invert';
+const ATTR_RECOLOR = 'data-nyx-recolor';
+
+function unrecolor(el: Element): void {
+  (el as HTMLElement).style.removeProperty('content');
+  el.removeAttribute(ATTR_RECOLOR);
+}
 
 export interface EngineConfig {
   theme: Theme;
@@ -347,10 +353,16 @@ export class DarkEngine {
     this.win = doc.defaultView as Window & typeof globalThis;
     this.config = config;
     this.palette = this.makePalette(config);
-    this.images = new ImageAnalyzer(this.win, (el, invert) => {
+    this.images = new ImageAnalyzer(this.win, (el, verdict) => {
       if (!this.running) return;
-      if (invert && this.config.appearance.imageInversion) el.setAttribute(ATTR_INVERT, '');
+      const on = this.config.appearance.imageInversion;
+      if (on && verdict.kind === 'invert') el.setAttribute(ATTR_INVERT, '');
       else el.removeAttribute(ATTR_INVERT);
+      if (on && verdict.kind === 'recolor') {
+        // Shown through `content` so the page's own src/srcset stay untouched.
+        el.style.setProperty('content', `url("${verdict.url}")`, 'important');
+        el.setAttribute(ATTR_RECOLOR, '');
+      } else if (el.hasAttribute(ATTR_RECOLOR)) unrecolor(el);
     }, fetcher, (el) => {
       if (this.running) el.setAttribute(ATTR_DIM, '');
     });
@@ -485,6 +497,7 @@ export class DarkEngine {
       for (let k = 0; k < style.length; k++) if (style[k].startsWith('--nyx-')) ours.push(style[k]);
       for (const name of ours) style.removeProperty(name);
     }
+    for (const el of Array.from(this.doc.querySelectorAll(`[${ATTR_RECOLOR}]`))) unrecolor(el);
     for (const el of Array.from(this.doc.querySelectorAll(`[${ATTR_INVERT}], img[${ATTR_DIM}]`))) {
       el.removeAttribute(ATTR_INVERT);
       el.removeAttribute(ATTR_DIM);
@@ -510,6 +523,7 @@ export class DarkEngine {
       for (const el of Array.from(r.root.querySelectorAll('*'))) if (el.localName !== 'img') this.contrast.observe(el);
     }
     if (!config.appearance.imageInversion) {
+      for (const el of Array.from(this.doc.querySelectorAll(`[${ATTR_RECOLOR}]`))) unrecolor(el);
       for (const el of Array.from(this.doc.querySelectorAll(`[${ATTR_INVERT}]`))) el.removeAttribute(ATTR_INVERT);
     } else this.images.reapply();
   }

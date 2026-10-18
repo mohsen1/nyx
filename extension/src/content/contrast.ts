@@ -51,6 +51,20 @@ function hasOwnText(el: Element): boolean {
 
 const SKIP = new Set(['script', 'style', 'noscript', 'template', 'svg', 'math', 'canvas', 'video', 'iframe', 'option', 'title']);
 
+/**
+ * A small non-repeating image beside the text, like the pencil on Gmail's Compose button. It
+ * doesn't sit behind the text, so the background color still decides legibility.
+ */
+export function isIconBackground(s: CSSStyleDeclaration, el: Element): boolean {
+  if (/gradient\(/.test(s.backgroundImage)) return false;
+  if (!s.backgroundRepeat.split(',').every((r) => r.trim() === 'no-repeat')) return false;
+  const sizes = s.backgroundSize.split(',').map((v) => v.trim());
+  const small = (v: string) => v.split(/\s+/).every((p) => /^\d+(\.\d+)?px$/.test(p) && parseFloat(p) <= 64);
+  if (sizes.every(small)) return true;
+  // auto/contain on a control no taller than an icon row.
+  return sizes.every((v) => v === 'auto' || v === 'contain') && el.getBoundingClientRect().height <= 64;
+}
+
 export class ContrastGuard {
   private io: IntersectionObserver;
   private visible = new Set<Element>();
@@ -234,7 +248,7 @@ export class ContrastGuard {
         break;
       }
       const s = this.win.getComputedStyle(node);
-      if (s.backgroundImage && s.backgroundImage !== 'none') {
+      if (s.backgroundImage && s.backgroundImage !== 'none' && !isIconBackground(s, node)) {
         this.considerDimming(node, s.backgroundImage);
         return null;
       }
