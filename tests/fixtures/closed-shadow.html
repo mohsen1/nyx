@@ -1,0 +1,15 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Closed shadow root</title>
+<style>body { background: #fff; color: #222; font: 16px system-ui; }</style></head>
+<body><p>Page text</p>
+<script>
+  // Transcend's consent manager (superhuman.com): an empty fixed div with a closed shadow root.
+  const host = document.createElement('div');
+  host.id = 'consent';
+  host.style.cssText = 'position: fixed; z-index: 2147483647;';
+  document.body.append(host);
+  setTimeout(() => {
+    const root = host.attachShadow({ mode: 'closed' });
+    root.innerHTML = '<style>.panel{background:#eef3f8;color:#111;padding:24px}</style><div class="panel" id="panel">We use cookies</div>';
+    window.__closedRoot = root; // for the test only
+  }, 500);
+</script></body></html>

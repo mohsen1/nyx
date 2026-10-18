@@ -94,6 +94,26 @@ interface SheetOverride {
 
 const isElement = (n: Node): n is Element => n.nodeType === 1;
 
+/**
+ * An element's shadow root, closed ones included where the browser lets extensions see them:
+ * chrome.dom.openOrClosedShadowRoot in Chrome, element.openOrClosedShadowRoot in Firefox.
+ * Consent managers (Transcend on superhuman.com) render into closed roots.
+ */
+function shadowOf(el: Element): ShadowRoot | null {
+  if (el.shadowRoot) return el.shadowRoot;
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const dom = (globalThis as any).chrome?.dom;
+    if (typeof dom?.openOrClosedShadowRoot === 'function') return dom.openOrClosedShadowRoot(el) ?? null;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const ff = (el as any).openOrClosedShadowRoot;
+    if (ff) return ff as ShadowRoot;
+  } catch {
+    /* not an HTMLElement, or not allowed */
+  }
+  return null;
+}
+
 /** Applies the dark style to one Document or ShadowRoot. */
 class RootStyler {
   private baseEl: HTMLStyleElement;
@@ -1054,7 +1074,7 @@ export class DarkEngine {
   private pollSheets(): void {
     if (!this.running) return;
     for (const el of this.pendingHosts) {
-      const sr = (el as HTMLElement).shadowRoot;
+      const sr = shadowOf(el);
       if (sr) {
         this.pendingHosts.delete(el);
         this.attachRoot(sr);
@@ -1062,7 +1082,7 @@ export class DarkEngine {
     }
     const now = Date.now();
     for (const [el, until] of this.recentHosts) {
-      const sr = (el as HTMLElement).shadowRoot;
+      const sr = shadowOf(el);
       if (sr) {
         this.recentHosts.delete(el);
         this.attachRoot(sr);

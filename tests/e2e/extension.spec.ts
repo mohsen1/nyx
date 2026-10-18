@@ -411,6 +411,19 @@ test('an SVG fill attribute that points at a variable is mapped (The Guardian)',
   await expect.poll(async () => luminance(await page.$eval('#icon', (el) => getComputedStyle(el).fill))).toBeGreaterThan(0.3);
 });
 
+test('a closed shadow root is styled where the browser exposes it (Transcend consent manager)', async ({ context }) => {
+  const page = await context.newPage();
+  await page.goto(url('closed-shadow.html'));
+  await page.waitForLoadState('load');
+  await expect
+    .poll(async () => luminance(await page.evaluate(() => {
+      const root = (window as unknown as { __closedRoot?: ShadowRoot }).__closedRoot;
+      const panel = root?.getElementById('panel');
+      return panel ? getComputedStyle(panel).backgroundColor : 'rgb(255, 255, 255)';
+    })), { timeout: 8000 })
+    .toBeLessThan(0.1);
+});
+
 test('re-detects when a site switches its own theme', async ({ context }) => {
   const page = await context.newPage();
   await page.goto(url('toggle.html'));
