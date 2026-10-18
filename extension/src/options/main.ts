@@ -181,7 +181,6 @@ function general(): Node[] {
           ),
         ),
       ],
-      'Change the theme for one website from the toolbar menu.',
     ),
   ];
 }
@@ -200,6 +199,8 @@ function thumb(th: Pick<Theme, 'background' | 'text' | 'imageBrightness' | 'gray
     h('i', { class: 'head' }),
     h('i'),
     h('i', { class: 'short' }),
+    h('i', { class: 'wide' }),
+    h('i', { class: 'wide short' }),
     h('b', { style: `filter:brightness(${th.imageBrightness}) grayscale(${th.grayscale})` }),
   );
 }
@@ -257,7 +258,6 @@ function themeMenu(th: Theme): HTMLElement {
         void updateLibrary((s) => ({ ...s, customThemes: [...s.customThemes, copyTheme] }));
       }),
       item('Copy link', 'link', () => copy(themeShareLink(th), copied)),
-      item('Copy compatible link', 'link', () => copy(themeShareLink(th, 'noir'), copied)),
       modified
         ? item('Reset to original', 'rotate-ccw', () =>
             updateLibrary((s) => {
@@ -304,13 +304,39 @@ function tile(th: Theme): HTMLElement {
   );
 }
 
+const MY_THEMES = 'My themes';
+
+function newThemeTile(): HTMLElement {
+  return h(
+    'article',
+    { class: 'tile tile-new' },
+    h(
+      'button',
+      {
+        type: 'button',
+        class: 'tile-pick',
+        onclick: () => {
+          editing = { draft: { id: newThemeId(), name: 'New theme', background: '#1c1c1e', text: '#e3e3e6', imageBrightness: 1, grayscale: 0 }, isNew: true };
+          render();
+        },
+      },
+      h('span', { class: 'thumb new', 'aria-hidden': 'true' }, icon('plus', 22)),
+      h('span', { class: 'tile-name' }, 'New theme…'),
+    ),
+  );
+}
+
 function themes(): Node[] {
   const list = allThemes(settings);
   const collections = new Map<string, Theme[]>();
   for (const th of list) {
-    const name = th.collection ?? 'My themes';
+    const name = th.collection ?? MY_THEMES;
     collections.set(name, [...(collections.get(name) ?? []), th]);
   }
+  // My themes always shows, last, ending with a tile that creates a new theme.
+  const mine = collections.get(MY_THEMES) ?? [];
+  collections.delete(MY_THEMES);
+  collections.set(MY_THEMES, mine);
   const importInput = h('input', { type: 'url', class: 'field', placeholder: 'Paste a theme link', 'aria-label': 'Theme link' });
   const importError = h('span', { class: 'error', role: 'alert' });
   const doImport = () => {
@@ -328,24 +354,19 @@ function themes(): Node[] {
   const hidden = BUILT_IN_THEMES.filter((b) => settings.hiddenThemeIds.includes(b.id));
 
   return [
-    group(
-      'Add a theme',
-      [
-        actionCell('New theme…', 'plus', () => {
-          editing = { draft: { id: newThemeId(), name: 'New theme', background: '#1c1c1e', text: '#e3e3e6', imageBrightness: 1, grayscale: 0 }, isNew: true };
-          render();
-        }),
-        cell(importInput, h('button', { type: 'button', class: 'btn', onclick: doImport }, 'Import'), { icon: 'link' }),
-      ],
-      importError,
-    ),
     h(
       'div',
       { class: 'gallery' },
       ...[...collections].map(([name, items]) =>
-        h('section', { class: 'collection' }, h('h2', { class: 'group-title' }, sentenceCase(name)), h('div', { class: 'list tiles' }, ...items.map(tile))),
+        h(
+          'section',
+          { class: 'collection' },
+          h('h2', { class: 'group-title' }, sentenceCase(name)),
+          h('div', { class: 'list tiles' }, ...items.map(tile), name === MY_THEMES ? newThemeTile() : null),
+        ),
       ),
     ),
+    group(null, [cell(importInput, h('button', { type: 'button', class: 'btn', onclick: doImport }, 'Import'), { icon: 'link' })], importError),
     hidden.length
       ? group(
           null,
@@ -519,8 +540,7 @@ function websites(): Node[] {
   return [
     group(
       null,
-      [cell(add, h('button', { type: 'button', class: 'btn', onclick: doAdd }, 'Add'), { icon: 'plus' })],
-      'New websites start with Nyx off.',
+      [cell(add, h('button', { type: 'button', class: 'btn', onclick: doAdd }, 'Turn off'), { icon: 'plus' })],
     ),
     rows.length
       ? group('Customized websites', rows)
@@ -529,6 +549,15 @@ function websites(): Node[] {
 }
 
 // ── Advanced ─────────────────────────────────────────────
+
+/** The browser's shortcut settings page, when an extension may open it (Safari and Firefox have none it can open). */
+function shortcutsUrl(): string | null {
+  const ua = navigator.userAgent;
+  if (/Firefox\//.test(ua)) return null;
+  if (/Edg\//.test(ua)) return 'edge://extensions/shortcuts';
+  if (/Chrome\//.test(ua)) return 'chrome://extensions/shortcuts';
+  return null;
+}
 
 function advanced(): Node[] {
   const g = settings.global;
@@ -552,12 +581,6 @@ function advanced(): Node[] {
     group(
       'Websites with their own dark mode',
       [toggle('Ignore their dark mode', g.ignoreBuiltInDarkMode, (v) => update((s) => updateGlobal(s, { ignoreBuiltInDarkMode: v })))],
-      'Best left off. You can turn it on for one website from the toolbar menu.',
-    ),
-    group(
-      null,
-      [toggle('Offer to report detection mistakes', g.darkModeReporting === 'ask', (v) => update((s) => updateGlobal(s, { darkModeReporting: v ? 'ask' : 'never' })))],
-      'You review each report before it’s sent.',
     ),
     group(
       'Appearance options',
@@ -571,12 +594,10 @@ function advanced(): Node[] {
             ]
           : []),
       ],
-      g.advancedAppearanceEnabled ? 'These are the defaults. Change them for one website from the toolbar menu.' : null,
     ),
-    group(
-      null,
-      [cell('Keyboard shortcuts', null, { icon: 'keyboard', hint: 'Set them in your browser’s extension settings.' })],
-    ),
+    shortcutsUrl()
+      ? group(null, [actionCell('Keyboard shortcuts', 'keyboard', () => void api.tabs.create({ url: shortcutsUrl()! }))])
+      : null,
     group('Backup', [
       actionCell('Export settings…', 'download', () => {
         const blob = new Blob([JSON.stringify(settings, null, 2)], { type: 'application/json' });
@@ -607,7 +628,7 @@ function advanced(): Node[] {
       ],
       'Nyx doesn’t collect any data.',
     ),
-  ];
+  ].filter(Boolean) as Node[];
 }
 
 async function main(): Promise<void> {
