@@ -94,6 +94,7 @@ const RESIDUAL = `(() => {
     if (!fg || fg.a < 0.1) continue;
     const layers = [];
     let skip = false;
+    let opacity = 1;
     for (let n = el; n && n !== document.documentElement; n = n.parentElement) {
       const s = getComputedStyle(n);
       if (s.backgroundImage !== 'none') {
@@ -103,13 +104,16 @@ const RESIDUAL = `(() => {
         if (!icon) { skip = true; break; }
       }
       const c = parse(s.backgroundColor);
-      if (c && c.a > 0.01) { layers.push(c); if (c.a >= 0.99) break; }
+      if (c && c.a >= 0.99) { layers.push(c); break; }
+      opacity *= +s.opacity;
+      if (c && c.a > 0.01) layers.push(c);
     }
-    if (skip) continue;
+    if (skip || opacity < 0.5) continue;
     let bg = base;
     for (let i = layers.length - 1; i >= 0; i--) bg = over(layers[i], bg);
     checked++;
-    const k = ratio(over(fg, bg), bg);
+    const t = over(fg, bg);
+    const k = ratio(over({ ...t, a: opacity }, bg), bg);
     if (k < 3) bad.push({ k: +k.toFixed(2), tag: el.localName, cls: String(el.className?.baseVal ?? el.className ?? '').slice(0, 50), text: el.textContent.trim().slice(0, 30), fg: cs.color, bg: 'rgb(' + [bg.r, bg.g, bg.b].map(Math.round).join(',') + ')' });
   }
   return { checked, lowContrast: bad.length, samples: bad.slice(0, 5) };

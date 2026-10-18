@@ -257,6 +257,15 @@ test('text on a button with an icon background is still checked (Gmail Compose)'
     return (Math.max(t, b) + 0.05) / (Math.min(t, b) + 0.05);
   };
   await expect.poll(ratio).toBeGreaterThan(4.4);
+  // Faded with opacity: what you see is the color mixed 70% over the background.
+  const seen = async () => {
+    const [t, b] = await page.$eval('#meta', (el) => [getComputedStyle(el).color, getComputedStyle(document.body).backgroundColor]);
+    const ch = (c: string) => c.match(/[\d.]+/g)!.slice(0, 3).map(Number);
+    const mix = ch(t).map((v, i) => v * 0.7 + ch(b)[i] * 0.3);
+    const tl = luminance(`rgb(${mix.join(',')})`), bl = luminance(b);
+    return (Math.max(tl, bl) + 0.05) / (Math.min(tl, bl) + 0.05);
+  };
+  await expect.poll(seen).toBeGreaterThan(4.4);
 });
 
 test('re-detects when a site switches its own theme', async ({ context }) => {

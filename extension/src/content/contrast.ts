@@ -28,13 +28,15 @@ const TARGET_RATIO = 4.5;
 const BATCH = 150;
 
 /** A text color with the same hue, moved away from `bg` until it reaches the target contrast. */
-export function readableOn(fg: RGBA, bg: RGBA): RGBA {
+export function readableOn(fg: RGBA, bg: RGBA, opacity = 1): RGBA {
   const lch = oklabToOklch(rgbaToOklab({ ...fg, a: 1 }));
   const up = relativeLuminance(bg) < 0.18;
   let L = lch.L;
   let C = lch.C;
   let out = fg;
-  for (let i = 0; i < 24 && contrastRatio(out, bg) < TARGET_RATIO; i++) {
+  // Opacity on the element or its ancestors fades whatever color we pick, so aim through it.
+  const seen = (c: RGBA) => composite({ ...c, a: opacity }, bg);
+  for (let i = 0; i < 24 && contrastRatio(seen(out), bg) < TARGET_RATIO; i++) {
     L = up ? Math.min(0.98, L + 0.04) : Math.max(0.02, L - 0.04);
     C *= 0.94;
     out = oklchToRgbaInGamut({ L, C, h: lch.h, alpha: 1 });
@@ -201,11 +203,14 @@ export class ContrastGuard {
     const fill = cs.getPropertyValue('-webkit-text-fill-color');
     const fg = parseColor(fill && fill !== cs.color && !/currentcolor/i.test(fill) ? fill : cs.color);
     if (!fg || fg.a < 0.05) return null;
-    const bg = this.backgroundBehind(el, canvas);
-    if (!bg) return null;
+    const behind = this.backgroundBehind(el, canvas);
+    if (!behind) return null;
+    const { bg, opacity } = behind;
+    // Text faded on purpose (disabled controls, placeholders) stays faded.
+    if (opacity < 0.5) return null;
     const text = composite(fg, bg);
-    if (contrastRatio(text, bg) >= MIN_RATIO) return null;
-    const c = readableOn(text, bg);
+    if (contrastRatio(composite({ ...text, a: opacity }, bg), bg) >= MIN_RATIO) return null;
+    const c = readableOn(text, bg, opacity);
     return `rgb(${c.r}, ${c.g}, ${c.b})`;
   }
 
@@ -238,8 +243,9 @@ export class ContrastGuard {
    * The solid color behind an element, or null when it can't be known (an image, gradient or
    * text clipped to a background is in the way).
    */
-  private backgroundBehind(el: Element, canvas: RGBA): RGBA | null {
+  private backgroundBehind(el: Element, canvas: RGBA): { bg: RGBA; opacity: number } | null {
     const layers: RGBA[] = [];
+    let opacity = 1;
     for (let node: Element | null = el; node; node = node.parentElement ?? ((node.getRootNode() as ShadowRoot).host || null)) {
       if (node.localName === 'html') break;
       const dimmedTo = this.dimmed.get(node as HTMLElement);
@@ -254,13 +260,16 @@ export class ContrastGuard {
       }
       if (s.backgroundClip === 'text' || s.getPropertyValue('-webkit-background-clip') === 'text') return null;
       const c = parseColor(s.backgroundColor);
-      if (c && c.a > 0.01) {
+      if (c && c.a >= 0.99) {
         layers.push(c);
-        if (c.a >= 0.99) break;
+        break;
       }
+      // Opacity between the text and its solid background fades the text against it.
+      opacity *= parseFloat(s.opacity) || 0;
+      if (c && c.a > 0.01) layers.push(c);
     }
     let out = canvas;
     for (let i = layers.length - 1; i >= 0; i--) out = composite(layers[i], out);
-    return out;
+    return { bg: out, opacity };
   }
 }
