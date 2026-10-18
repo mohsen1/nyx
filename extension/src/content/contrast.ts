@@ -20,6 +20,8 @@ export const ATTR_FIX = 'data-nyx-fix';
 export const FIX_VAR = '--nyx-fix-c';
 export const ATTR_FIX_FILL = 'data-nyx-fix-fill';
 export const ATTR_FIX_STROKE = 'data-nyx-fix-stroke';
+/** A mask-image icon whose ink (its background color) was lifted. */
+export const ATTR_FIX_INK = 'data-nyx-fix-ink';
 export const ATTR_DIM = 'data-nyx-dim-bg';
 export const DIM_VAR = '--nyx-dim-c';
 
@@ -93,6 +95,7 @@ export class ContrastGuard {
   private queue = new Set<Element>();
   private fixed = new Set<HTMLElement>();
   private fixedShapes = new Set<SVGElement>();
+  private fixedInk = new Set<HTMLElement>();
   /** The page's own inline `color: … !important`, which only an inline override can beat. */
   private inlineOriginals = new Map<HTMLElement, string>();
   private scheduled = false;
@@ -144,7 +147,8 @@ export class ContrastGuard {
    * ::before really draws something is checked only once it's on screen.
    */
   private isGlyphIcon(el: Element): boolean {
-    return !el.firstChild && (el.localName === 'i' || el.localName === 'span') && el.hasAttribute('class');
+    if (el.firstChild || !el.hasAttribute('class')) return false;
+    return el.localName === 'i' || el.localName === 'span' || /icon/i.test(el.getAttribute('class')!);
   }
 
   /** The element's text changed or it was just added: check it if it's on screen. */
@@ -173,6 +177,11 @@ export class ContrastGuard {
     this.fixed.clear();
     for (const shape of this.fixedShapes) unfixShape(shape);
     this.fixedShapes.clear();
+    for (const el of this.fixedInk) {
+      el.removeAttribute(ATTR_FIX_INK);
+      el.style.removeProperty('--nyx-fix-ink');
+    }
+    this.fixedInk.clear();
     for (const el of this.dimmed.keys()) {
       el.removeAttribute(ATTR_DIM);
       el.style.removeProperty(DIM_VAR);
@@ -289,6 +298,32 @@ export class ContrastGuard {
     return out;
   }
 
+  /**
+   * A mask icon draws its background color through the mask; with that color in a different rule
+   * than the mask, the rewriter maps it as a background and the icon can vanish. Lift the ink.
+   */
+  private fixMaskIcon(el: HTMLElement, cs: CSSStyleDeclaration, canvas: RGBA): void {
+    if (el.hasAttribute(ATTR_FIX_INK)) {
+      el.removeAttribute(ATTR_FIX_INK); // measure the page's own color
+      cs = this.win.getComputedStyle(el);
+    }
+    const ink = parseColor(cs.backgroundColor);
+    const parent = el.parentElement ?? ((el.getRootNode() as ShadowRoot).host as HTMLElement | undefined);
+    const behind = ink && ink.a > 0.05 && parent ? this.backgroundBehind(parent, canvas) : null;
+    if (!ink || !behind || behind.opacity < 0.5) return;
+    const { bg, opacity } = behind;
+    const seen = composite({ ...composite(ink, bg), a: opacity }, bg);
+    if (contrastRatio(seen, bg) >= ICON_MIN_RATIO) {
+      this.fixedInk.delete(el);
+      el.style.removeProperty('--nyx-fix-ink');
+      return;
+    }
+    const c = readableOn(composite(ink, bg), bg, opacity);
+    el.style.setProperty('--nyx-fix-ink', `rgb(${c.r}, ${c.g}, ${c.b})`);
+    el.setAttribute(ATTR_FIX_INK, '');
+    this.fixedInk.add(el);
+  }
+
   /** Returns a replacement text color when the element's text is unreadable, else null. */
   private fixFor(el: Element, canvas: RGBA): string | null {
     const cs = this.win.getComputedStyle(el);
@@ -297,6 +332,11 @@ export class ContrastGuard {
     // Icon-font glyphs draw in their ::before; read its color.
     let color = cs.color;
     if (!el.firstChild && !isTextField(el)) {
+      const mask = cs.getPropertyValue('mask-image') + cs.getPropertyValue('-webkit-mask-image');
+      if (mask.includes('url(')) {
+        this.fixMaskIcon(el as HTMLElement, cs, canvas);
+        return null;
+      }
       const before = this.win.getComputedStyle(el, '::before');
       const content = before.content;
       if (!content || content === 'none' || content === 'normal' || content === '""') {

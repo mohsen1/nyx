@@ -291,6 +291,8 @@ test('text on a button with an icon background is still checked (Gmail Compose)'
   await expect.poll(async () => luminance(await page.$eval('#star', (el) => getComputedStyle(el, '::before').color))).toBeGreaterThan(0.15);
   // Text in a form field (not a text node).
   await expect.poll(async () => luminance(await fg(page, '#search'))).toBeGreaterThan(0.15); // ≥ 3:1
+  // A mask icon whose ink color comes from another rule.
+  await expect.poll(async () => luminance(await bg(page, '#maskicon'))).toBeGreaterThan(0.15);
 });
 
 test('backdrops beside the content and canvas heroes are darkened', async ({ context }) => {

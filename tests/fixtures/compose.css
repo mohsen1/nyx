@@ -4,3 +4,4 @@
 .ic-red { fill: #c5221f; }
 .star::before { content: "\2605"; color: #3c4043; font-size: 20px; }
 .search { color: #202124; background: transparent; border: 1px solid #ccc; }
+.ico-gray { background-color: #444746; }

@@ -6,6 +6,9 @@
   <link rel="stylesheet" href="CROSS_ORIGIN/compose.css?nocors">
   <style>
     body { background: #f6f8fc; font: 14px system-ui, sans-serif; }
+    .mask-icon { display: inline-block; width: 24px; height: 24px;
+      -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Crect x='4' y='4' width='16' height='16'/%3E%3C/svg%3E") center / contain no-repeat;
+      mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Crect x='4' y='4' width='16' height='16'/%3E%3C/svg%3E") center / contain no-repeat; }
     .compose { display: inline-flex; align-items: center; height: 56px; padding: 0 24px 0 56px; border-radius: 16px;
       background: #c2e7ff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cpath d='M3 17v4h4L18 10l-4-4z' fill='%23001d35'/%3E%3C/svg%3E") no-repeat 18px center / 24px 24px; }
   </style>
@@ -16,6 +19,7 @@
   <svg width="24" height="24" viewBox="0 0 24 24"><path id="icon" class="ic" d="M3 5h18v14H3z"/></svg>
   <i class="star" id="star"></i>
   <input class="search" id="search" value="Search mail">
+  <span class="mask-icon ico-gray" id="maskicon"></span>
   <svg width="24" height="24" viewBox="0 0 24 24"><path id="icon-red" class="ic-red" d="M3 5h18v14H3z"/></svg>
 </body>
 </html>
