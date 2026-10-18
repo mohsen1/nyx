@@ -4,50 +4,64 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light dark">
-  <meta name="theme-color" content="#f6f5fb" media="(prefers-color-scheme: light)">
-  <meta name="theme-color" content="#0e0d13" media="(prefers-color-scheme: dark)">
+  <meta name="theme-color" content="#a9b5e2" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0d0b26" media="(prefers-color-scheme: dark)">
   <title>Page not found · Nyx</title>
   <meta name="description" content="This page doesn’t exist. Nyx is an open-source dark mode extension for Safari, Chrome, Edge and Firefox.">
   <meta name="robots" content="noindex">
   <link rel="icon" href="/nyx/icon-32.png" sizes="32x32" type="image/png">
   <link rel="icon" href="/nyx/icon.png" sizes="256x256" type="image/png">
   <link rel="apple-touch-icon" href="/nyx/apple-touch-icon.png">
+  <link rel="preload" as="font" type="font/woff2" href="/nyx/fonts/josefin-sans.woff2" crossorigin>
   <link rel="stylesheet" href="/nyx/style.css">
+  <script>try{var t=localStorage.getItem('nyx-site-theme');if(t==='light'||t==='dark')document.documentElement.dataset.theme=t}catch(e){}document.documentElement.classList.add('js')</script>
+  <script src="/nyx/site.js" defer></script>
 </head>
 <body>
   <a class="skip" href="#main">Skip to content</a>
 
-  <header class="site-header">
-    <div class="wrap">
-      <a class="brand" href="/nyx/"><img src="/nyx/icon.png" alt="" width="30" height="30">Nyx</a>
+  <header class="sky">
+    <svg class="moon" viewBox="0 0 200 200" aria-hidden="true" focusable="false"><defs><mask id="moon-cut"><rect width="200" height="200" fill="#fff"/><circle cx="128" cy="78" r="70" fill="#000"/></mask></defs><circle cx="92" cy="108" r="80" fill="currentColor" mask="url(#moon-cut)"/></svg>
+    <svg class="roof-props" viewBox="0 0 220 64" aria-hidden="true" focusable="false"><path d="M18 20h34v8h-4v36H22V28h-4Z M88 32h26v7h-3v25H91V39h-3Z"/><path class="aerial" d="M170 64V10M154 18h32M158 28h24M162 38h16"/></svg>
+    <div class="sky-bar">
+      <a class="brand" href="/nyx/"><svg viewBox="0 0 1024 1024" aria-hidden="true" focusable="false"><rect width="1024" height="1024" rx="228" fill="#241a5e"/><path fill="#fff4dc" d="M470 250a290 290 0 1 0 270 400 255 255 0 0 1-270-400Z"/></svg><span>Nyx</span></a>
       <nav class="nav" aria-label="Main">
-        <a class="wide" href="/nyx/#features">Features</a>
-        <a class="mid" href="/nyx/#install">Install</a>
-        <a href="/nyx/privacy/">Privacy</a>
+        <a class="n-wide" href="/nyx/#how">How it works</a>
+        <a class="n-wide" href="/nyx/#themes">Themes</a>
+        <a href="/nyx/#install">Install</a>
         <a href="/nyx/support/">Support</a>
-        <a href="https://github.com/mohsen1/nyx">GitHub</a>
+        <a class="n-mid" href="https://github.com/mohsen1/nyx">GitHub</a>
       </nav>
+      <button class="lamp" type="button" aria-pressed="false" hidden><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20.5 14.1A8.5 8.5 0 1 1 9.9 3.5a6.6 6.6 0 0 0 10.6 10.6Z"/></svg><span>Dark</span></button>
     </div>
   </header>
 
-  <main id="main" class="doc">
-    <h1>Page not found</h1>
-    <p class="meta">There’s nothing at this address. It may have moved, or the link may have a typo.</p>
-    <ul>
-      <li><a href="/nyx/">Nyx home page</a>: what Nyx does and how to install it</li>
-      <li><a href="/nyx/support/">Support</a>: turning Nyx on in Safari, and fixing sites that look wrong</li>
-      <li><a href="/nyx/privacy/">Privacy policy</a></li>
-      <li><a href="https://github.com/mohsen1/nyx">Source code on GitHub</a></li>
-    </ul>
+  <main id="main" class="floor f-doc">
+    <div class="wrap">
+      <div class="win doc-window">
+        <article class="doc">
+          <div class="unlit" aria-hidden="true"></div>
+          <h1>Page not found</h1>
+          <p class="meta">There’s nothing at this address. It may have moved, or the link may have a typo.</p>
+          <ul class="links">
+            <li><a href="/nyx/">Nyx home page</a>: what Nyx does and how to install it</li>
+            <li><a href="/nyx/support/">Support</a>: turning Nyx on in Safari, and fixing sites that look wrong</li>
+            <li><a href="/nyx/privacy/">Privacy policy</a></li>
+            <li><a href="https://github.com/mohsen1/nyx">Source code on GitHub</a></li>
+          </ul>
+        </article>
+      </div>
+    </div>
   </main>
 
-  <footer class="site-footer">
-    <div class="wrap">
-      <span>Nyx is open source under the MIT license.</span>
+  <footer class="street">
+    <div class="wrap street-row">
+      <p>Nyx is open source under the MIT license.</p>
       <nav aria-label="Footer">
         <a href="https://github.com/mohsen1/nyx">GitHub</a>
-        <a href="/nyx/privacy/">Privacy Policy</a>
+        <a href="/nyx/privacy/">Privacy policy</a>
         <a href="/nyx/support/">Support</a>
+        <a href="https://github.com/mohsen1/nyx/releases">Releases</a>
         <a href="https://github.com/mohsen1/nyx/issues">Report an issue</a>
       </nav>
     </div>

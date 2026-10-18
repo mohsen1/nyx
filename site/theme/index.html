@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light dark">
-  <meta name="theme-color" content="#f5f5f7" media="(prefers-color-scheme: light)">
-  <meta name="theme-color" content="#111114" media="(prefers-color-scheme: dark)">
+  <meta name="theme-color" content="#a9b5e2" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0d0b26" media="(prefers-color-scheme: dark)">
   <title>Nyx Theme</title>
   <meta name="description" content="A shared color theme for Nyx, the open-source dark mode extension for Safari, Chrome, Edge and Firefox.">
   <meta name="robots" content="noindex, follow">
@@ -21,41 +21,68 @@
   <link rel="icon" href="../icon-32.png" sizes="32x32" type="image/png">
   <link rel="icon" href="../icon.png" sizes="256x256" type="image/png">
   <link rel="apple-touch-icon" href="../apple-touch-icon.png">
-  <style>
-    :root { --bg: #f5f5f7; --surface: #fff; --text: #1d1d1f; --muted: #6e6e73; --accent: #5b4bdb; color-scheme: light dark; font: 16px/1.5 -apple-system, BlinkMacSystemFont, system-ui, sans-serif; }
-    @media (prefers-color-scheme: dark) { :root { --bg: #111114; --surface: #1c1c1f; --text: #f2f2f7; --muted: #98989f; --accent: #8e80ff; } }
-    body { margin: 0; background: var(--bg); color: var(--text); }
-    main { max-width: 560px; margin: 0 auto; padding: 40px 16px; display: grid; gap: 20px; }
-    header { display: flex; align-items: center; gap: 12px; }
-    header img { width: 48px; height: 48px; border-radius: 11px; }
-    h1 { font-size: 22px; margin: 0; }
-    .preview { border-radius: 14px; padding: 20px; display: grid; gap: 8px; min-height: 140px; box-shadow: 0 1px 3px rgb(0 0 0 / .2); }
-    .preview h2 { margin: 0; font-size: 20px; }
-    .preview p { margin: 0; opacity: .85; }
-    .preview .img { height: 70px; border-radius: 8px; background: linear-gradient(160deg, #f6b94b, #e0654f 45%, #3c7dd9); }
-    .actions { display: grid; gap: 10px; }
-    .button { display: block; text-align: center; padding: 12px; border-radius: 10px; background: var(--surface); color: var(--text); text-decoration: none; border: 1px solid rgb(127 127 127 / .3); font: inherit; cursor: pointer; }
-    .button.primary { background: var(--accent); color: #fff; border: 0; font-weight: 600; }
-    .muted { color: var(--muted); font-size: 14px; margin: 0; }
-    code { word-break: break-all; }
-  </style>
+  <link rel="preload" as="font" type="font/woff2" href="../fonts/josefin-sans.woff2" crossorigin>
+  <link rel="stylesheet" href="../style.css">
+  <script>try{var t=localStorage.getItem('nyx-site-theme');if(t==='light'||t==='dark')document.documentElement.dataset.theme=t}catch(e){}document.documentElement.classList.add('js')</script>
+  <script src="../site.js" defer></script>
 </head>
-<body>
-  <main>
-    <header><img src="../icon.png" alt="" width="48" height="48"><div><h1 id="title">Theme</h1><p class="muted">Shared theme for Nyx, the open-source dark mode for Safari</p></div></header>
-    <div class="preview" id="preview">
-      <h2>The Evening Edition</h2>
-      <p>A preview of how websites look with this theme.</p>
-      <div class="img" id="img"></div>
+<body class="theme-page">
+  <a class="skip" href="#main">Skip to content</a>
+
+  <header class="sky">
+    <svg class="moon" viewBox="0 0 200 200" aria-hidden="true" focusable="false"><defs><mask id="moon-cut"><rect width="200" height="200" fill="#fff"/><circle cx="128" cy="78" r="70" fill="#000"/></mask></defs><circle cx="92" cy="108" r="80" fill="currentColor" mask="url(#moon-cut)"/></svg>
+    <svg class="roof-props" viewBox="0 0 220 64" aria-hidden="true" focusable="false"><path d="M18 20h34v8h-4v36H22V28h-4Z M88 32h26v7h-3v25H91V39h-3Z"/><path class="aerial" d="M170 64V10M154 18h32M158 28h24M162 38h16"/></svg>
+    <div class="sky-bar">
+      <a class="brand" href="../"><svg viewBox="0 0 1024 1024" aria-hidden="true" focusable="false"><rect width="1024" height="1024" rx="228" fill="#241a5e"/><path fill="#fff4dc" d="M470 250a290 290 0 1 0 270 400 255 255 0 0 1-270-400Z"/></svg><span>Nyx</span></a>
+      <nav class="nav" aria-label="Main">
+        <a class="n-wide" href="../#themes">Themes</a>
+        <a href="../#install">Install</a>
+        <a href="../support/">Support</a>
+        <a class="n-mid" href="https://github.com/mohsen1/nyx">GitHub</a>
+      </nav>
+      <button class="lamp" type="button" aria-pressed="false" hidden><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20.5 14.1A8.5 8.5 0 1 1 9.9 3.5a6.6 6.6 0 0 0 10.6 10.6Z"/></svg><span>Dark</span></button>
     </div>
-    <div class="actions">
-      <button type="button" class="button primary" id="nyx-import" hidden>Add to Nyx</button>
-      <a class="button" id="open-app" href="#">Open in the Nyx App</a>
-      <a class="button" id="open-noir" href="#">Open in Noir</a>
+  </header>
+
+  <main id="main" class="floor f-doc">
+    <div class="wrap theme-wrap">
+        <article>
+          <div class="theme-head">
+            <svg viewBox="0 0 1024 1024" aria-hidden="true" focusable="false"><rect width="1024" height="1024" rx="228" fill="#241a5e"/><path fill="#fff4dc" d="M470 250a290 290 0 1 0 270 400 255 255 0 0 1-270-400Z"/></svg>
+            <div>
+              <h1 id="title">Theme</h1>
+              <p>Shared theme for Nyx, the open-source dark mode for Safari</p>
+            </div>
+          </div>
+          <div class="win theme-preview">
+            <div class="preview" id="preview">
+              <h2>The Evening Edition</h2>
+              <p>A preview of how websites look with this theme.</p>
+              <div class="img" id="img"></div>
+            </div>
+          </div>
+          <div class="theme-actions">
+            <button type="button" class="btn btn-primary" id="nyx-import" hidden>Add to Nyx</button>
+            <a class="btn" id="open-app" href="#">Open in the Nyx App</a>
+            <a class="btn" id="open-noir" href="#">Open in Noir</a>
+          </div>
+          <p class="muted" id="details"></p>
+          <p class="muted">Don’t have Nyx? Get it from <a href="https://github.com/mohsen1/nyx">github.com/mohsen1/nyx</a>. The link format is compatible with Noir’s theme links.</p>
+        </article>
     </div>
-    <p class="muted" id="details"></p>
-    <p class="muted">Don’t have Nyx? Get it from <a href="https://github.com/mohsen1/nyx">github.com/mohsen1/nyx</a>. The link format is compatible with Noir’s theme links.</p>
   </main>
+
+  <footer class="street">
+    <div class="wrap street-row">
+      <p>Nyx is open source under the MIT license.</p>
+      <nav aria-label="Footer">
+        <a href="https://github.com/mohsen1/nyx">GitHub</a>
+        <a href="../privacy/">Privacy policy</a>
+        <a href="../support/">Support</a>
+        <a href="https://github.com/mohsen1/nyx/issues">Report an issue</a>
+      </nav>
+    </div>
+  </footer>
   <script>
     const q = new URLSearchParams(location.search);
     const hex = (v, d) => /^#?[0-9a-f]{6}$/i.test(v || '') ? '#' + v.replace('#', '') : d;
