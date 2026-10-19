@@ -2,7 +2,7 @@
 
 Package: `npm run chrome:package` → `dist/nyx-chrome-<version>.zip`. Images in this folder come from `node scripts/chrome-store-assets.mjs`.
 
-Chrome Web Store item ID: `jpjjbamkncfmpjadgkmfbifhnnnhefhm` (set as `CWS_EXTENSION_ID` for `scripts/chrome-publish.mjs`). Version 1.0.1 submitted for review on 2026-10-18.
+Chrome Web Store item ID: `jpjjbamkncfmpjadgkmfbifhnnnhefhm` (set as `CWS_EXTENSION_ID` for `scripts/chrome-publish.mjs`). Version 1.0.2 submitted for review on 2026-10-19, replacing the pending 1.0.1 submission. Status: Pending Review; automatic publication after approval enabled.
 
 For future API updates, configure Chrome Web Store OAuth credentials yourself and provide `CWS_CLIENT_ID`, `CWS_CLIENT_SECRET`, and `CWS_REFRESH_TOKEN` alongside `CWS_EXTENSION_ID`. No OAuth credentials were created during the first submission.
 
