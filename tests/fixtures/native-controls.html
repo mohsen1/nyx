@@ -1,0 +1,17 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Native controls</title>
+<style>body { background: #fff; color: #222; font: 16px system-ui; }</style></head>
+<body><p>Comment form</p>
+<!-- An empty textarea is a shadow-host polling candidate, as on Hacker News. -->
+<textarea id="comment" rows="6" cols="60"></textarea>
+<input id="search" type="search"><select id="choice"><option>One</option><option>Two</option></select>
+<button id="button" type="button">Add comment</button><progress value="1" max="2"></progress>
+<video controls></video>
+<script>
+  setTimeout(() => {
+    const textarea = document.createElement('textarea');
+    textarea.id = 'late-comment';
+    document.body.append(textarea);
+  }, 100);
+  // Let Nyx's one-second shadow-root polling inspect both initial and added controls.
+  setTimeout(() => document.body.dataset.settled = 'true', 2500);
+</script></body></html>

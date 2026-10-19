@@ -9,6 +9,7 @@ import { stripImports, transformRules, transformSheet, type TransformOptions } f
 import { ImageAnalyzer } from './images';
 import { ATTR_BLIND_BG, ATTR_DIM, ATTR_FIX, BLIND_IMAGE_VAR, BLIND_VAR, ATTR_FIX_FILL, ATTR_FIX_INK, ATTR_FIX_STROKE, ContrastGuard, DIM_VAR, FIX_VAR } from './contrast';
 import { formatColor, parseColor, relativeLuminance } from '../shared/color';
+import { canHostAuthorShadowRoot, shadowOf } from './shadow-root';
 
 export const STYLE_CLASS = 'nyx-style';
 const ATTR_INLINE = 'data-nyx-inline';
@@ -93,26 +94,6 @@ interface SheetOverride {
 }
 
 const isElement = (n: Node): n is Element => n.nodeType === 1;
-
-/**
- * An element's shadow root, closed ones included where the browser lets extensions see them:
- * chrome.dom.openOrClosedShadowRoot in Chrome, element.openOrClosedShadowRoot in Firefox.
- * Consent managers (Transcend on superhuman.com) render into closed roots.
- */
-function shadowOf(el: Element): ShadowRoot | null {
-  if (el.shadowRoot) return el.shadowRoot;
-  try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const dom = (globalThis as any).chrome?.dom;
-    if (typeof dom?.openOrClosedShadowRoot === 'function') return dom.openOrClosedShadowRoot(el) ?? null;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const ff = (el as any).openOrClosedShadowRoot;
-    if (ff) return ff as ShadowRoot;
-  } catch {
-    /* not an HTMLElement, or not allowed */
-  }
-  return null;
-}
 
 /** Applies the dark style to one Document or ShadowRoot. */
 class RootStyler {
@@ -718,6 +699,7 @@ export class DarkEngine {
   private recentHosts = new Map<Element, number>();
 
   watchRecentHost(el: Element, until: number): void {
+    if (!canHostAuthorShadowRoot(el)) return;
     if (this.recentHosts.size >= RECENT_HOST_MAX) return;
     this.recentHosts.set(el, until);
   }
@@ -1017,6 +999,7 @@ export class DarkEngine {
   }
 
   attachRoot(root: Document | ShadowRoot): void {
+    if (!(root instanceof Document) && !canHostAuthorShadowRoot(root.host)) return;
     if (this.roots.has(root)) return;
     const styler = new RootStyler(root, this);
     this.roots.set(root, styler);

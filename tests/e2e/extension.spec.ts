@@ -426,6 +426,21 @@ test('an SVG fill attribute that points at a variable is mapped (The Guardian)',
   await expect.poll(async () => luminance(await page.$eval('#icon', (el) => getComputedStyle(el).fill))).toBeGreaterThan(0.18);
 });
 
+test('native form controls stay editable after shadow-root polling', async ({ context }) => {
+  const page = await context.newPage();
+  await page.goto(url('native-controls.html'));
+  await expect(page.locator('body')).toHaveAttribute('data-settled', 'true');
+  expect(await page.getAttribute('html', 'data-nyx-active')).toBe('');
+  await page.locator('#comment').fill('First line\nSecond line');
+  await page.locator('#late-comment').fill('Added after load');
+  await page.locator('#search').fill('Search text');
+  await page.locator('#choice').selectOption({ label: 'Two' });
+  await expect(page.locator('#comment')).toHaveValue('First line\nSecond line');
+  await expect(page.locator('#late-comment')).toHaveValue('Added after load');
+  await expect(page.locator('#search')).toHaveValue('Search text');
+  await expect(page.locator('#choice')).toHaveValue('Two');
+});
+
 test('a closed shadow root is styled where the browser exposes it (Transcend consent manager)', async ({ context }) => {
   const page = await context.newPage();
   await page.goto(url('closed-shadow.html'));
