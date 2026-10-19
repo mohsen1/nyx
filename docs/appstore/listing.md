@@ -2,6 +2,8 @@
 
 Source of truth for the App Store Connect metadata. Screenshots in this folder are rendered by `scripts/appstore-screenshots.mjs`.
 
+App Store Connect app ID: `6824462594` (created on 2026-10-19 with iOS and macOS platforms).
+
 | Field | Value |
 | --- | --- |
 | Name | Nyx: Dark Mode for Safari |
