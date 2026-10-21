@@ -2,7 +2,7 @@
 
 Package: `npm run chrome:package` → `dist/nyx-chrome-<version>.zip`. Images in this folder come from `node scripts/chrome-store-assets.mjs`.
 
-Chrome Web Store item ID: `jpjjbamkncfmpjadgkmfbifhnnnhefhm` (set as `CWS_EXTENSION_ID` for `scripts/chrome-publish.mjs`). Version 1.0.2 submitted for review on 2026-10-19, replacing the pending 1.0.1 submission. Rejected on 2026-10-20 for keyword spam (Yellow Argon); removed the theme-name list from the description and resubmitted on 2026-10-21. Status: Pending Review. Automatic publication after approval enabled.
+Chrome Web Store item ID: `jpjjbamkncfmpjadgkmfbifhnnnhefhm` (set as `CWS_EXTENSION_ID` for `scripts/chrome-publish.mjs`). Version 1.0.2 submitted for review on 2026-10-19, replacing the pending 1.0.1 submission. Rejected on 2026-10-20 for keyword spam (Yellow Argon); removed the theme-name list from the description and resubmitted on 2026-10-21. Replaced the pending 1.0.2 submission with version 1.0.3 on 2026-10-22. Status: Pending Review. Automatic publication after approval enabled.
 
 For future API updates, configure Chrome Web Store OAuth credentials yourself and provide `CWS_CLIENT_ID`, `CWS_CLIENT_SECRET`, and `CWS_REFRESH_TOKEN` alongside `CWS_EXTENSION_ID`. No OAuth credentials were created during the first submission.
 
