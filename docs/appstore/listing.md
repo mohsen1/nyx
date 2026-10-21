@@ -62,6 +62,12 @@ Nyx collects no data. There's no account to create and no analytics or ads. The 
 
 Nyx is free and open source: github.com/mohsen1/nyx
 
+## What's new (1.0.3)
+
+Review report screenshots before copying them. Black out private areas in both comparison views, undo changes, and inspect screenshots at actual size. Report details can also be edited before opening GitHub.
+
+Nyx now re-checks a site's own dark mode when browser appearance changes. Fixed excessive dimming of article images beneath fixed navigation, and a Safari screenshot-capture stall.
+
 ## What's new (1.0)
 
 First release. If a site looks wrong, choose "Report a problem with this website" in the Nyx menu and it will open an issue on GitHub.

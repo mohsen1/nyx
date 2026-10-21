@@ -136,6 +136,9 @@ Changes made in the app reach Safari in three ways:
 
 ## Private problem reports
 
+Capture acknowledgments wait for two painted frames, with a short timer fallback
+for Safari, which can pause animation frames while its extension popup is open.
+
 The toolbar report action captures the page locally and opens an extension review
 tab before writing to the clipboard. The user can draw opaque blackouts, enter
 rectangle coordinates with the keyboard, undo or clear them, and edit the report

@@ -5,6 +5,7 @@ import type { FetchResult, Message, PageState } from '../shared/messages';
 import { decide, matchSiteKey, type Decision, type Settings } from '../shared/settings';
 import { loadSettings, onSettingsChanged } from '../shared/storage';
 import { detectDarkPage } from './detect';
+import { afterPaint } from './paint';
 import { DarkEngine, type EngineConfig } from './engine';
 
 declare global {
@@ -87,7 +88,7 @@ class Controller {
       if (msg?.type === 'setSuspended') {
         this.suspend(msg.suspended);
         // Answer after the change has been painted, so a screenshot taken next shows it.
-        requestAnimationFrame(() => requestAnimationFrame(() => sendResponse(true)));
+        afterPaint(() => sendResponse(true));
         return true;
       }
       return false;

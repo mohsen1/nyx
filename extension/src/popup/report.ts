@@ -73,20 +73,25 @@ async function suspend(tabId: number, suspended: boolean): Promise<void> {
  * Captures the tab with Nyx and, if Nyx is restyling it, without (briefly switching it off), and
  * returns both side by side as a PNG with panel coordinates. Null when the browser can't capture the tab.
  */
-export async function captureComparison(tab: Tab, nyxActive: boolean): Promise<{ image: Blob; layout: Layout } | null> {
+export async function captureComparison(tab: Tab, nyxActive: boolean, progress: (stage: string) => void = () => {}): Promise<{ image: Blob; layout: Layout } | null> {
   const capture = api.tabs.captureVisibleTab;
   if (!capture || tab.id === undefined) return null;
   const shoot = () => capture.call(api.tabs, tab.windowId, { format: 'png' });
+  progress('Capturing page…');
   const withNyx = await shoot();
   let original: string | null = null;
   if (nyxActive) {
     try {
+      progress('Showing original page…');
       await suspend(tab.id, true);
+      progress('Capturing original…');
       original = await shoot();
     } finally {
+      progress('Restoring Nyx…');
       await suspend(tab.id, false);
     }
   }
+  progress('Preparing screenshot…');
   const panels: Panel[] = [];
   if (original) panels.push({ label: 'Original', image: await loadImage(original) });
   panels.push({ label: nyxActive ? 'With Nyx' : 'Page', image: await loadImage(withNyx) });

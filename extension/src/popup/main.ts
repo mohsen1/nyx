@@ -278,7 +278,7 @@ function browserName(): string {
 async function reportSite(key: string, button: HTMLButtonElement): Promise<void> {
   button.disabled = true;
   button.textContent = 'Taking a screenshot…';
-  const capture = tab ? await captureComparison(tab, !!page?.active).catch(() => null) : null;
+  const capture = tab ? await captureComparison(tab, !!page?.active, (stage) => { button.textContent = stage; }).catch(() => null) : null;
   const s = settings.sites[key];
   const theme = findTheme(allThemes(settings), s?.themeId ?? settings.global.defaultThemeId);
   const details = [
