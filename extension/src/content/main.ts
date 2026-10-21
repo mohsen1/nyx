@@ -72,7 +72,13 @@ class Controller {
       this.settings = s;
       this.apply();
     });
-    this.media.addEventListener('change', () => this.apply());
+    this.media.addEventListener('change', () => {
+      // Media-query styles have already changed. Inspect the site's own colors before applying
+      // ours, then re-check after any asynchronous site theme handlers have settled.
+      this.detect();
+      this.apply();
+      this.detectSoon();
+    });
     api.runtime.onMessage.addListener((msg: Message, _sender, sendResponse) => {
       if (msg?.type === 'getPageState' && isTop) {
         sendResponse(this.state());
@@ -163,7 +169,7 @@ class Controller {
   }
 
   private detect(): void {
-    if (!this.decision?.enabled || !document.body) return;
+    if (!document.body) return;
     const run = () => detectDarkPage(document);
     const report = this.engine?.running ? this.engine.withoutStyles(run, true) : run();
     this.detected = true;
@@ -173,12 +179,19 @@ class Controller {
     }
   }
 
+  private detectSoon(): void {
+    if (this.redetectTimer !== null) window.clearTimeout(this.redetectTimer);
+    this.redetectTimer = window.setTimeout(() => {
+      this.redetectTimer = null;
+      this.detect();
+    }, 250);
+  }
+
   /** Sites that switch their own theme by toggling a class/attribute on <html> or <body>. */
   private watchThemeSwitches(): void {
     const observer = new MutationObserver(() => {
       if (!this.detected) return;
-      if (this.redetectTimer !== null) window.clearTimeout(this.redetectTimer);
-      this.redetectTimer = window.setTimeout(() => this.detect(), 250);
+      this.detectSoon();
     });
     const opts: MutationObserverInit = {
       attributes: true,

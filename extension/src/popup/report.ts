@@ -1,5 +1,5 @@
 // Screenshots for problem reports: the page as it is and, when Nyx is restyling it, the original.
-// Nothing is uploaded; the image goes to the clipboard for the user to paste into the issue.
+// Nothing is uploaded; screenshots are reviewed and blacked out before copying into an issue.
 
 import { api, type Tab } from '../shared/browser';
 import type { Message } from '../shared/messages';
@@ -71,9 +71,9 @@ async function suspend(tabId: number, suspended: boolean): Promise<void> {
 
 /**
  * Captures the tab with Nyx and, if Nyx is restyling it, without (briefly switching it off), and
- * returns both side by side as a PNG. Null when the browser can't capture the tab.
+ * returns both side by side as a PNG with panel coordinates. Null when the browser can't capture the tab.
  */
-export async function captureComparison(tab: Tab, nyxActive: boolean): Promise<Blob | null> {
+export async function captureComparison(tab: Tab, nyxActive: boolean): Promise<{ image: Blob; layout: Layout } | null> {
   const capture = api.tabs.captureVisibleTab;
   if (!capture || tab.id === undefined) return null;
   const shoot = () => capture.call(api.tabs, tab.windowId, { format: 'png' });
@@ -90,7 +90,8 @@ export async function captureComparison(tab: Tab, nyxActive: boolean): Promise<B
   const panels: Panel[] = [];
   if (original) panels.push({ label: 'Original', image: await loadImage(original) });
   panels.push({ label: nyxActive ? 'With Nyx' : 'Page', image: await loadImage(withNyx) });
-  return compose(panels);
+  const image = await compose(panels);
+  return image ? { image, layout: comparisonLayout(panels.map((p) => p.image)) } : null;
 }
 
 /**

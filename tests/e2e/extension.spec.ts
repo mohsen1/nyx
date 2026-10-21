@@ -515,3 +515,246 @@ test('toolbar menu renders', async ({ context, worker }) => {
   await page.goto(`chrome-extension://${id}/popup.html`);
   await expect(page.getByRole('radiogroup', { name: 'Global status' })).toBeVisible();
 });
+
+
+test('browser appearance changes hand native dark mode back to the site in Auto', async ({ context, worker }) => {
+  void worker;
+  const page = await context.newPage();
+  await page.emulateMedia({ colorScheme: 'light' });
+  await page.goto(url('system-theme.html'));
+  await expect.poll(() => bg(page, 'body')).toBe('rgb(255, 255, 255)');
+  await page.waitForTimeout(350); // let the initial native-theme detection settle
+  await page.emulateMedia({ colorScheme: 'dark' });
+  await expect.poll(() => page.getAttribute('html', 'data-nyx-active')).toBeNull();
+  await expect.poll(() => bg(page, 'body')).toBe('rgb(16, 20, 24)');
+  await page.emulateMedia({ colorScheme: 'light' });
+  await expect.poll(() => bg(page, 'body')).toBe('rgb(255, 255, 255)');
+  await page.waitForTimeout(350); // let the initial native-theme detection settle
+  await page.emulateMedia({ colorScheme: 'dark' });
+  await expect.poll(() => bg(page, 'body')).toBe('rgb(16, 20, 24)');
+  expect(await page.getAttribute('html', 'data-nyx-active')).toBeNull();
+});
+
+test('browser appearance changes re-detect native dark mode while Nyx is forced On', async ({ context, worker }) => {
+  await setSettings(worker, (s) => { s.global = { ...(s.global ?? {}), mode: 'on' }; });
+  const page = await context.newPage();
+  await page.emulateMedia({ colorScheme: 'light' });
+  await page.goto(url('system-theme.html'));
+  await expect.poll(() => page.getAttribute('html', 'data-nyx-active')).toBe('');
+  await page.emulateMedia({ colorScheme: 'dark' });
+  await expect.poll(() => page.getAttribute('html', 'data-nyx-active')).toBeNull();
+  expect(await bg(page, 'body')).toBe('rgb(16, 20, 24)');
+  await page.emulateMedia({ colorScheme: 'light' });
+  await expect.poll(() => page.getAttribute('html', 'data-nyx-active')).toBe('');
+  await page.emulateMedia({ colorScheme: 'dark' });
+  await expect.poll(() => page.getAttribute('html', 'data-nyx-active')).toBeNull();
+  await setSettings(worker, (s) => {
+    s.sites = { localhost: { mode: 'default', themeId: null, pausedUntil: null, ignoreBuiltInDarkMode: true, appearance: {}, updatedAt: Date.now() } };
+  });
+  await expect.poll(() => page.getAttribute('html', 'data-nyx-active')).toBe('');
+});
+
+test('a native light-dark canvas is left alone in dark browser appearance', async ({ context, worker }) => {
+  void worker;
+  const page = await context.newPage();
+  await page.goto(url('system-canvas.html'));
+  await expect.poll(() => page.getAttribute('html', 'data-nyx-active')).toBeNull();
+  expect(await page.$$eval('style.nyx-style', (els) => els.length)).toBe(0);
+});
+
+test('fixed navigation over an article image does not dim it as a hero backdrop', async ({ context, worker }) => {
+  void worker;
+  const page = await context.newPage();
+  await page.goto(url('chart-under-header.html'));
+  await expect.poll(() => page.getAttribute('html', 'data-nyx-active')).toBe('');
+  await page.waitForTimeout(2000); // allow asynchronous image analysis and the hydration retry
+  expect(await page.getAttribute('#chart', 'data-nyx-dim-bg')).toBeNull();
+  expect(await page.$eval('#chart', (el) => getComputedStyle(el).filter)).not.toContain('brightness(0.3)');
+});
+
+async function openReportReview(context: BrowserContext, worker: Worker, screenshot = true): Promise<Page> {
+  await context.addInitScript(() => {
+    if (!location.pathname.endsWith('/report.html')) return;
+    (window as any).__clipboardWrites = 0;
+    Object.defineProperty(navigator, 'clipboard', { value: { write: async (items: ClipboardItem[]) => {
+      (window as any).__clipboardWrites++;
+      const blob = await items[0].getType('image/png');
+      (window as any).__copiedPng = Array.from(new Uint8Array(await blob.arrayBuffer()));
+    } } });
+    // Keep the review tab open after Continue so its resulting PNG can be inspected.
+    window.close = () => undefined;
+  });
+  await context.route('https://github.com/mohsen1/nyx/issues/new?*', (route) => route.fulfill({ contentType: 'text/html', body: '<h1>Test issue draft</h1>' }));
+  const popup = await context.newPage();
+  await popup.goto(`chrome-extension://${new URL(worker.url()).host}/popup.html`);
+  const opened = context.waitForEvent('page');
+  await popup.evaluate(async (screenshot) => {
+    await document.fonts.ready;
+    const canvas = document.createElement('canvas');
+    canvas.width = 648; canvas.height = 272;
+    const ctx = canvas.getContext('2d')!;
+    ctx.fillStyle = '#1c1c1e'; ctx.fillRect(0, 0, 648, 272);
+    for (const x of [0, 328]) {
+      ctx.fillStyle = x ? '#202124' : '#fff'; ctx.fillRect(x, 32, 320, 240);
+      ctx.fillStyle = x ? '#eee' : '#222'; ctx.font = '18px system-ui';
+      ctx.fillText('Example account', x + 16, 67);
+      ctx.font = '13px system-ui'; ctx.fillText('private@example.test', x + 16, 94);
+      ctx.fillText('Recent activity', x + 16, 153);
+      ctx.fillText('A sample row for screenshot review', x + 16, 184);
+    }
+    await (window as any).chrome.runtime.sendMessage({ type: 'prepareReport', draft: {
+      title: 'Website issue: example.test', details: '**Website:** https://example.test/\n**Nyx:** test',
+      image: screenshot ? canvas.toDataURL('image/png') : null,
+      layout: screenshot ? { width: 648, height: 272, panels: [{ x: 0, y: 32, width: 320, height: 240 }, { x: 328, y: 32, width: 320, height: 240 }] } : null,
+    } });
+  }, screenshot);
+  const review = await opened;
+  await review.getByRole('heading', { name: 'Review screenshot', exact: true }).waitFor();
+  if (screenshot) await expect.poll(() => review.locator('.report-preview').evaluateAll((els) => els.length === 2 && els.every((el) => (el as HTMLImageElement).complete))).toBe(true);
+  return review;
+}
+
+test('report review burns blackouts into both PNG views before any clipboard write', async ({ context, worker }) => {
+  const page = await openReportReview(context, worker);
+  expect(await page.evaluate(() => (window as any).__clipboardWrites)).toBe(0);
+  const preview = await page.locator('.report-preview').first().boundingBox();
+  expect(preview).not.toBeNull();
+  const r = preview!;
+  await page.mouse.move(r.x + r.width * 0.03, r.y + r.height * 0.1);
+  await page.mouse.down();
+  await page.mouse.move(r.x + r.width * 0.6, r.y + r.height * 0.3);
+  await page.mouse.up();
+  await expect(page.getByRole('status')).toHaveText('1 blackout applied to both views.');
+  // Reversible while editing, then committed through the keyboard-accessible percentage form.
+  await page.getByRole('button', { name: 'Undo', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Undo', exact: true })).toBeDisabled();
+  await page.getByText('Black out an area using the keyboard', { exact: true }).click();
+  await page.getByRole('spinbutton', { name: 'Left percent' }).fill('3');
+  await page.getByRole('spinbutton', { name: 'Top percent' }).fill('10');
+  await page.getByRole('spinbutton', { name: 'Width percent' }).fill('57');
+  await page.getByRole('spinbutton', { name: 'Height percent' }).fill('20');
+  await page.getByRole('button', { name: 'Add blackout', exact: true }).click();
+  const copied = page.evaluate(() => new Promise<number[][]>((resolve) => {
+    const timer = setInterval(async () => {
+      const bytes = (window as any).__copiedPng;
+      if (!bytes) return;
+      clearInterval(timer);
+      const image = new Image();
+      image.src = URL.createObjectURL(new Blob([new Uint8Array(bytes)], { type: 'image/png' }));
+      await image.decode();
+      const canvas = document.createElement('canvas'); canvas.width = image.width; canvas.height = image.height;
+      const ctx = canvas.getContext('2d')!; ctx.drawImage(image, 0, 0);
+      resolve([Array.from(ctx.getImageData(30, 80, 1, 1).data), Array.from(ctx.getImageData(358, 80, 1, 1).data), Array.from(ctx.getImageData(250, 80, 1, 1).data)]);
+      URL.revokeObjectURL(image.src);
+    }, 20);
+  }));
+  await page.getByRole('button', { name: 'Copy screenshot and continue', exact: true }).click();
+  expect(await copied).toEqual([[0, 0, 0, 255], [0, 0, 0, 255], [255, 255, 255, 255]]);
+  expect(await page.evaluate(() => (window as any).__clipboardWrites)).toBe(1);
+  const storage = await worker.evaluate(async () => (globalThis as any).chrome.storage.local.get(null));
+  expect(JSON.stringify(storage)).not.toContain('data:image/png');
+});
+
+test('canceling a report copies nothing; raw screenshots cannot be retrieved after reload', async ({ context, worker }) => {
+  const page = await openReportReview(context, worker);
+  await page.getByRole('button', { name: 'Cancel', exact: true }).click();
+  expect(await page.evaluate(() => (window as any).__clipboardWrites)).toBe(0);
+  await page.reload();
+  await expect(page.getByRole('heading', { name: 'Screenshot no longer available' })).toBeVisible();
+});
+
+test('reporting still works when screenshots cannot be captured', async ({ context, worker }) => {
+  const page = await openReportReview(context, worker, false);
+  await expect(page.getByRole('button', { name: 'Copy screenshot and continue', exact: true })).toBeHidden();
+  await expect(page.getByRole('button', { name: 'Continue without screenshot', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Continue without screenshot', exact: true }).click();
+  expect(await page.evaluate(() => (window as any).__clipboardWrites)).toBe(0);
+});
+
+test('clipboard failure keeps blackouts available and opens no issue', async ({ context, worker }) => {
+  const page = await openReportReview(context, worker);
+  await page.evaluate(() => { navigator.clipboard.write = async () => { throw new Error('Clipboard denied'); }; });
+  await page.getByText('Black out an area using the keyboard', { exact: true }).click();
+  await page.getByRole('button', { name: 'Add blackout', exact: true }).click();
+  await page.getByRole('button', { name: 'Copy screenshot and continue', exact: true }).click();
+  await expect(page.getByRole('status')).toContainText('Could not copy the screenshot.');
+  await expect(page.getByRole('button', { name: 'Undo', exact: true })).toBeEnabled();
+  await expect(page.getByRole('button', { name: 'Copy screenshot and continue', exact: true })).toBeEnabled();
+  expect(context.pages().some((p) => p.url().startsWith('https://github.com/'))).toBe(false);
+});
+
+test('the toolbar report action opens privacy review before touching the clipboard', async ({ context, worker }) => {
+  const popup = await context.newPage();
+  await popup.addInitScript(() => {
+    (window as any).__clipboardWrites = 0;
+    Object.defineProperty(navigator, 'clipboard', { value: { write: async () => { (window as any).__clipboardWrites++; } } });
+    const tabs = (window as any).chrome.tabs;
+    tabs.query = async () => [{ id: 7, windowId: 1, url: 'https://example.test/' }];
+    tabs.sendMessage = async (_id: number, message: { type: string }) => message.type === 'getPageState' ? {
+      url: 'https://example.test/', active: true, builtInDarkMode: false,
+      decision: { enabled: true, reason: 'global-on', effectiveMode: 'on', ignoreBuiltInDarkMode: false, themeId: 'dark' },
+    } : true;
+    tabs.captureVisibleTab = async () => {
+      const canvas = document.createElement('canvas'); canvas.width = 640; canvas.height = 480;
+      const ctx = canvas.getContext('2d')!; ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, 640, 480);
+      return canvas.toDataURL('image/png');
+    };
+    window.close = () => undefined;
+  });
+  await popup.goto(`chrome-extension://${new URL(worker.url()).host}/popup.html`);
+  const opened = context.waitForEvent('page');
+  await popup.getByRole('button', { name: 'Report a problem', exact: true }).click();
+  const review = await opened;
+  await expect(review.getByRole('heading', { name: 'Review screenshot', exact: true })).toBeVisible();
+  await expect(review.locator('.report-preview')).toHaveCount(2);
+  expect(await popup.evaluate(() => (window as any).__clipboardWrites)).toBe(0);
+});
+
+
+for (const colorScheme of ['light', 'dark'] as const) {
+  test.describe(`report appearance ${colorScheme}`, () => {
+    test.use({ colorScheme });
+    for (const [device, width, height] of [['desktop', 1440, 1000], ['mobile', 390, 844], ['user-1280', 1280, 720]] as const) {
+      test(`${device} keeps both screenshot previews readable`, async ({ context, worker }) => {
+        const page = await openReportReview(context, worker);
+        await page.setViewportSize({ width, height });
+        await page.getByText('Black out an area using the keyboard', { exact: true }).click();
+        await page.getByRole('spinbutton', { name: 'Left percent' }).fill('3');
+        await page.getByRole('spinbutton', { name: 'Top percent' }).fill('10');
+        await page.getByRole('spinbutton', { name: 'Width percent' }).fill('57');
+        await page.getByRole('spinbutton', { name: 'Height percent' }).fill('20');
+        await page.getByRole('button', { name: 'Add blackout', exact: true }).click();
+        await expect(page.getByRole('status')).toHaveText('1 blackout applied to both views.');
+        expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+        if (SCREENSHOTS) await page.screenshot({ path: join(SCREENSHOTS, `report-review-${device}-${colorScheme}.png`), fullPage: true });
+      });
+    }
+  });
+}
+
+
+test('actual-size inspection scrolls without misaligning blackout pixels', async ({ context, worker }) => {
+  const page = await openReportReview(context, worker);
+  await page.setViewportSize({ width: 240, height: 844 });
+  await page.getByText('Black out an area using the keyboard', { exact: true }).click();
+  await page.getByRole('button', { name: 'Add blackout', exact: true }).click();
+  await page.getByRole('button', { name: 'Show actual size', exact: true }).click();
+  const viewport = page.getByRole('region', { name: 'Original screenshot scroll area' });
+  expect(await viewport.evaluate((el) => el.scrollWidth > el.clientWidth)).toBe(true);
+  await viewport.focus();
+  await page.keyboard.press('ArrowRight');
+  await expect.poll(() => viewport.evaluate((el) => el.scrollLeft)).toBeGreaterThan(0);
+  const sizes = await page.locator('.report-preview').first().evaluate((el) => {
+    const img = el as HTMLImageElement;
+    const mask = img.parentElement!.querySelector('.report-blackout')!;
+    return { width: img.getBoundingClientRect().width, natural: img.naturalWidth, mask: mask.getBoundingClientRect().width };
+  });
+  expect(sizes.width).toBe(sizes.natural);
+  expect(sizes.mask).toBeCloseTo(sizes.width * 0.2, 0);
+  if (SCREENSHOTS) {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.screenshot({ path: join(SCREENSHOTS, 'report-review-mobile-actual-size-dark.png'), fullPage: true });
+  }
+  await page.getByRole('button', { name: 'Fit screenshots', exact: true }).click();
+  expect(await viewport.evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true);
+});

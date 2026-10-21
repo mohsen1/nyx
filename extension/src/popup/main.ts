@@ -20,10 +20,9 @@ import {
 } from '../shared/settings';
 import { loadSettings, onSettingsChanged, updateSettings } from '../shared/storage';
 import { findTheme } from '../shared/theme';
-import { captureComparison, copyImage } from './report';
+import { captureComparison } from './report';
 import { actionCell, cell, formatClock, formatTime, group, h, icon, segmented, select, themeSwatch, toggle } from '../shared/ui';
 
-const REPO = 'https://github.com/mohsen1/nyx';
 const root = document.getElementById('app')!;
 
 let tab: Tab | undefined;
@@ -267,12 +266,6 @@ function scopePicker(): HTMLElement {
   );
 }
 
-function openIssue(title: string, body: string): void {
-  const url = `${REPO}/issues/new?${new URLSearchParams({ title, body, labels: 'website' })}`;
-  void api.tabs.create({ url });
-  window.close();
-}
-
 /** "Chrome 141", "Safari 26", "Firefox 144": enough to reproduce a rendering problem. */
 function browserName(): string {
   const ua = navigator.userAgent;
@@ -285,8 +278,7 @@ function browserName(): string {
 async function reportSite(key: string, button: HTMLButtonElement): Promise<void> {
   button.disabled = true;
   button.textContent = 'Taking a screenshot…';
-  // Started inside the click: Safari only lets the clipboard be written during a user gesture.
-  const copied = tab ? await copyImage(captureComparison(tab, !!page?.active).catch(() => null)) : false;
+  const capture = tab ? await captureComparison(tab, !!page?.active).catch(() => null) : null;
   const s = settings.sites[key];
   const theme = findTheme(allThemes(settings), s?.themeId ?? settings.global.defaultThemeId);
   const details = [
@@ -295,11 +287,23 @@ async function reportSite(key: string, button: HTMLButtonElement): Promise<void>
     `**Theme:** ${theme.name}${page?.active ? '' : ' (Nyx was not restyling the page)'}`,
     `**Detected built-in dark mode:** ${page?.builtInDarkMode ? 'yes' : 'no'}`,
   ].join('\n');
-  const screenshot = copied
-    ? `\n\n**Screenshot:** ${page?.active ? 'the page without and with Nyx is' : 'the page is'} on your clipboard. ` +
-      'Check that it shows nothing private, then paste it here (⌘V or Ctrl+V).\n\n'
-    : '\n\n';
-  openIssue(`Website issue: ${key}`, `${details}${screenshot}**What looks wrong?**\n\n`);
+  const image = capture ? await new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(capture.image);
+  }).catch(() => null) : null;
+  try {
+    const result = await api.runtime.sendMessage({
+      type: 'prepareReport', draft: { title: `Website issue: ${key}`, details, image, layout: capture?.layout ?? null },
+    } satisfies Message);
+    if (!result?.ok) throw new Error('Could not open screenshot review.');
+    window.close();
+  } catch {
+    button.disabled = false;
+    button.textContent = 'Try reporting again';
+    root.append(h('p', { role: 'alert', class: 'group-footer' }, 'Could not open screenshot review. Please try again.'));
+  }
 }
 
 async function main(): Promise<void> {

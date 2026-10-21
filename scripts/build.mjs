@@ -16,6 +16,7 @@ const entries = {
   'theme-import': 'extension/src/content/theme-import.ts',
   background: 'extension/src/background/main.ts',
   popup: 'extension/src/popup/main.ts',
+  report: 'extension/src/report/main.ts',
   options: 'extension/src/options/main.ts',
 };
 

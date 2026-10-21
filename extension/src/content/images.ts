@@ -267,7 +267,18 @@ export class ImageAnalyzer {
         top = inner;
       }
       if (!top || top === img || img.contains(top) || top.contains(img)) continue;
-      if (top.textContent && top.textContent.trim().length > 2) return top;
+      // A sticky header or fixed cookie banner can scroll over an ordinary article image.
+      // Its text belongs to that overlay, not to the image. A fixed hero containing both its
+      // image and text is still a genuine backdrop.
+      let unrelatedOverlay = false;
+      for (let node: Element | null = top; node; node = node.parentElement ?? (node.getRootNode() as ShadowRoot).host ?? null) {
+        const position = this.win.getComputedStyle(node).position;
+        if ((position === 'fixed' || position === 'sticky') && !node.contains(img)) {
+          unrelatedOverlay = true;
+          break;
+        }
+      }
+      if (!unrelatedOverlay && top.textContent && top.textContent.trim().length > 2) return top;
     }
     return null;
   }

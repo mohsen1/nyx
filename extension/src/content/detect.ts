@@ -14,7 +14,9 @@ export function canvasColor(doc: Document): RGBA {
   const win = doc.defaultView!;
   const html = win.getComputedStyle(doc.documentElement);
   const scheme = html.colorScheme || '';
-  const base = /\bdark\b/.test(scheme) && !/\blight\b/.test(scheme) ? DARK_CANVAS : WHITE;
+  const darkCanvas = /\bdark\b/.test(scheme) &&
+    (!/\blight\b/.test(scheme) || win.matchMedia('(prefers-color-scheme: dark)').matches);
+  const base = darkCanvas ? DARK_CANVAS : WHITE;
   const htmlBg = parseColor(html.backgroundColor);
   if (opaque(htmlBg)) return composite(htmlBg, base);
   if (doc.body) {

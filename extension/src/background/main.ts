@@ -15,6 +15,7 @@ import {
   type GlobalMode,
 } from '../shared/settings';
 import { loadSettings, updateSettings } from '../shared/storage';
+import { ReportHandoff } from './reports';
 import { startSync, syncNow, syncSoon } from './sync';
 
 const MAX_TEXT = 4 * 1024 * 1024;
@@ -45,7 +46,31 @@ async function fetchResource(url: string, as: 'text' | 'dataUrl'): Promise<Fetch
   }
 }
 
-api.runtime.onMessage.addListener((msg: Message, _sender, sendResponse) => {
+const reports = new ReportHandoff();
+api.runtime.onMessage.addListener((msg: Message, sender, sendResponse) => {
+  // Content scripts and websites cannot seed or retrieve private screenshot drafts.
+  const senderUrl = (sender.url ?? sender.tab?.url ?? '').split(/[?#]/)[0];
+  if (msg?.type === 'prepareReport') {
+    if (senderUrl !== api.runtime.getURL('popup.html')) return false;
+    const draft = msg.draft;
+    if (!draft || typeof draft.title !== 'string' || typeof draft.details !== 'string' ||
+      draft.title.length > 1000 || draft.details.length > 16000 ||
+      (draft.image !== null && (typeof draft.image !== 'string' || !draft.image.startsWith('data:image/png;base64,') || draft.image.length > 32 * 1024 * 1024))) {
+      sendResponse({ ok: false });
+      return false;
+    }
+    const id = reports.put(draft);
+    api.tabs.create({ url: api.runtime.getURL('report.html') + '#' + id }).then(
+      () => sendResponse({ ok: true }),
+      () => { reports.take(id); sendResponse({ ok: false }); },
+    );
+    return true;
+  }
+  if (msg?.type === 'takeReport') {
+    if (senderUrl !== api.runtime.getURL('report.html')) return false;
+    sendResponse(reports.take(msg.id));
+    return false;
+  }
   if (msg?.type === 'fetchResource') {
     fetchResource(msg.url, msg.as).then(sendResponse);
     return true;

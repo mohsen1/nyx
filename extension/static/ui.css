@@ -527,3 +527,36 @@ a.cell .icon-external-link { color: var(--tertiary); }
 }
 
 .row-value { display: inline-flex; align-items: center; gap: 2px; min-width: 0; }
+
+/* Screenshot review reuses the extension's native-looking controls and semantic surfaces. */
+body.report { padding: var(--s5) var(--s4); }
+.report #app { max-width: 1120px; margin: 0 auto; }
+.report-header { display: flex; align-items: center; justify-content: space-between; gap: var(--s4); }
+.report h1 { font-size: 1.6rem; letter-spacing: -0.02em; }
+.report-help { max-width: 72ch; margin: var(--s3) 0 var(--s5); color: var(--secondary); }
+.report .btn { min-height: 44px; padding: 8px 14px; white-space: normal; }
+.report-tools, .report-actions { display: flex; flex-wrap: wrap; gap: var(--s2); }
+.report-previews { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 360px), 1fr)); gap: var(--s4); margin-top: var(--s3); }
+.report figure { margin: 0; min-width: 0; background: var(--cell); }
+.report figcaption { padding: var(--s2) var(--s3); font-weight: 600; }
+.report-preview { display: block; width: 100%; height: auto; touch-action: none; cursor: crosshair; }
+.report-keyboard { margin-top: var(--s4); }
+.report summary { padding: var(--s3) 0; cursor: pointer; color: var(--tint-text); }
+.report-coordinates { display: flex; flex-wrap: wrap; align-items: end; gap: var(--s3); padding: var(--s3) 0; }
+.report-coordinates label { display: grid; gap: var(--s1); }
+.report input { width: 90px; min-height: 44px; padding: var(--s2); }
+.report-metadata { margin: var(--s5) 0 var(--s4); }
+.report-metadata > label { font-weight: 600; }
+.report-metadata p { color: var(--secondary); margin-top: var(--s1); }
+.report textarea { width: 100%; padding: var(--s3); margin-top: var(--s2); resize: vertical; font: inherit; line-height: 1.5; }
+.report textarea, .report input { color: var(--label); background: var(--cell); border: 1px solid var(--separator); border-radius: 7px; caret-color: var(--tint-text); }
+.report-status { margin-top: var(--s3); min-height: 1.5em; color: var(--secondary); }
+.report [hidden] { display: none !important; }
+/* Screenshot colors are evidence: browser darkening must not reinterpret their pixels. */
+.report-preview { color-scheme: only light; forced-color-adjust: none; user-select: none; -webkit-user-drag: none; }
+.report-image { position: relative; }
+.report-masks { position: absolute; inset: 0; pointer-events: none; }
+.report-blackout { position: absolute; background: #000; }
+
+.report-viewport { overflow: auto; max-height: 70vh; }
+.report-previews.actual-size .report-image { width: var(--report-width); }

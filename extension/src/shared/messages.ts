@@ -1,5 +1,6 @@
 // Messages exchanged between the content script, background and toolbar menu.
 
+import type { ReportDraft } from './report';
 import type { Decision } from './settings';
 
 export interface PageState {
@@ -14,6 +15,8 @@ export interface PageState {
 
 export type Message =
   | { type: 'getPageState' }
+  | { type: 'prepareReport'; draft: ReportDraft }
+  | { type: 'takeReport'; id: string }
   | { type: 'fetchResource'; url: string; as: 'text' | 'dataUrl' }
   | { type: 'reportBuiltInDarkMode'; siteKey: string; url: string; detected: boolean }
   | { type: 'syncNow' }
