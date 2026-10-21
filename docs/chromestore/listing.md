@@ -2,7 +2,7 @@
 
 Package: `npm run chrome:package` → `dist/nyx-chrome-<version>.zip`. Images in this folder come from `node scripts/chrome-store-assets.mjs`.
 
-Chrome Web Store item ID: `jpjjbamkncfmpjadgkmfbifhnnnhefhm` (set as `CWS_EXTENSION_ID` for `scripts/chrome-publish.mjs`). Version 1.0.2 submitted for review on 2026-10-19, replacing the pending 1.0.1 submission. Status: Pending Review; automatic publication after approval enabled.
+Chrome Web Store item ID: `jpjjbamkncfmpjadgkmfbifhnnnhefhm` (set as `CWS_EXTENSION_ID` for `scripts/chrome-publish.mjs`). Version 1.0.2 submitted for review on 2026-10-19, replacing the pending 1.0.1 submission. Rejected on 2026-10-20 for keyword spam (Yellow Argon); removed the theme-name list from the description on 2026-10-21 for resubmission. Automatic publication after approval enabled.
 
 For future API updates, configure Chrome Web Store OAuth credentials yourself and provide `CWS_CLIENT_ID`, `CWS_CLIENT_SECRET`, and `CWS_REFRESH_TOKEN` alongside `CWS_EXTENSION_ID`. No OAuth credentials were created during the first submission.
 
@@ -32,7 +32,7 @@ Per-site settings
 Click the Nyx button to give the current site its own status and theme. A setting can cover a whole domain, one subdomain, or a single page.
 
 Themes
-26 built in, from Dark, Black and Sepia to Dracula, Nord, Solarized, Gruvbox, Catppuccin Mocha and Tokyo Night. You can make your own by picking a background color, text color, image brightness and grayscale, and share it with a link.
+26 built in. You can make your own by picking a background color, text color, image brightness and grayscale, and share it with a link.
 
 Keyboard shortcuts
 Alt+Shift+N turns the current site on or off, Alt+Shift+P pauses it until tomorrow, and Alt+Shift+T switches themes. More commands can be assigned at chrome://extensions/shortcuts.
