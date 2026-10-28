@@ -4,10 +4,10 @@ Source of truth for the App Store Connect metadata. Screenshots in this folder a
 
 App Store Connect app ID: `6824462594` (created on 2026-10-19 with iOS and macOS platforms).
 
-Version **1.0.3**, build **261021.2232**, uploaded and submitted on **2026-10-22** for both iOS and macOS, replacing the pending 1.0.2 submissions. Both platforms: **Waiting for Review**. Manual release after approval remains selected.
+Version **1.0.4**, build **261028.1101**, signed, uploaded and submitted for both iOS and macOS on **2026-10-28** after membership renewal activated. Both platforms: **Waiting for Review**. Manual release after approval remains selected. The previous 1.0.3 submissions were removed after the replacement builds were ready.
 
-- iOS submission: `63cbfe3b-db2f-4228-bc8f-018c1a729b68`
-- macOS submission: `0c49ce94-b3ec-4321-9702-8dbdab8016c2`
+- iOS submission: `ac122c11-bfff-4646-983e-130481bfe6bd`
+- macOS submission: `eef928a2-b3ba-4cb5-8a8f-29ceb297574e`
 
 | Field | Value |
 | --- | --- |
