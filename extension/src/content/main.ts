@@ -60,6 +60,7 @@ class Controller {
   private detected = false;
   private timer: number | null = null;
   private redetectTimer: number | null = null;
+  private appearanceSettleTimer: number | null = null;
   private readonly media = window.matchMedia('(prefers-color-scheme: dark)');
   private url = topUrl();
   private siteKey: string | null = null;
@@ -72,7 +73,17 @@ class Controller {
       this.settings = s;
       this.apply();
     });
-    this.media.addEventListener('change', () => this.apply());
+    this.media.addEventListener('change', () => {
+      // Media queries have already changed. Inspect the site's own colors before
+      // applying Nyx, including when Auto was disabled during the day.
+      this.detect();
+      this.apply();
+      // The site's matchMedia listeners may run after ours, or update its theme
+      // asynchronously. Recheck once those updates and transitions have settled.
+      this.queueDetection(0);
+      if (this.appearanceSettleTimer !== null) window.clearTimeout(this.appearanceSettleTimer);
+      this.appearanceSettleTimer = window.setTimeout(() => this.detect(), 1500);
+    });
     api.runtime.onMessage.addListener((msg: Message, _sender, sendResponse) => {
       if (msg?.type === 'getPageState' && isTop) {
         sendResponse(this.state());
@@ -163,7 +174,7 @@ class Controller {
   }
 
   private detect(): void {
-    if (!this.decision?.enabled || !document.body) return;
+    if (!this.settings || !document.body) return;
     const run = () => detectDarkPage(document);
     const report = this.engine?.running ? this.engine.withoutStyles(run, true) : run();
     this.detected = true;
@@ -173,12 +184,16 @@ class Controller {
     }
   }
 
+  private queueDetection(delay = 250): void {
+    if (this.redetectTimer !== null) window.clearTimeout(this.redetectTimer);
+    this.redetectTimer = window.setTimeout(() => this.detect(), delay);
+  }
+
   /** Sites that switch their own theme by toggling a class/attribute on <html> or <body>. */
   private watchThemeSwitches(): void {
     const observer = new MutationObserver(() => {
       if (!this.detected) return;
-      if (this.redetectTimer !== null) window.clearTimeout(this.redetectTimer);
-      this.redetectTimer = window.setTimeout(() => this.detect(), 250);
+      this.queueDetection();
     });
     const opts: MutationObserverInit = {
       attributes: true,

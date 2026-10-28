@@ -7,9 +7,10 @@ import type { AppearanceOptions } from '../shared/settings';
 import type { Theme } from '../shared/theme';
 import { stripImports, transformRules, transformSheet, type TransformOptions } from './sheet-transform';
 import { ImageAnalyzer } from './images';
-import { ATTR_BLIND_BG, ATTR_DIM, ATTR_FIX, BLIND_IMAGE_VAR, BLIND_VAR, ATTR_FIX_FILL, ATTR_FIX_INK, ATTR_FIX_STROKE, ContrastGuard, DIM_VAR, FIX_VAR } from './contrast';
+import { ATTR_BLIND_BG, ATTR_DIM, ATTR_FIX, ATTR_MEASURE, BLIND_IMAGE_VAR, BLIND_VAR, ATTR_FIX_FILL, ATTR_FIX_INK, ATTR_FIX_STROKE, ContrastGuard, DIM_VAR, FIX_VAR } from './contrast';
 import { formatColor, parseColor, relativeLuminance } from '../shared/color';
 import { canHostAuthorShadowRoot, shadowOf } from './shadow-root';
+import { siteFixCss } from './site-fixes';
 
 export const STYLE_CLASS = 'nyx-style';
 const ATTR_INLINE = 'data-nyx-inline';
@@ -868,6 +869,8 @@ export class DarkEngine {
     css += `[${ATTR_FIX_FILL}] { fill: var(--nyx-fix-f) !important; }\n[${ATTR_FIX_STROKE}] { stroke: var(--nyx-fix-s) !important; }\n`;
     css += `[${ATTR_FIX_INK}] { background-color: var(--nyx-fix-ink) !important; }\n`;
     css += `[${ATTR_FIX}], [${ATTR_FIX}]::before, [${ATTR_FIX}]::after { color: var(${FIX_VAR}) !important; -webkit-text-fill-color: var(${FIX_VAR}) !important; }\n`;
+    css += `[${ATTR_MEASURE}], [${ATTR_MEASURE}]::before, [${ATTR_MEASURE}]::after { transition: none !important; }\n`;
+    if (isDocument) css += siteFixCss(this.doc.URL, theme);
     return css;
   }
 

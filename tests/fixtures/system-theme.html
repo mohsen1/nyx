@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Native system appearance</title>
+  <style>
+    body { margin: 0; background: white; color: #111; font: 18px system-ui; }
+    main { padding: 40px; min-height: 100vh; }
+  </style>
+  <style id="native">
+    @media (prefers-color-scheme: dark) {
+      body { background: #101418; color: #eee; }
+    }
+  </style>
+</head>
+<body><main>Native theme follows the system without changing a class or attribute.</main></body>
+<script>
+  if (new URLSearchParams(location.search).has('delayed')) {
+    const native = document.getElementById('native');
+    native.media = 'not all';
+    const appearance = matchMedia('(prefers-color-scheme: dark)');
+    const update = () => setTimeout(() => { native.media = appearance.matches ? 'all' : 'not all'; }, 600);
+    appearance.addEventListener('change', update);
+    update();
+  }
+</script>
+</html>

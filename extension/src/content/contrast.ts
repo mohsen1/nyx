@@ -18,6 +18,8 @@ import { isPaleSurface, type ImageAnalyzer } from './images';
 
 export const ATTR_FIX = 'data-nyx-fix';
 export const FIX_VAR = '--nyx-fix-c';
+/** Suppresses transitions only while an existing repair is measured and restored. */
+export const ATTR_MEASURE = 'data-nyx-contrast-measuring';
 export const ATTR_FIX_FILL = 'data-nyx-fix-fill';
 export const ATTR_FIX_STROKE = 'data-nyx-fix-stroke';
 /** A mask-image icon whose ink (its background color) was lifted. */
@@ -304,14 +306,25 @@ export class ContrastGuard {
       this.queue.delete(el);
       if (batch.length >= BATCH) break;
     }
-    // Measure fixed elements as the page would show them without our fix.
-    const refixed = batch.filter((el): el is HTMLElement => this.fixed.has(el as HTMLElement));
+    // A site's running animation should settle before measurement. Check before
+    // removing repairs, so deferring a measurement never leaves text unrepaired.
+    const ready = batch.filter((el) => {
+      if (typeof el.getAnimations === 'function' && el.getAnimations().some((a) => a.playState === 'running')) {
+        this.win.setTimeout(() => this.enqueue(el), 600);
+        return false;
+      }
+      return true;
+    });
+    // Removing a repair must not itself start a color transition. Measure the
+    // unmodified color with transitions frozen, then restore the final color.
+    const refixed = ready.filter((el): el is HTMLElement => this.fixed.has(el as HTMLElement));
     for (const el of refixed) {
+      el.setAttribute(ATTR_MEASURE, '');
       el.removeAttribute(ATTR_FIX);
       const original = this.inlineOriginals.get(el);
       if (original !== undefined) el.style.setProperty('color', original, 'important');
     }
-    const icons = batch.filter((el): el is SVGSVGElement => el.localName === 'svg');
+    const icons = ready.filter((el): el is SVGSVGElement => el.localName === 'svg');
     for (const svg of icons) {
       for (const shape of Array.from(svg.querySelectorAll<SVGElement>(`[${ATTR_FIX_FILL}], [${ATTR_FIX_STROKE}]`))) {
         unfixShape(shape);
@@ -325,15 +338,10 @@ export class ContrastGuard {
       shape.setAttribute(prop === 'fill' ? ATTR_FIX_FILL : ATTR_FIX_STROKE, '');
       this.fixedShapes.add(shape);
     }
-    if (this.blind) for (const el of batch) if (el.isConnected) this.mapBlindBackgrounds(el.localName === 'svg' ? el.parentElement ?? el : el);
+    if (this.blind) for (const el of ready) if (el.isConnected) this.mapBlindBackgrounds(el.localName === 'svg' ? el.parentElement ?? el : el);
     const decisions: Array<[HTMLElement, string | null]> = [];
-    for (const el of batch) {
+    for (const el of ready) {
       if (!el.isConnected || el.localName === 'svg') continue;
-      // Mid-transition colors are not the page's real colors; look again once it settles.
-      if (typeof el.getAnimations === 'function' && el.getAnimations().some((a) => a.playState === 'running')) {
-        this.win.setTimeout(() => this.enqueue(el), 600);
-        continue;
-      }
       decisions.push([el as HTMLElement, this.fixFor(el, canvas)]);
     }
     for (const [el, color] of decisions) {
@@ -346,6 +354,10 @@ export class ContrastGuard {
         }
         this.fixed.add(el);
       } else if (this.fixed.has(el)) this.unfix(el);
+    }
+    if (refixed.length) {
+      void this.win.document.documentElement.offsetWidth;
+      for (const el of refixed) el.removeAttribute(ATTR_MEASURE);
     }
     if (this.queue.size) {
       this.scheduled = true;

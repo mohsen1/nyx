@@ -72,6 +72,19 @@ async function setSettings(worker: Worker, patch: (s: any) => void): Promise<voi
 const bg = (page: Page, sel: string) => page.$eval(sel, (el) => getComputedStyle(el).backgroundColor);
 const fg = (page: Page, sel: string) => page.$eval(sel, (el) => getComputedStyle(el).color);
 
+/** Samples composited screenshots, including filters and opacity that getImageData ignores. */
+async function renderedPixels(page: Page, selector: string, points: number[][]): Promise<number[][]> {
+  const png = await page.locator(selector).screenshot();
+  return page.evaluate(async ({ bytes, points }) => {
+    const bitmap = await createImageBitmap(new Blob([new Uint8Array(bytes)], { type: 'image/png' }));
+    const canvas = document.createElement('canvas');
+    canvas.width = bitmap.width; canvas.height = bitmap.height;
+    const ctx = canvas.getContext('2d')!;
+    ctx.drawImage(bitmap, 0, 0);
+    return points.map(([x, y]) => Array.from(ctx.getImageData(x, y, 1, 1).data).slice(0, 3));
+  }, { bytes: Array.from(png), points });
+}
+
 function luminance(rgb: string): number {
   const [r, g, b] = rgb.match(/[\d.]+/g)!.slice(0, 3).map(Number).map((c) => {
     c /= 255;
@@ -332,6 +345,22 @@ test('a WebGL hero whose pixels cannot be read is darkened under light text (Asa
   await expect.poll(() => page.getAttribute('#webgl', 'data-nyx-dim-bg'), { timeout: 8000 }).toBe('');
 });
 
+test('contrast rechecks keep repaired text readable when it transitions color', async ({ context, worker }) => {
+  await worker.evaluate(() => { (globalThis as any).fetch = () => Promise.reject(new TypeError('blocked')); });
+  const page = await context.newPage();
+  await page.goto(url('compose.html'));
+  await expect(page.locator('#compose')).toHaveAttribute('data-nyx-fix', '');
+  await page.locator('#compose').evaluate((el: HTMLElement) => {
+    el.style.transition = 'color 5s linear';
+    el.firstChild!.textContent = 'Compose message';
+  });
+  await page.waitForTimeout(300);
+  expect(await page.getAttribute('#compose', 'data-nyx-fix')).toBe('');
+  const text = luminance(await fg(page, '#compose'));
+  const paper = luminance(await bg(page, '.compose'));
+  expect((Math.max(text, paper) + .05) / (Math.min(text, paper) + .05)).toBeGreaterThan(4.4);
+});
+
 test('backdrops beside the content and canvas heroes are darkened', async ({ context }) => {
   const page = await context.newPage();
   await page.goto(url('backdrops.html'));
@@ -465,6 +494,33 @@ test('re-detects when a site switches its own theme', async ({ context }) => {
   expect(await bg(page, '#main')).toBe('rgb(16, 20, 24)');
 });
 
+for (const mode of ['auto', 'on']) {
+  for (const delayed of [false, true]) {
+    test(`system appearance changes preserve native dark mode (${mode}, ${delayed ? 'delayed JS' : 'CSS'})`, async ({ context, worker }) => {
+      await setSettings(worker, (s) => {
+        s.global = { ...s.global, mode, updatedAt: Date.now() };
+      });
+      const page = await context.newPage();
+      await page.emulateMedia({ colorScheme: 'light' });
+      await page.goto(url(`system-theme.html${delayed ? '?delayed=1' : ''}`));
+      await page.waitForTimeout(350);
+      await page.emulateMedia({ colorScheme: 'dark' });
+      await expect.poll(() => page.getAttribute('html', 'data-nyx-active')).toBeNull();
+      await expect.poll(() => bg(page, 'body')).toBe('rgb(16, 20, 24)');
+      await page.emulateMedia({ colorScheme: 'light' });
+      if (mode === 'on') {
+        await expect.poll(() => page.getAttribute('html', 'data-nyx-active')).toBe('');
+        await expect.poll(() => bg(page, 'body')).toBe('rgb(28, 28, 30)');
+      } else {
+        await expect.poll(() => bg(page, 'body')).toBe('rgb(255, 255, 255)');
+      }
+      await page.emulateMedia({ colorScheme: 'dark' });
+      await expect.poll(() => page.getAttribute('html', 'data-nyx-active')).toBeNull();
+      await expect.poll(() => bg(page, 'body')).toBe('rgb(16, 20, 24)');
+    });
+  }
+}
+
 test('advanced appearance: dynamic colors off, background images hidden, inversion off', async ({ context, worker }) => {
   const page = await openLight(context);
   await setSettings(worker, (s) => {
@@ -514,4 +570,68 @@ test('toolbar menu renders', async ({ context, worker }) => {
   await page.setViewportSize({ width: 340, height: 520 });
   await page.goto(`chrome-extension://${id}/popup.html`);
   await expect(page.getByRole('radiogroup', { name: 'Global status' })).toBeVisible();
+});
+
+test('Google Sheets darkens canvas cells and sprites, follows new grids, and restores on disable', async ({ context, worker }) => {
+  const fixture = readFileSync(join(FIXTURES, 'google-surfaces.html'), 'utf8');
+  await context.route('https://docs.google.com/**', (route) => route.fulfill({ contentType: 'text/html', body: fixture }));
+  const page = await context.newPage();
+  await page.goto('https://docs.google.com/spreadsheets/d/nyx-fixture/edit');
+  const filter = (selector: string) => page.$eval(selector, (el) => getComputedStyle(el).filter);
+  await expect.poll(() => filter('#grid')).toContain('invert(');
+  expect(await filter('#chart')).toBe('none');
+  expect(await filter('.docs-icon-img')).toBe('invert(1)');
+
+  const pixels = async () => {
+    const [paper, ink, blue] = await renderedPixels(page, '#grid', [[80, 80], [25, 25], [170, 20]]);
+    return { paper, ink, blue };
+  };
+  const dark = await pixels();
+  expect(Math.max(...dark.paper)).toBeLessThan(55);
+  expect(Math.min(...dark.ink)).toBeGreaterThan(200);
+  expect(dark.blue[2]).toBeGreaterThan(dark.blue[0] + 60);
+  if (SCREENSHOTS) await page.screenshot({ path: join(SCREENSHOTS, 'google-sheets-dark.png') });
+
+  await page.evaluate(() => {
+    const grid = document.querySelector('#grid')!;
+    const replacement = grid.cloneNode() as HTMLCanvasElement;
+    grid.replaceWith(replacement);
+    replacement.getContext('2d')!.fillRect(0, 0, 10, 10);
+  });
+  expect(await filter('#grid')).toContain('invert(');
+  await setSettings(worker, (s) => { s.global = { ...s.global, mode: 'off', updatedAt: Date.now() }; });
+  await expect.poll(() => filter('#grid')).toBe('none');
+  expect(await filter('.docs-icon-img')).toBe('none');
+  await page.reload();
+  expect((await pixels()).paper).toEqual([255, 255, 255]);
+  expect((await pixels()).ink).toEqual([0, 0, 0]);
+
+  // A Docs document with the same markup must not receive the Sheets workaround.
+  await setSettings(worker, (s) => { s.global = { ...s.global, mode: 'on', updatedAt: Date.now() }; });
+  await page.goto('https://docs.google.com/document/d/nyx-fixture/edit');
+  await expect(page.locator('html')).toHaveAttribute('data-nyx-active', '');
+  expect(await filter('#grid')).toBe('none');
+  if (SCREENSHOTS) await page.screenshot({ path: join(SCREENSHOTS, 'google-docs-unaffected.png') });
+});
+
+test('Gmail search sprites remain visible at rest and on keyboard focus', async ({ context, worker }) => {
+  void worker;
+  await context.route('https://mail.google.com/**', (route) => route.fulfill({ contentType: 'text/html', body: readFileSync(join(FIXTURES, 'google-surfaces.html'), 'utf8') }));
+  const page = await context.newPage();
+  await page.goto('https://mail.google.com/mail/u/0/');
+  const filter = (selector: string) => page.$eval(selector, (el) => getComputedStyle(el).filter);
+  await expect.poll(() => filter('.asor_i5')).toBe('invert(1)');
+  expect(await filter('.gsaq_b')).toBe('invert(1)');
+  expect(await filter('#grid')).toBe('none');
+  const iconContrast = async (selector: string) => {
+    const [ink, paper] = await renderedPixels(page, selector, [[10, 10], [10, 2]]);
+    return (luminance(`rgb(${ink.join(',')})`) + 0.05) / (luminance(`rgb(${paper.join(',')})`) + 0.05);
+  };
+  expect(await iconContrast('.asor_i5')).toBeGreaterThan(3);
+  expect(await iconContrast('.gsaq_b')).toBeGreaterThan(3);
+  await page.locator('.suggestion').focus();
+  expect(await iconContrast('.asor_i5')).toBeGreaterThan(3);
+  await page.locator('.suggestion').hover();
+  expect(await iconContrast('.gsaq_b')).toBeGreaterThan(3);
+  if (SCREENSHOTS) await page.screenshot({ path: join(SCREENSHOTS, 'gmail-search-sprites.png') });
 });

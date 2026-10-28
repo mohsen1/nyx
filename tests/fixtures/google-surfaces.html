@@ -1,0 +1,36 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    body { background: white; color: black; font: 16px sans-serif; }
+    #toolbar { background: #f0f4f9; padding: 12px; }
+    .docs-icon-img { display: inline-block; width: 20px; height: 20px; content: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"><path fill="%235f6368" d="M2 8h16v4H2z"/></svg>'); }
+    .suggestions { background: white; padding: 20px; }
+    .suggestion { padding: 8px; }
+    .suggestion:hover, .suggestion:focus { background: #eee; }
+    .asor_i5, .gsaq_b { display: inline-block; width: 20px; height: 20px; background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"><path d="M2 8h16v4H2z"/></svg>') center no-repeat; }
+    .asor_i5 { opacity: .55; }
+    .gsaq_b { opacity: .4; }
+    canvas { display: block; }
+  </style>
+</head>
+<body>
+  <div id="toolbar"><span class="docs-icon-img"></span> Toolbar</div>
+  <div id="waffle-grid-container"><div class="grid-container"><canvas id="grid" width="600" height="300"></canvas></div></div>
+  <canvas id="chart" width="100" height="50"></canvas>
+  <div class="suggestions"><div class="suggestion" tabindex="0"><span class="asor_i5"></span> Example search <span class="gsaq_b"></span></div></div>
+  <script>
+    function paint(canvas) {
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = 'white'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = 'black'; ctx.fillRect(20, 20, 10, 10);
+      ctx.font = '16px sans-serif'; ctx.fillText('Cell text', 40, 30);
+      ctx.strokeStyle = '#ddd'; ctx.strokeRect(0, 0, 120, 40);
+      ctx.fillStyle = '#4285f4'; ctx.fillRect(160, 10, 20, 20);
+    }
+    paint(document.getElementById('grid'));
+    paint(document.getElementById('chart'));
+  </script>
+</body>
+</html>
