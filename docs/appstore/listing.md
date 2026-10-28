@@ -2,6 +2,13 @@
 
 Source of truth for the App Store Connect metadata. Screenshots in this folder are rendered by `scripts/appstore-screenshots.mjs`.
 
+App Store Connect app ID: `6824462594` (created on 2026-10-19 with iOS and macOS platforms).
+
+Version **1.0.3**, build **261021.2232**, uploaded and submitted on **2026-10-22** for both iOS and macOS, replacing the pending 1.0.2 submissions. Both platforms: **Waiting for Review**. Manual release after approval remains selected.
+
+- iOS submission: `63cbfe3b-db2f-4228-bc8f-018c1a729b68`
+- macOS submission: `0c49ce94-b3ec-4321-9702-8dbdab8016c2`
+
 | Field | Value |
 | --- | --- |
 | Name | Nyx: Dark Mode for Safari |
@@ -59,6 +66,16 @@ PRIVACY
 Nyx collects no data. There's no account to create and no analytics or ads. The only network requests it makes are for stylesheets and images the page already loads, so it can read their colors.
 
 Nyx is free and open source: github.com/mohsen1/nyx
+
+## What's new (1.0.4)
+
+Google Sheets cells now darken with the rest of the page, and Gmail search icons stay visible. Improved detection of sites that switch their own dark mode after a system appearance change. Text contrast repairs now stay in place while controls transition colors.
+
+## What's new (1.0.3)
+
+Review report screenshots before copying them. Black out private areas in both comparison views, undo changes, and inspect screenshots at actual size. Report details can also be edited before opening GitHub.
+
+Nyx now re-checks a site's own dark mode when browser appearance changes. Fixed excessive dimming of article images beneath fixed navigation, and a Safari screenshot-capture stall.
 
 ## What's new (1.0)
 

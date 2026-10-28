@@ -2,6 +2,10 @@
 
 Visited 87 URLs and inspected real content on 59 distinct sites across 10 categories. Verification screens, login-only views, and extra pages from the same site are excluded from the minimum-50 count.
 
+## Release follow-up
+
+For 1.0.4 publication, merged the upstream 1.0.3 release history, preserving its report privacy UI, Safari capture fix, native system canvas detection, and article image fix. The merged release passes TypeScript checking, 98 unit tests, and 55 Chromium extension tests. The screenshots and hash below identify the earlier audit build, before that merge.
+
 ## Method
 
 Loaded the built Chrome extension into a fresh Chromium profile at 1280 × 860, with Nyx On and the Dark theme. For every URL, captured the initial light-system rendering, switched to a dark system appearance, and switched back to light. Saved screenshots, visible-text contrast candidates, extension activity, resolved URLs, and browser/build metadata. Rejected optional cookies where an identifiable rejection control was available. Reviewed the screenshot contact sheets and probed flagged elements separately.
@@ -14,12 +18,12 @@ Coverage is public, unauthenticated desktop pages. Screenshots include cookie no
 
 - [#7: contrast repairs disappear on color transitions](https://github.com/mohsen1/nyx/issues/7). ESPN exposed a repaired Log In label dropping to 2.91:1 contrast after a theme change. The guard now checks animations before removing repairs and suppresses transitions only during measurement/restoration. A focused text-change regression failed before the fix and passes afterward. A fresh ESPN probe after dark → light reports the repair present, no running animation, and approximately 4.99:1 contrast.
 
-Existing local Google Sheets canvas and Gmail sprite fixes remain in the checkout and their regressions pass. The changes are local and rebuilt; issues remain open pending commit/release.
+Existing local Google Sheets canvas and Gmail sprite fixes remain in the checkout and their regressions pass. The changes are included in the 1.0.4 release preparation.
 
 ## Verification
 
 - TypeScript check passed; all 94 unit tests and all 39 Chromium extension end-to-end tests passed.
-- The final live sweep completed all 87 URLs with the same frozen extension bundle; its SHA-256 matches the current rebuilt content script.
+- The final live sweep completed all 87 URLs with the same frozen extension bundle; its SHA-256 identifies the content script built for that audit.
 - Live transitions showed Nyx yielding to native dark mode and resuming on light pages, including GitHub, Medium, Python docs, MDN, Go, Ruby, OpenStreetMap, Wikipedia, and FreeBSD.
 - Remaining automated candidates were triaged: LinkedIn initial color transitions settle to readable text in a later probe; Smithsonian’s `search` text is 0px fallback content inside a mask icon; Substack/OpenStreetMap button contrast and faded Reddit login text were measured while Nyx was inactive in native dark mode. Those native colors were preserved.
 

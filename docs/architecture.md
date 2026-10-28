@@ -19,6 +19,7 @@ extension/src/
   background/        fetches cross-origin CSS/images, keyboard shortcuts, sync
   popup/             the toolbar menu
   options/           the settings page
+  report/            local screenshot review and opaque blackout editing
 apple/               Safari container app (iOS + macOS), native messaging, App Intents, Control
 ```
 
@@ -90,7 +91,9 @@ apple/               Safari container app (iOS + macOS), native messaging, App I
    - Large pale backdrops with text on them (hero images, `<video>`,
      `<canvas>`, full-page background images) are darkened. When a backdrop's
      pixels can't be read (no host access, no CORS), it is darkened if the
-     page's own text on it is dark.
+     page's own text on it is dark. Text in unrelated fixed or sticky headers
+     does not count as image overlay text, so scrolling an article chart under
+     navigation does not dim the chart as a hero backdrop.
 9. **Contrast guard.** Whatever produced the final colors, text that is on screen is
    checked against the solid background actually behind it. Text below 3:1 (a color
    the rewriter could not see: an unreadable stylesheet, a variable set from script,
@@ -99,10 +102,12 @@ apple/               Safari container app (iOS + macOS), native messaging, App I
    runs lazily on elements as they scroll into view and again when stylesheets
    change. Text over photos or gradients is left alone.
 10. **Detection.** After `DOMContentLoaded` (and again on `load`, or when
-   `<html>`/`<body>` theme classes change) Nyx briefly disables its styles and
+   `<html>`/`<body>` theme classes or browser appearance change) Nyx briefly disables its styles and
    samples the rendered page, looking through modal backdrops. If most of the
    viewport is already dark (75%), Nyx steps aside, unless "ignore built-in
-   dark mode" applies.
+   dark mode" applies. Appearance changes are sampled immediately and again
+   after a short debounce for sites that update their theme asynchronously.
+   Native canvas colors also follow the active `color-scheme`.
 11. **Keep up.** The engine stays current through three mechanisms:
    - **MutationObservers** catch new stylesheets, inline style changes and
      shadow roots.
@@ -128,3 +133,24 @@ Changes made in the app reach Safari in three ways:
 - on the next page load (throttled to once a minute)
 - every 5 minutes
 - whenever the toolbar menu opens
+
+## Private problem reports
+
+Capture acknowledgments wait for two painted frames, with a short timer fallback
+for Safari, which can pause animation frames while its extension popup is open.
+
+The toolbar report action captures the page locally and opens an extension review
+tab before writing to the clipboard. The user can draw opaque blackouts, enter
+rectangle coordinates with the keyboard, undo or clear them, and edit the report
+details to remove private URLs. Every blackout is mirrored onto both comparison
+views and rounded outwards when burned into a fresh PNG.
+
+Raw screenshot drafts use a one-use, in-memory background handoff that expires
+after 60 seconds; they never enter extension storage or tab URLs. Only extension
+UI pages may create or take drafts. The review tab holds the pixels while editing
+and discards them when canceled, continued, or left. Copying starts only from an
+explicit click and exports the flattened PNG, with no recoverable overlay layers.
+
+Continue opens a GitHub issue draft; the user still pastes the reviewed screenshot
+and submits the issue themselves. They can continue without a screenshot when
+capture or clipboard access is unavailable.

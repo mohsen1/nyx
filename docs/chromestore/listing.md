@@ -2,7 +2,10 @@
 
 Package: `npm run chrome:package` → `dist/nyx-chrome-<version>.zip`. Images in this folder come from `node scripts/chrome-store-assets.mjs`.
 
-Chrome Web Store item ID: `jpjjbamkncfmpjadgkmfbifhnnnhefhm` (set as `CWS_EXTENSION_ID` for `scripts/chrome-publish.mjs`). Version 1.0.1 submitted for review on 2026-10-18.
+Chrome Web Store item ID: `jpjjbamkncfmpjadgkmfbifhnnnhefhm` (set as `CWS_EXTENSION_ID` for `scripts/chrome-publish.mjs`). Version 1.0.2 submitted for review on 2026-10-19, replacing the pending 1.0.1 submission. Rejected on 2026-10-20 for keyword spam (Yellow Argon); removed the theme-name list from the description and resubmitted on 2026-10-21. Replaced the pending 1.0.2 submission with version 1.0.3 on 2026-10-22. Status: Pending Review. Automatic publication after approval enabled.
+
+
+Version 1.0.4 prepared on 2026-10-28 with Google Sheets cell darkening, Gmail search sprite fixes, delayed native-theme detection, and contrast transition repairs. The package is available through the GitHub release workflow. Store submission is pending: this workspace has no Chrome Web Store OAuth credentials and browser automation could not open the store dashboard. The 1.0.3 review status above was recorded on 2026-10-22.
 
 For future API updates, configure Chrome Web Store OAuth credentials yourself and provide `CWS_CLIENT_ID`, `CWS_CLIENT_SECRET`, and `CWS_REFRESH_TOKEN` alongside `CWS_EXTENSION_ID`. No OAuth credentials were created during the first submission.
 
@@ -32,7 +35,7 @@ Per-site settings
 Click the Nyx button to give the current site its own status and theme. A setting can cover a whole domain, one subdomain, or a single page.
 
 Themes
-26 built in, from Dark, Black and Sepia to Dracula, Nord, Solarized, Gruvbox, Catppuccin Mocha and Tokyo Night. You can make your own by picking a background color, text color, image brightness and grayscale, and share it with a link.
+26 built in. You can make your own by picking a background color, text color, image brightness and grayscale, and share it with a link.
 
 Keyboard shortcuts
 Alt+Shift+N turns the current site on or off, Alt+Shift+P pauses it until tomorrow, and Alt+Shift+T switches themes. More commands can be assigned at chrome://extensions/shortcuts.

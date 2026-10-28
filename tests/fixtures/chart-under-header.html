@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Article image under fixed navigation</title>
+  <style>
+    body { margin: 0; background: #fff; color: #222; font: 18px system-ui; }
+    nav { position: fixed; inset: 0 0 auto; height: 180px; z-index: 10; background: #fff; display: grid; place-items: center; }
+    figure { margin: 0; }
+    img { display: block; width: 720px; height: 600px; }
+  </style>
+</head>
+<body>
+  <nav><span>Research and company navigation</span></nav>
+  <figure><img id="chart" width="720" height="600" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='720' height='600'%3E%3Crect width='720' height='600' fill='white'/%3E%3Ctext x='40' y='300' fill='black' font-size='20'%3EBenchmark chart: 73.7%3C/text%3E%3C/svg%3E"><figcaption>A chart in an article, not a hero backdrop.</figcaption></figure>
+</body>
+</html>

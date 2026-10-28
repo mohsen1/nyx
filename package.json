@@ -1,6 +1,6 @@
 {
   "name": "nyx-dark-mode",
-  "version": "1.0.2",
+  "version": "1.0.4",
   "private": true,
   "description": "Open-source dark mode for every website. A Safari Web Extension (also runs in Chrome and Firefox) with a Noir-compatible theme and settings model.",
   "license": "MIT",
