@@ -55,6 +55,8 @@ const test = base.extend<Fixtures>({
   worker: async ({ context }, use) => {
     let [worker] = context.serviceWorkers();
     if (!worker) worker = await context.waitForEvent('serviceworker');
+    // The worker event can arrive before Chromium exposes extension APIs.
+    await expect.poll(() => worker.evaluate(() => typeof (globalThis as any).chrome?.storage?.local?.get)).toBe('function');
     await use(worker);
   },
 });
