@@ -8,6 +8,8 @@ Version **1.0.4**, build **261102.1740**, uploaded for both platforms on **2026-
 
 Apple's iOS response dated October 31 requests a physical-device screen recording starting with app launch, plus the purpose/audience, setup instructions, external dependencies, regional behavior and any applicable protected-content authorization. The expanded review notes below were saved to App Store Connect on both platforms on November 2. The physical-device recording is still required before iOS resubmission. Both replacement builds include the Safari background reset fix and have finished processing.
 
+Further iPhone testing on November 2 found a popup startup defect, tracked in [issue #8](https://github.com/mohsen1/nyx/issues/8). Commit `0a8c907` fixes the initial render waiting indefinitely on page state. The fix passed automated checks and an iOS device build, but is not included in uploaded build `261102.1740`. Physical installation is pending a USB connection because CoreDevice reports the phone unavailable. The existing phone installation subsequently passed popup, website On/Off, Sepia, and reload checks; site defaults were restored. This does not verify the startup fix or resolve the reported first-permission failure. Verify the corrected build on the physical device, upload it with a new build number, and record the requested demonstration before resubmitting iOS.
+
 - iOS submission: `ac122c11-bfff-4646-983e-130481bfe6bd`
 - macOS submission: `72d3cea9-932a-466e-803b-f73daf90b71a` (replaces `eef928a2-b3ba-4cb5-8a8f-29ceb297574e`)
 
