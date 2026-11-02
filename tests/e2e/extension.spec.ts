@@ -74,6 +74,14 @@ async function setSettings(worker: Worker, patch: (s: any) => void): Promise<voi
 const bg = (page: Page, sel: string) => page.$eval(sel, (el) => getComputedStyle(el).backgroundColor);
 const fg = (page: Page, sel: string) => page.$eval(sel, (el) => getComputedStyle(el).color);
 
+test('transparent variable overrides do not paint rectangles behind text', async ({ context }) => {
+  const page = await context.newPage();
+  await page.goto(url('transparent-variable.html'));
+  await expect.poll(() => bg(page, 'html')).not.toBe('rgb(255, 255, 255)');
+  await expect.poll(() => bg(page, 'h1')).toBe('rgba(0, 0, 0, 0)');
+  await expect.poll(() => bg(page, '.button .label')).toBe('rgba(0, 0, 0, 0)');
+});
+
 /** Samples composited screenshots, including filters and opacity that getImageData ignores. */
 async function renderedPixels(page: Page, selector: string, points: number[][]): Promise<number[][]> {
   const png = await page.locator(selector).screenshot();

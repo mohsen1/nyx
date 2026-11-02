@@ -2,7 +2,7 @@
 import { describe, expect, it } from 'vitest';
 import { rewriteCustomProperty, rewriteChannels, rewriteValue } from '../../extension/src/shared/css-values';
 import { Palette } from '../../extension/src/shared/palette';
-import { stripImports, transformRules } from '../../extension/src/content/sheet-transform';
+import { stripImports, transformDeclarations, transformRules } from '../../extension/src/content/sheet-transform';
 
 const palette = new Palette({ background: '#1c1c1e', text: '#e3e3e6', dynamicColors: true });
 const ctx = { palette, baseUrl: 'https://cdn.example.com/css/site.css' };
@@ -94,6 +94,17 @@ describe('rewriteValue', () => {
 });
 
 describe('transformRules', () => {
+  it('uses a serializable Safari background shorthand instead of sampling reset selectors', () => {
+    const style = {
+      0: 'background-color', 1: 'background-image', length: 2,
+      getPropertyValue: (name: string) => name === 'background' ? 'var(--reset-background)' : '',
+      getPropertyPriority: () => '',
+    } as unknown as CSSStyleDeclaration;
+    const sampled: string[] = [];
+    const css = transformDeclarations(style, { ...ctx, onComposedProperty: (_selector, prop) => sampled.push(prop) }, 'html, div, h2, span');
+    expect(sampled).toEqual([]);
+    expect(css).toContain('background: var(--nyx-b--reset-background, var(--reset-background))');
+  });
   it('mirrors selectors, priorities and wrappers', () => {
     const sheet = sheetFrom(`
       body { background: #fff; color: #111; margin: 0 }
@@ -118,6 +129,13 @@ describe('transformRules', () => {
     expect(css).toContain('--nyx-t--bg:');
     expect(css).not.toContain('--gap');
     expect(css).toMatch(/\.card \{ background[^:]*: var\(--nyx-b--bg, var\(--bg\)\)/);
+  });
+
+  it('shadows inherited mapped colors when a custom property becomes transparent', () => {
+    const css = transformRules(sheetFrom(':root { --surface: #fff } .text { --surface: transparent; background: var(--surface) }').cssRules, ctx);
+    expect(css).toContain('--nyx-b--surface: #1c1c1e');
+    expect(css).toMatch(/\.text \{[^}]*--nyx-b--surface: transparent/);
+    expect(rewriteCustomProperty('--surface', 'transparent', ctx)).toHaveLength(4);
   });
 
   it('maps gradient text (background-clip: text) as text, not as a background', () => {

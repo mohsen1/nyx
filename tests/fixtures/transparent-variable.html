@@ -1,0 +1,11 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Transparent surface overrides</title>
+<style>
+:root { --surface: white; background: white; color: #111; }
+.card { padding: 30px; background: #e8e8e8; }
+.label { --surface: transparent; background: var(--surface); }
+.button { background: #0a66c2; color: white; padding: 15px; }
+</style></head><body>
+<section class="card"><h1 class="label">Transparent heading</h1>
+<button class="button"><span class="label">Create</span></button></section>
+</body></html>

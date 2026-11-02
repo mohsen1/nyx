@@ -68,6 +68,10 @@ export function transformDeclarations(style: CSSStyleDeclaration, opts: Transfor
     seen.add(prop);
     const value = style.getPropertyValue(prop);
     if (!value) {
+      // Safari exposes empty background longhands even when the var() shorthand
+      // is still available. Rewrite that shorthand; sampling the first matching
+      // element would otherwise paint its background across a whole reset rule.
+      if (prop.startsWith('background-') && style.getPropertyValue('background').includes('var(')) continue;
       // A longhand left "pending substitution" by a var() shorthand that can no longer be
       // serialized (a later longhand overrode part of it): its value is lost to the CSSOM, so
       // the computed color is read at runtime instead.

@@ -400,6 +400,11 @@ const ALL_ROLES: ColorRole[] = ['background', 'text', 'border', 'shadow'];
  */
 export function rewriteCustomProperty(name: string, value: string, ctx: RewriteContext): Array<[string, string]> {
   const out: Array<[string, string]> = [];
+  // A transparent override must shadow the mapped copies inherited from an opaque
+  // ancestor too. Otherwise var(--surface) keeps painting the ancestor's color.
+  if (value.trim().toLowerCase() === 'transparent') {
+    return ALL_ROLES.map((role) => [roleVarName(name, role), value]);
+  }
   if (mayContainColor(value)) {
     for (const role of ALL_ROLES) {
       const v = rewriteValue(value, role, { ...ctx, hideImages: false });
