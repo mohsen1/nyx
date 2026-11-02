@@ -2,6 +2,8 @@
 
 Package: `npm run chrome:package` → `dist/nyx-chrome-<version>.zip`. Images in this folder come from `node scripts/chrome-store-assets.mjs`.
 
+Version **1.0.5** uploaded and submitted for review on **2026-11-02** under **Mohsen Azimi** (`me@azimi.me`). Verified draft version 1.0.5 before submission and **Pending review** afterward. Automatic publication after approval is enabled. This release includes transparent background fixes for CSS variable resets and toolbar startup controls that render without waiting for a page-state response. TypeScript checking and all 101 unit tests passed; ZIP integrity was verified. Source release commit: `eead43e`. Package SHA-256: `edc6d3deb02ae8b4724c9e2f222fcab4c13750a0b259e738e4684f520eecdb59`. Submission screenshot: `audit-results/2026-11-02/chrome-store-1.0.5-submitted.png`. Published version 1.0.4 remains available while the new version is reviewed.
+
 Chrome Web Store item ID: `jpjjbamkncfmpjadgkmfbifhnnnhefhm` (set as `CWS_EXTENSION_ID` for `scripts/chrome-publish.mjs`). Version 1.0.2 submitted for review on 2026-10-19, replacing the pending 1.0.1 submission. Rejected on 2026-10-20 for keyword spam (Yellow Argon); removed the theme-name list from the description and resubmitted on 2026-10-21. Replaced the pending 1.0.2 submission with version 1.0.3 on 2026-10-22. Status: Pending Review. Automatic publication after approval enabled.
 
 
