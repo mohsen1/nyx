@@ -4,12 +4,12 @@ Source of truth for the App Store Connect metadata. Screenshots in this folder a
 
 App Store Connect app ID: `6824462594` (created on 2026-10-19 with iOS and macOS platforms).
 
-Version **1.0.4**, build **261028.1101**, signed, uploaded and submitted for both iOS and macOS on **2026-10-28** after membership renewal activated. As of **2026-11-02**, macOS is **Waiting for Review** and iOS is **Rejected — Information Needed (2.1)**. Manual release after approval remains selected. The previous 1.0.3 submissions were removed after the replacement builds were ready.
+Version **1.0.4**, build **261102.1740**, uploaded for both platforms on **2026-11-02**. macOS was resubmitted and is **Waiting for Review**. iOS is saved as **Prepare for Submission**, pending the physical-device recording requested by Apple after rejecting the previous build for **Information Needed (2.1)**. Manual release after approval remains selected.
 
-Apple's iOS response dated October 31 requests a physical-device screen recording starting with app launch, plus the purpose/audience, setup instructions, external dependencies, regional behavior and any applicable protected-content authorization. The expanded review notes below were saved to App Store Connect on November 2. The physical-device recording is still required before resubmission. Replacement iOS and macOS builds **261102.1740**, including the Safari background reset fix, were successfully uploaded on November 2 and are processing.
+Apple's iOS response dated October 31 requests a physical-device screen recording starting with app launch, plus the purpose/audience, setup instructions, external dependencies, regional behavior and any applicable protected-content authorization. The expanded review notes below were saved to App Store Connect on both platforms on November 2. The physical-device recording is still required before iOS resubmission. Both replacement builds include the Safari background reset fix and have finished processing.
 
 - iOS submission: `ac122c11-bfff-4646-983e-130481bfe6bd`
-- macOS submission: `eef928a2-b3ba-4cb5-8a8f-29ceb297574e`
+- macOS submission: `72d3cea9-932a-466e-803b-f73daf90b71a` (replaces `eef928a2-b3ba-4cb5-8a8f-29ceb297574e`)
 
 | Field | Value |
 | --- | --- |
