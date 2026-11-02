@@ -307,12 +307,11 @@ async function reportSite(key: string, button: HTMLButtonElement): Promise<void>
 }
 
 async function main(): Promise<void> {
-  [tab] = await api.tabs.query({ active: true, currentWindow: true });
+  [tab] = await api.tabs.query({ active: true, currentWindow: true }).catch(() => []);
   settings = await loadSettings();
-  await refreshPage();
-  // Browsers hide a tab's URL when the extension isn't allowed on that website (Safari does this
-  // until the user grants access), so fall back to the URL the content script reports.
-  pageUrl = tab?.url ?? page?.url;
+  // The page may not answer after Safari has just granted website access. Its
+  // state is optional: show the controls before waiting for that response.
+  pageUrl = tab?.url;
   siteKey = pageUrl ? matchSiteKey(settings, pageUrl) : null;
   render();
   onSettingsChanged(async (s) => {
@@ -326,6 +325,12 @@ async function main(): Promise<void> {
     render();
   });
   void api.runtime.sendMessage({ type: 'syncNow' } satisfies Message).catch(() => undefined);
+  void refreshPage().then(() => {
+    // Safari can withhold the tab URL until website access is granted.
+    pageUrl = tab?.url ?? page?.url;
+    if (!scopePinned && pageUrl) siteKey = matchSiteKey(settings, pageUrl);
+    render();
+  });
 }
 
 void main();
