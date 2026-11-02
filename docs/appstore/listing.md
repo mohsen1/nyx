@@ -4,7 +4,9 @@ Source of truth for the App Store Connect metadata. Screenshots in this folder a
 
 App Store Connect app ID: `6824462594` (created on 2026-10-19 with iOS and macOS platforms).
 
-Version **1.0.4**, build **261028.1101**, signed, uploaded and submitted for both iOS and macOS on **2026-10-28** after membership renewal activated. Both platforms: **Waiting for Review**. Manual release after approval remains selected. The previous 1.0.3 submissions were removed after the replacement builds were ready.
+Version **1.0.4**, build **261028.1101**, signed, uploaded and submitted for both iOS and macOS on **2026-10-28** after membership renewal activated. As of **2026-11-02**, macOS is **Waiting for Review** and iOS is **Rejected — Information Needed (2.1)**. Manual release after approval remains selected. The previous 1.0.3 submissions were removed after the replacement builds were ready.
+
+Apple's iOS response dated October 31 requests a physical-device screen recording starting with app launch, plus the purpose/audience, setup instructions, external dependencies, regional behavior and any applicable protected-content authorization. The expanded review notes below were saved to App Store Connect on November 2. The physical-device recording is still required before resubmission. A replacement iOS build **261102.1740** includes the Safari background reset fix and is being uploaded.
 
 - iOS submission: `ac122c11-bfff-4646-983e-130481bfe6bd`
 - macOS submission: `eef928a2-b3ba-4cb5-8a8f-29ceb297574e`
@@ -83,10 +85,24 @@ First release. If a site looks wrong, choose "Report a problem with this website
 
 ## Review notes
 
-Nyx is a Safari Web Extension, so most of what it does happens inside Safari.
+PURPOSE AND AUDIENCE
 
-Mac: open Nyx and click "Open Safari Extension Settings". Turn on Nyx and allow it on all websites. Then visit any website, for example https://news.ycombinator.com.
+Nyx is a free Safari Web Extension for people who want to read websites with darker backgrounds and readable text. It applies themes to the websites the user visits. Most of its functionality is used inside Safari; the container app provides setup instructions and default settings. It is a general-purpose consumer utility.
 
-iPhone and iPad: go to Settings > Apps > Safari > Extensions > Nyx, turn it on, and set All Websites to Allow. Then open any website in Safari.
+SETUP AND MAIN FEATURES
 
-The Nyx button in Safari's toolbar changes the status and theme for the current website. No account or sign-in is needed.
+1. Launch Nyx. Select On to test darkening regardless of the device appearance. Auto follows the device appearance or a user-defined schedule; Off disables darkening.
+2. On iPhone/iPad, open Settings > Apps > Safari > Extensions > Nyx. Enable Nyx and allow website access. On Mac, use "Open Safari Extension Settings" in Nyx and enable the extension.
+3. Open Safari and visit https://news.ycombinator.com. This public page needs no account or sample files. Nyx darkens the page.
+4. Open Safari's page menu and choose Nyx (on Mac, use the Nyx toolbar button). Change the current website's status or theme. Selecting Off restores that site's appearance; On applies Nyx. The default theme can also be selected in the container app.
+5. Other features include per-site preferences, pause until tomorrow, custom themes and theme-link import. Settings sync through the user's existing iCloud account when available; iCloud is not required to use dark mode locally.
+
+No Nyx registration, login, account deletion, subscription, in-app purchase or paid content exists. No demo credentials are needed. Nyx does not host a social feed or user-generated content service.
+
+EXTERNAL SERVICES
+
+Website appearance is processed locally by the bundled extension. It reads the visited page's styles and may fetch stylesheets and images already referenced by that page to analyze their colors. There is no Nyx backend, authentication service, payment processor, AI service or analytics provider. Apple's iCloud key-value storage optionally syncs settings. The optional "Report a problem with this website" flow lets the user review/edit a report and opens GitHub to file it; GitHub is not required for dark mode. The website/support/privacy links open azimi.me.
+
+REGIONS AND THIRD-PARTY MATERIAL
+
+Nyx has the same functionality in all regions and has no region-specific catalog. The availability of websites or Apple services can depend on the user's network and region. Nyx is not a regulated service and does not distribute a protected third-party content catalog. Users browse websites directly in Safari; Nyx changes their local appearance and does not provide access to paid content.
